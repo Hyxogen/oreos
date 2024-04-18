@@ -1,31 +1,45 @@
-AS	:= nasm
+NAME		:= oreos
+AS		:= nasm
 
-CC	:= $(HOME)/opt/cross/bin/i686-elf-gcc
-CFLAGS	:= -std=c11 -O2 -Wall -Wextra -ffreestanding
+ISO		:= $(NAME).iso
+KERNEL		:= $(NAME).bin
 
-all: hyxos.iso
+CC		:= $(HOME)/opt/cross/bin/i686-elf-gcc
+CFLAGS		:= -std=c11 -O0 -Wall -Wextra -ffreestanding -masm=intel -g
 
-hyxos.iso: hyxos.bin grub.cfg Makefile
+OBJ_DIR		:= build
+
+C_FILES		:= kernel.c
+ASM_FILES	:= boot.asm
+OBJ_FILES	:= $(patsubst %.c,$(OBJ_DIR)/%.o,$(C_FILES)) $(patsubst %.asm,$(OBJ_DIR)/%.o,$(ASM_FILES))
+DEP_FILES	:= $(patsubst %.c,$(OBJ_DIR)/%.d,$(C_FILES))
+
+all: $(ISO)
+
+$(ISO): $(KERNEL) grub.cfg Makefile
 	rm -rf isodir
 	mkdir -p isodir/boot/grub
 	cp grub.cfg isodir/boot/grub
-	cp hyxos.bin isodir/boot
+	cp $(KERNEL) isodir/boot
 	grub-mkrescue -o $@ isodir
 
-hyxos.bin: boot.o kernel.o linker.ld Makefile
-	$(CC) -T linker.ld -o hyxos.bin kernel.o -ffreestanding -O2 -nostdlib boot.o -lgcc
+$(KERNEL): $(OBJ_FILES) linker.ld Makefile
+	$(CC) -T linker.ld -o $(KERNEL) $(OBJ_FILES) -ffreestanding -O2 -nostdlib -lgcc
 
-%.o: %.asm Makefile
+$(OBJ_DIR)/%.o: %.asm Makefile
+	@mkdir -p $(@D)
 	$(AS) -felf32 $< -o $@
 
-%.o: %.c Makefile
+$(OBJ_DIR)/%.o: %.c Makefile
+	@mkdir -p $(@D)
 	$(CC) -c $< -o $@ $(CFLAGS)
 
-run: hyxos.iso
-	qemu-system-i386 -cdrom hyxos.iso -nographic
+run: $(ISO)
+	qemu-system-i386 -cdrom $(ISO) -nographic
 
 clean:
 	rm -rf isodir
-	rm -f boot.o hyxos.bin hyxos.iso
+	rm -rf build
+	rm -f $(KERNEL) $(ISO)
 
 .PHONY: all run
