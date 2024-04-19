@@ -3,6 +3,7 @@
 #include <kernel/tty.h>
 #include <kernel/types.h>
 #include <kernel/kernel.h>
+#include <libc/string.h>
 #include "multiboot2.h"
 #include "psf.h"
 #include "boot.h"
@@ -146,19 +147,9 @@ void term_write(const char *data, size_t n)
 		term_put(data[i]);
 }
 
-static size_t _strlen(const char *str)
-{
-	const char *beg = str;
-
-	while (*str)
-		++str;
-
-	return str - beg;
-}
-
 void term_print(const char *str)
 {
-	term_write(str, _strlen(str));
+	term_write(str, strlen(str));
 }
 
 void _term_init(const struct multiboot_info *boot_info)

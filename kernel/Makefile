@@ -8,9 +8,10 @@ CFLAGS		:= -std=c11 -O0 -Wall -Wextra -ffreestanding -masm=intel -g -Iinclude
 
 OBJ_DIR		:= build
 
+LIBC_DIR	:= libc
 I386_DIR	:= arch/i386
 
-C_FILES		:= $(I386_DIR)/tty.c $(I386_DIR)/platform.c kernel.c
+C_FILES		:= $(I386_DIR)/tty.c $(I386_DIR)/platform.c $(LIBC_DIR)/string.c $(LIBC_DIR)/ctype.c $(LIBC_DIR)/strings.c kernel.c
 ASM_FILES	:= $(I386_DIR)/boot.asm
 OBJ_FILES	:= $(patsubst %.c,$(OBJ_DIR)/%.o,$(C_FILES)) $(patsubst %.asm,$(OBJ_DIR)/%.o,$(ASM_FILES))
 DEP_FILES	:= $(patsubst %.c,$(OBJ_DIR)/%.d,$(C_FILES))

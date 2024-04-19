@@ -24,4 +24,4 @@ clean:
 	rm -rf $(ISO_DIR)
 	@${MAKE} -C kernel clean
 
-.PHONY: all run debug clean
+.PHONY: all run debug clean $(ISO)
