@@ -1,19 +1,23 @@
-#include "types.h"
-#include "multiboot2.h"
-#include "psf.h"
 #include <stdbool.h>
 
-__attribute__ ((noreturn)) extern void halt(void);
+#include <kernel/tty.h>
+#include <kernel/types.h>
+#include <kernel/kernel.h>
+#include "multiboot2.h"
+#include "psf.h"
+#include "boot.h"
 
-__attribute__ ((noinline)) void panic(void)
-{
-	halt();
-}
-
-struct color_desc {
+static bool initialized = false;
+static u8* term_buf;
+static u32 term_width, term_height;
+static u32 term_charwidth, term_charheight;
+static u32 term_col, term_row;
+static u8 term_bpp;
+static u32 term_fg, term_bg;
+static struct {
 	u8 field_pos;
 	u8 mask_size;
-};
+} colors[3];
 
 struct color {
 	union {
@@ -26,16 +30,6 @@ struct color {
 	};
 };
 
-static volatile u8* term_buf;
-static u32 term_width;
-static u32 term_height;
-static u32 term_charwidth;
-static u32 term_charheight;
-static u32 term_col, term_row;
-static u32 term_fg, term_bg;
-static u8 term_bpp;
-static struct color_desc colors[3];
-
 static const struct color COLOR_PURPLE = {{{ 0xff, 0x00, 0xff }}};
 static const struct color COLOR_BLACK = {{{ 0x00, 0x00, 0x00 }}};
 static const struct color COLOR_WHITE = {{{ 0xff, 0xff, 0xff }}};
@@ -43,6 +37,17 @@ static const struct color COLOR_WHITE = {{{ 0xff, 0xff, 0xff }}};
 extern struct psf2_font _binary_font_psfu_start;
 extern u8 _binary_font_psfu_end;
 static u16 unicode[256];
+
+u32 term_encode_color(struct color color)
+{
+       u32 result = 0;
+
+       for (int i = 0; i < 3; ++i) {
+               result |= ((u32) color.elems[i] & ((1 << colors[i].mask_size) - 1)) << colors[i].field_pos;
+       }
+       return result;
+}
+
 
 static void psf_init()
 {
@@ -72,30 +77,11 @@ static void psf_init()
 			unicode[b] = glyph;
 		} else {
 			//invalid utf8
-			panic();
+			continue;
 		}
 
 		++s;
 	}
-}
-
-size_t strlen(const char *str)
-{
-	const char *beg = str;
-
-	while (*str)
-		++str;
-	return str - beg;
-}
-
-u32 term_encode_color(struct color color)
-{
-	u32 result = 0;
-
-	for (int i = 0; i < 3; ++i) {
-		result |= ((u32) color.elems[i] & ((1 << colors[i].mask_size) - 1)) << colors[i].field_pos;
-	}
-	return result;
 }
 
 static u32* term_get_pixel(u32 x, u32 y)
@@ -107,11 +93,6 @@ static u32* term_get_pixel(u32 x, u32 y)
 static void term_putat_encoded(u32 x, u32 y, u32 color)
 {
 	*term_get_pixel(x, y) = color;
-}
-
-void term_putat(u32 x, u32 y, struct color color)
-{
-	term_putat_encoded(x, y, term_encode_color(color));
 }
 
 void term_putcharat(u32 cx, u32 cy, char c, u32 fg, u32 bg)
@@ -137,7 +118,18 @@ void term_putcharat(u32 cx, u32 cy, char c, u32 fg, u32 bg)
 	}
 }
 
-void term_put(char c)
+static void term_clear(struct color color)
+{
+	u32 col = term_encode_color(color);
+
+	for (u32 y = 0; y < term_height; ++y) {
+		for (u32 x = 0; x < term_width; ++x) {
+			term_putat_encoded(x, y, col);
+		}
+	}
+}
+
+void term_put(int c)
 {
 	term_putcharat(term_col, term_row, c, term_fg, term_bg);
 	if (++term_col == term_width) {
@@ -154,39 +146,43 @@ void term_write(const char *data, size_t n)
 		term_put(data[i]);
 }
 
+static size_t _strlen(const char *str)
+{
+	const char *beg = str;
+
+	while (*str)
+		++str;
+
+	return str - beg;
+}
+
 void term_print(const char *str)
 {
-	term_write(str, strlen(str));
+	term_write(str, _strlen(str));
 }
 
-void term_clear(struct color color)
+void _term_init(const struct multiboot_info *boot_info)
 {
-	u32 col = term_encode_color(color);
-	for (u32 y = 0; y < term_height; ++y) {
-		for (u32 x = 0; x < term_width; ++x) {
-			//TODO make this not use term_putat as it is not
-			//necesarry to recalculate x,y internally every call
-			term_putat_encoded(x, y, col);
-		}
-	}
-}
+	if (initialized)
+		return;
 
-void term_init(const struct multiboot_info *info)
-{
-	const struct multiboot_tag_base *tag = (const struct multiboot_tag_base*) info->tags;
+	psf_init();
+
+	const struct multiboot_tag_base *tag = (const struct multiboot_tag_base*) boot_info->tags;
+
 	for (; tag->type != MULTIBOOT_TAG_TYPE_END; tag = MULTIBOOT_NEXT_TAG(tag)) {
 		if (tag->type == MULTIBOOT_TAG_TYPE_FRAMEBUFFER) {
 			struct multiboot_framebuffer_info *f = (struct multiboot_framebuffer_info*) tag;
 
 			if (f->type != FRAMEBUFFER_TYPE_DIRECT || f->bpp > 32)
-				panic(); //unsupported framebuffer type or bpp
+				panic(""); //unsupported framebuffer type or bpp
 
 			for (int i = 0; i < 3; ++i) {
 				colors[i].field_pos = f->color_info.direct.colors[i].field_pos;
 				colors[i].mask_size = f->color_info.direct.colors[i].mask_size;
-			}
+                        }
 
-			term_buf = (u8*) (uintptr_t) f->addr;
+                        term_buf = (u8*) (uintptr_t) f->addr;
 			term_width = f->width;
 			term_height = f->height;
 			term_bpp = f->bpp;
@@ -198,19 +194,12 @@ void term_init(const struct multiboot_info *info)
 			term_fg = term_encode_color(COLOR_WHITE);
 			term_bg = term_encode_color(COLOR_BLACK);
 
-			//term_clear(COLOR_BLACK);
+			term_clear(COLOR_BLACK);
+			initialized = true;
 			return;
 		}
 	}
 	//no framebuffer
-	panic();
+	panic("");
 }
 
-void kernel_main(struct multiboot_info *info)
-{
-	psf_init();
-	term_init(info);
-
-	//term_putchar(1, 1, 'x', COLOR_WHITE, COLOR_BLACK);
-	term_print("Hello World!");
-}

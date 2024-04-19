@@ -38,8 +38,8 @@ stack_top:
 
 section .text
 
-global halt:function (halt.end - halt)
-halt:
+global _idle:function (_idle.end - _idle)
+_idle:
 	cli
 .hang:	hlt
 	jmp .hang
@@ -49,14 +49,18 @@ global _start:function (_start.end - _start)
 _start:
 	mov esp, stack_top
 
-	push ebx ; pass multiboot info struct as first argument
 
 	; clear eflags
 	push dword 0
 	popf
 
+	push ebx ; pass multiboot info struct as first argument
+	extern _term_init
+	call _term_init
+	pop ebx
+
 	extern kernel_main
 	call kernel_main
 
-	call halt
+	call _idle
 .end:

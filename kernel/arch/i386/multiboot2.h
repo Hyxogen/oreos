@@ -1,7 +1,7 @@
 #ifndef OREOS_MULTIBOOT2
 #define OREOS_MULTIBOOT2
 
-#include "types.h"
+#include <kernel/types.h>
 
 #define MULTIBOOT_TAG_TYPE_END 0
 #define MULTIBOOT_TAG_TYPE_FRAMEBUFFER 8
