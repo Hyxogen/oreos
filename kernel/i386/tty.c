@@ -39,7 +39,7 @@ extern struct psf2_font _binary_font_psfu_start;
 extern u8 _binary_font_psfu_end;
 static u16 unicode[256];
 
-u32 term_encode_color(struct color color)
+static u32 term_encode_color(struct color color)
 {
        u32 result = 0;
 
@@ -96,7 +96,7 @@ static void term_putat_encoded(u32 x, u32 y, u32 color)
 	*term_get_pixel(x, y) = color;
 }
 
-void term_putcharat(u32 cx, u32 cy, char c, u32 fg, u32 bg)
+static void term_putcharat(u32 cx, u32 cy, char c, u32 fg, u32 bg)
 {
 	struct psf2_font* font = (struct psf2_font*) &_binary_font_psfu_start;
 
@@ -130,13 +130,24 @@ static void term_clear(struct color color)
 	}
 }
 
+static void term_newline()
+{
+	term_col = 0;
+	if (++term_row == term_charheight) {
+		term_row = 0;
+	}
+}
+
 void term_put(int c)
 {
-	term_putcharat(term_col, term_row, c, term_fg, term_bg);
-	if (++term_col == term_width) {
-		term_col = 0;
-		if (++term_row == term_height) {
-			term_row = 0;
+	if (c == '\n') {
+		term_newline();
+	} else {
+		term_putcharat(term_col, term_row, c, term_fg, term_bg);
+		if (++term_col == term_charwidth) {
+			term_col = 0;
+
+			term_newline();
 		}
 	}
 }

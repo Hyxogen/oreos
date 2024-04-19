@@ -1,3 +1,85 @@
+#include <libc/ctype.h>
+#include <libc/strings.h>
+#include <libc/ctype.h>
+
+int isalnum(int c)
+{
+	return isalpha(c) || isdigit(c);
+}
+
+int isalpha(int c)
+{
+	return isupper(c) || islower(c);
+}
+
+int iscntrl(int c)
+{
+	return (unsigned)c < 0x20 || c == 0x7f;
+}
+
+int isdigit(int c)
+{
+	return (unsigned)c - '0' < 10;
+}
+
+int isgraph(int c)
+{
+	return (unsigned)c - 0x21 < 0x5e;
+}
+
+int islower(int c)
+{
+	return (unsigned)c - 'a' < 26;
+}
+
+int isprint(int c)
+{
+	return (unsigned)c - 0x20 < 0x5f;
+}
+
+int ispunct(int c)
+{
+	return isgraph(c) && !isalnum(c);
+}
+
+int isspace(int c)
+{
+	return c == ' ' || (unsigned)c - '\t' < 5;
+}
+
+int isupper(int c)
+{
+	return (unsigned)c - 'A' < 26;
+}
+
+int isxdigit(int c)
+{
+	return isdigit(c) || ((unsigned)c | 32) - 'a' < 6;
+}
+
+int isascii(int c)
+{
+	return !(c & ~0x7f);
+}
+
+int isblank(int c)
+{
+	return c == ' ' || c == '\t';
+}
+
+int toupper(int c)
+{
+	if (islower(c))
+		return c & 0x5f;
+	return c;
+}
+
+int tolower(int c)
+{
+	if (isupper(c))
+		return c | 0x20;
+	return c;
+}
 #include <libc/string.h>
 
 void *memcpy(void *restrict dest, const void *restrict src, size_t n)
@@ -156,4 +238,30 @@ char *strchr(const char *s, int c)
 			return NULL;
 	}
 	return (char *)s;
+}
+
+int strcasecmp(const char *s1, const char *s2)
+{
+	const unsigned char *p1 = (const unsigned char *)s1;
+	const unsigned char *p2 = (const unsigned char *)s2;
+
+	int val = 0;
+	while ((val = (tolower(*p1) - tolower(*p2))) == 0 && *p1) {
+		++p1;
+		++p2;
+	}
+	return val;
+}
+
+int strncasecmp(const char *s1, const char *s2, size_t n)
+{
+	const unsigned char *p1 = (const unsigned char *)s1;
+	const unsigned char *p2 = (const unsigned char *)s2;
+
+	int val = 0;
+	while (n-- && (val = (tolower(*p1) - tolower(*p2))) == 0 && *p1) {
+		++p1;
+		++p2;
+	}
+	return val;
 }
