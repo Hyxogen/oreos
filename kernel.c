@@ -1,7 +1,9 @@
 #include "types.h"
 #include "multiboot2.h"
+#include "psf.h"
+#include <stdbool.h>
 
-extern void halt(void);
+__attribute__ ((noreturn)) extern void halt(void);
 
 __attribute__ ((noinline)) void panic(void)
 {
@@ -32,6 +34,46 @@ static struct color_desc colors[3];
 
 static const struct color COLOR_PURPLE = {{{ 0xff, 0x00, 0xff }}};
 static const struct color COLOR_BLACK = {{{ 0x00, 0x00, 0x00 }}};
+static const struct color COLOR_WHITE = {{{ 0xff, 0xff, 0xff }}};
+
+extern struct psf2_font _binary_font_psfu_start;
+extern u8 _binary_font_psfu_end;
+static u16 unicode[256];
+
+static void psf_init()
+{
+	//todo check magic
+	struct psf2_font* font = (struct psf2_font*) &_binary_font_psfu_start;
+	if (font->hdr.flags) {
+		for (int i = 0; i < 256; ++i) {
+			unicode[i] = i;
+		}
+		return;
+	}
+
+	u8* s = font->data + font->hdr.count * font->hdr.charsize;
+	u8 glyph = 0;
+	while (s < (u8*) &_binary_font_psfu_end) {
+		u8 b = *s;
+
+		if (b == 0xFF) {
+			++glyph;
+		} else if ((b & 0xF8) == 0xF0) {
+			s += 3;
+		} else if ((b & 0xF0) == 0xD0) {
+			s += 2;
+		} else if ((b & 0xD0) == 0xC0) {
+			s += 1;
+		} else if ((b & 0x80) == 0x00) {
+			unicode[b] = glyph;
+		} else {
+			//invalid utf8
+			panic();
+		}
+
+		++s;
+	}
+}
 
 size_t strlen(const char *str)
 {
@@ -52,18 +94,56 @@ u32 term_encode_color(struct color color)
 	return result;
 }
 
-void term_putat(size_t x, size_t y, struct color color)
+static u32* term_get_pixel(u32 x, u32 y)
 {
-	u32 col = term_encode_color(color);
 
-	*(u32*) &term_buf[y * term_height * (term_bpp >> 3) + x * (term_bpp >> 3)] = col;
+	return (u32*) &term_buf[y * term_width * (term_bpp >> 3) + x * (term_bpp >> 3)];
+}
+
+static void term_putat_encoded(u32 x, u32 y, u32 color)
+{
+	*term_get_pixel(x, y) = color;
+}
+
+void term_putat(u32 x, u32 y, struct color color)
+{
+	term_putat_encoded(x, y, term_encode_color(color));
+}
+
+void term_putchar(u32 cx, u32 cy, char c, struct color fg, struct color bg)
+{
+	struct psf2_font* font = (struct psf2_font*) &_binary_font_psfu_start;
+
+	u32 f = term_encode_color(fg);
+	u32 b = term_encode_color(bg);
+
+	u8* glyph = font->data + unicode[(u8) c] * font->hdr.charsize;
+
+	u32 bytes_per_row = (font->hdr.width + 7) / 8;
+
+	u32 xoff = cx * font->hdr.width;
+	u32 yoff = cy * font->hdr.height;
+
+	for (u32 y = 0; y < font->hdr.height; ++y) {
+		u8* row = &glyph[y * bytes_per_row];
+
+		for (u32 x = 0; x < font->hdr.width; ++x) {
+			u8 col = row[x / 8];
+			u8 mask = 0x80 >> (x % 8);
+
+			term_putat_encoded(x + xoff, y + yoff, (col & mask) ? f : b);
+		}
+	}
 }
 
 void term_clear(struct color color)
 {
+	u32 col = term_encode_color(color);
 	for (u32 y = 0; y < term_height; ++y) {
 		for (u32 x = 0; x < term_width; ++x) {
-			term_putat(x, y, color);
+			//TODO make this not use term_putat as it is not
+			//necesarry to recalculate x,y internally every call
+			term_putat_encoded(x, y, col);
 		}
 	}
 }
@@ -88,12 +168,7 @@ void term_init(const struct multiboot_info *info)
 			term_height = f->height;
 			term_bpp = f->bpp;
 
-			term_clear(COLOR_PURPLE);
-			/*for (u32 y = 0; y < f->height; ++y) {
-				for (u32 x = 0; x < f->width; ++x) {
-					term_putat(x, y, COLOR_PURPLE);
-				}
-			}*/
+			//term_clear(COLOR_BLACK);
 			return;
 		}
 	}
@@ -103,7 +178,9 @@ void term_init(const struct multiboot_info *info)
 
 void kernel_main(struct multiboot_info *info)
 {
+	psf_init();
 	term_init(info);
 
+	term_putchar(1, 1, 'x', COLOR_WHITE, COLOR_BLACK);
 	//term_print("Hello World!\n");
 }

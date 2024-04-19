@@ -24,7 +24,7 @@ $(ISO): $(KERNEL) grub.cfg Makefile
 	grub-mkrescue -o $@ isodir
 
 $(KERNEL): $(OBJ_FILES) linker.ld Makefile
-	$(CC) -T linker.ld -o $(KERNEL) $(OBJ_FILES) -ffreestanding -O2 -nostdlib -lgcc
+	$(CC) -T linker.ld -o $(KERNEL) $(OBJ_FILES) font.o -ffreestanding -O2 -nostdlib -lgcc
 
 $(OBJ_DIR)/%.o: %.asm Makefile
 	@mkdir -p $(@D)
@@ -35,7 +35,10 @@ $(OBJ_DIR)/%.o: %.c Makefile
 	$(CC) -c $< -o $@ $(CFLAGS)
 
 run: $(ISO)
-	qemu-system-i386 -cdrom $(ISO) -nographic
+	qemu-system-i386 -cdrom $(ISO)
+
+debug: $(ISO)
+	qemu-system-i386 -cdrom $(ISO) -s -S
 
 clean:
 	rm -rf isodir
