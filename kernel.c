@@ -29,6 +29,10 @@ struct color {
 static volatile u8* term_buf;
 static u32 term_width;
 static u32 term_height;
+static u32 term_charwidth;
+static u32 term_charheight;
+static u32 term_col, term_row;
+static u32 term_fg, term_bg;
 static u8 term_bpp;
 static struct color_desc colors[3];
 
@@ -110,12 +114,9 @@ void term_putat(u32 x, u32 y, struct color color)
 	term_putat_encoded(x, y, term_encode_color(color));
 }
 
-void term_putchar(u32 cx, u32 cy, char c, struct color fg, struct color bg)
+void term_putcharat(u32 cx, u32 cy, char c, u32 fg, u32 bg)
 {
 	struct psf2_font* font = (struct psf2_font*) &_binary_font_psfu_start;
-
-	u32 f = term_encode_color(fg);
-	u32 b = term_encode_color(bg);
 
 	u8* glyph = font->data + unicode[(u8) c] * font->hdr.charsize;
 
@@ -131,9 +132,31 @@ void term_putchar(u32 cx, u32 cy, char c, struct color fg, struct color bg)
 			u8 col = row[x / 8];
 			u8 mask = 0x80 >> (x % 8);
 
-			term_putat_encoded(x + xoff, y + yoff, (col & mask) ? f : b);
+			term_putat_encoded(x + xoff, y + yoff, (col & mask) ? fg : bg);
 		}
 	}
+}
+
+void term_put(char c)
+{
+	term_putcharat(term_col, term_row, c, term_fg, term_bg);
+	if (++term_col == term_width) {
+		term_col = 0;
+		if (++term_row == term_height) {
+			term_row = 0;
+		}
+	}
+}
+
+void term_write(const char *data, size_t n)
+{
+	for (size_t i = 0; i < n; ++i)
+		term_put(data[i]);
+}
+
+void term_print(const char *str)
+{
+	term_write(str, strlen(str));
 }
 
 void term_clear(struct color color)
@@ -168,6 +191,13 @@ void term_init(const struct multiboot_info *info)
 			term_height = f->height;
 			term_bpp = f->bpp;
 
+			struct psf2_font* font = (struct psf2_font*) &_binary_font_psfu_start;
+			term_charwidth = term_width / font->hdr.width;
+			term_charheight = term_height / font->hdr.height;
+			term_row = term_col = 0;
+			term_fg = term_encode_color(COLOR_WHITE);
+			term_bg = term_encode_color(COLOR_BLACK);
+
 			//term_clear(COLOR_BLACK);
 			return;
 		}
@@ -181,6 +211,6 @@ void kernel_main(struct multiboot_info *info)
 	psf_init();
 	term_init(info);
 
-	term_putchar(1, 1, 'x', COLOR_WHITE, COLOR_BLACK);
-	//term_print("Hello World!\n");
+	//term_putchar(1, 1, 'x', COLOR_WHITE, COLOR_BLACK);
+	term_print("Hello World!");
 }
