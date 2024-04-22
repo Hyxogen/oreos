@@ -1,6 +1,7 @@
 #include <libc/ctype.h>
 #include <libc/strings.h>
 #include <libc/ctype.h>
+#include <libc/string.h>
 
 int isalnum(int c)
 {
@@ -80,7 +81,6 @@ int tolower(int c)
 		return c | 0x20;
 	return c;
 }
-#include <libc/string.h>
 
 void *memcpy(void *restrict dest, const void *restrict src, size_t n)
 {
