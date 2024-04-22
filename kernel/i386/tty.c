@@ -6,7 +6,6 @@
 #include <libc/string.h>
 #include "multiboot2.h"
 #include "psf.h"
-#include "boot.h"
 
 static bool initialized = false;
 static u8* term_buf;
