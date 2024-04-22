@@ -162,6 +162,40 @@ void term_print(const char *str)
 	term_write(str, strlen(str));
 }
 
+static void outb(u16 port, u8 b)
+{
+	__asm__ ("mov %%dx, %0\n\t"
+		 "mov %%al, %1\n\t"\
+		 "out %%dx, %%al"
+		 : : "r"(port), "r"(b) : "dx", "al");
+}
+
+static u8 recvb(u16 port)
+{
+	u8 b;
+
+	__asm__ ("mov %%dx, %1\n\t"
+		 "in %%al, %%dx\n\t"
+		 "mov %0, %%al"
+		 : "=r"(b) : "r"(port) : "dx", "al");
+
+	return b;
+}
+
+void kb_init(void)
+{
+	for (u16 p = 0; p < UINT16_MAX; ++p) {
+		outb(p, 0xF5);
+		u8 b = recvb(p);
+
+		if (b == 0xFA) {
+			//term_print("found keyboard");
+			return;
+		}
+	}
+	//term_print("no keyboard found");
+}
+
 void _term_init(const struct multiboot_info *boot_info)
 {
 	if (initialized)
@@ -197,6 +231,7 @@ void _term_init(const struct multiboot_info *boot_info)
 
 			term_clear(COLOR_BLACK);
 			initialized = true;
+			kb_init();
 			return;
 		}
 	}

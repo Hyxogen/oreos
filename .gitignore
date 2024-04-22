@@ -4,4 +4,4 @@
 build
 /isodir
 /.bochsrc
-/.gdbinit
+.gdbinit
