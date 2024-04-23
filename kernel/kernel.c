@@ -1,12 +1,19 @@
 #include <kernel/tty.h>
+#include <kernel/ps2.h>
 #include <kernel/kernel.h>
-#include <limits.h>
 
 void kernel_main(void)
 {
-	//printk("%i %i %i\n", 0, -1, 1);
-	//printk("%.5i %.5i %.5i\n", 0, -1, 1);
-	//printk("%10.5i %*.5i %10.5i\n", 0, 10, -1, 1);
-	printk("\"%-10.5i\"\n", 1);
+	ps2_init();
+
+	printk("%hx\n", (unsigned short) 42);
+
+	while (1) {
+		enum keycode k = ps2_getkey_timeout();
+
+		if ((int) k > 0) {
+			printk("%c", kc_toascii(k));
+		}
+	}
 	//term_print("Hello\nWorld!");
 }

@@ -1,7 +1,12 @@
 *.bin
 *.o
 *.iso
+*.out
 build
+compile_commands.json
 /isodir
 /.bochsrc
 .gdbinit
+.cache/
+/test.c
+/test.py
