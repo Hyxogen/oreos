@@ -119,6 +119,20 @@ static void term_putcharat(u32 cx, u32 cy, char c, u32 fg, u32 bg)
 	}
 }
 
+
+static void term_fillchar(u32 cx, u32 cy, u32 color)
+{
+	struct psf2_font* font = (struct psf2_font*) &_binary_font_psfu_start;
+	u32 xoff = cx * font->hdr.width;
+	u32 yoff = cy * font->hdr.height;
+
+	for (u32 y = 0; y < font->hdr.height; ++y) {
+		for (u32 x = 0; x < font->hdr.width; ++x)
+			term_putat_encoded(x + xoff, y + yoff, color);
+	}
+
+}
+
 static void term_clear(struct color color)
 {
 	u32 col = term_encode_color(color);
@@ -130,19 +144,43 @@ static void term_clear(struct color color)
 	}
 }
 
-static void term_newline()
+static void term_clearline(u32 cy)
+{
+	struct psf2_font* font = (struct psf2_font*) &_binary_font_psfu_start;
+
+	u32 y = cy * font->hdr.height;
+	u32* start = term_get_pixel(0, y);
+	u32* end = term_get_pixel(term_width, y + font->hdr.height);
+	memset(start, 0, (end - start) * sizeof(u32));
+}
+
+static void term_scroll(void)
+{
+	struct psf2_font* font = (struct psf2_font*) &_binary_font_psfu_start;
+
+	u32* start = term_get_pixel(0, font->hdr.height);
+	u32* end = term_get_pixel(term_width - 1, term_height - 1);
+	memmove(term_buf, start, (end - start) * sizeof(u32));
+
+	term_clearline(term_charheight - 1);
+}
+
+static void term_newline(void)
 {
 	term_col = 0;
 	if (++term_row == term_charheight) {
-		term_row = 0;
+		term_scroll();
+		term_row = term_charheight - 1;
 	}
 }
 
 void term_put(int c)
 {
 	if (c == '\n') {
+		term_fillchar(term_col, term_row, term_bg);
 		term_newline();
 	} else if (c == '\b') {
+		term_fillchar(term_col, term_row, term_bg);
 		if (term_col-- == 0)
 			term_col = 0;
 		term_putcharat(term_col, term_row, ' ', term_fg, term_bg);
@@ -154,6 +192,7 @@ void term_put(int c)
 			term_newline();
 		}
 	}
+	term_fillchar(term_col, term_row, term_fg);
 }
 
 void term_write(const char *data, size_t n)
