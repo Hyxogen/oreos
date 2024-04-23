@@ -227,15 +227,25 @@ static enum keycode ps2_getkey(void)
 		case SCANCODE_LALT_PRESSED:
 		case SCANCODE_CAPSLOCK_PRESSED:
 		case SCANCODE_F1_PRESSED:
+			return KEYCODE_F1;
 		case SCANCODE_F2_PRESSED:
+			return KEYCODE_F2;
 		case SCANCODE_F3_PRESSED:
+			return KEYCODE_F3;
 		case SCANCODE_F4_PRESSED:
+			return KEYCODE_F4;
 		case SCANCODE_F5_PRESSED:
+			return KEYCODE_F5;
 		case SCANCODE_F6_PRESSED:
+			return KEYCODE_F6;
 		case SCANCODE_F7_PRESSED:
+			return KEYCODE_F7;
 		case SCANCODE_F8_PRESSED:
+			return KEYCODE_F8;
 		case SCANCODE_F9_PRESSED:
+			return KEYCODE_F9;
 		case SCANCODE_F10_PRESSED:
+			return KEYCODE_F10;
 		case SCANCODE_NUMLOCK_PRESSED:
 		case SCANCODE_SCROLLLOCK_PRESSED:
 		case SCANCODE_KP_7_PRESSED:
@@ -252,7 +262,9 @@ static enum keycode ps2_getkey(void)
 		case SCANCODE_KP_0_PRESSED:
 		case SCANCODE_KP_PERIOD_PRESSED:
 		case SCANCODE_F11_PRESSED:
+			return KEYCODE_F11;
 		case SCANCODE_F12_PRESSED:
+			return KEYCODE_F12;
 		default:
 			return KEYCODE_UNKNOWN;
 	}

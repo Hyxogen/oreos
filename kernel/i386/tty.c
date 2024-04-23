@@ -9,6 +9,8 @@
 #include "multiboot2.h"
 #include "psf.h"
 
+//TODO move platfrom agnostic code out of i386/
+
 static bool initialized = false;
 static u8* term_buf;
 static u32 term_width, term_height;
@@ -157,7 +159,6 @@ static void term_cleararea(u32 x1, u32 y1, u32 x2, u32 y2, u32 color)
 	}
 }
 
-
 static void term_clear(u32 color)
 {
 	term_cleararea(0, 0, term_width, term_height, color);
@@ -217,7 +218,15 @@ static void term_exec_escape(const char *str)
 		term_row = 0;
 		return;
 	case 'J':
+		if (i == 1) {
+			term_clearchars(0, 0, term_col, term_row, term_bg);
+			return;
+		} else if (i == 2) {
+			term_clear(term_bg);
+			return;
+		}
 		term_clearlines(term_row + 1, term_charheight, term_bg);
+
 		__attribute__ ((fallthrough));
 	case 'K':
 		term_clearchars(term_col, term_row, term_width, term_row + 1, term_bg);
@@ -227,8 +236,7 @@ static void term_exec_escape(const char *str)
 			term_fg = term_encode_color(ANSI_COLORS[COLOR_WHITE]);
 			term_bg = term_encode_color(ANSI_COLORS[COLOR_BLACK]);
 		} else if (i >= 30 && i <= 37) {
-			term_fg = term_encode_color(ANSI_COLORS[COLOR_RED]);
-			//term_fg = term_encode_color(ANSI_COLORS[i - 30]);
+			term_fg = term_encode_color(ANSI_COLORS[i - 30]);
 		} else if (i >= 40 && i < 47) {
 			term_bg = term_encode_color(ANSI_COLORS[i - 40]);
 		}
@@ -253,6 +261,8 @@ static bool term_put_escaped(int c)
 		//end of escape seq
 		buf[i] = '\0';
 		term_exec_escape(buf);
+
+		i = 0;
 		return false;
 	} 
 	return true;
