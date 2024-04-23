@@ -200,6 +200,9 @@ static int vprintx(const char *fmt, va_list ap, int (*put)(int c, void*), void *
 		} else if (strncmp(fmt, "l", 1) == 0) {
 			size = 'l';
 			fmt += 1;
+		} else if (strncmp(fmt, "z", 1) == 0) {
+			size = 'z';
+			fmt += 1;
 		}
 
 		char buf[32];
@@ -244,6 +247,8 @@ static int vprintx(const char *fmt, va_list ap, int (*put)(int c, void*), void *
 				if (*fmt == 'p') {
 					v = (uintmax_t) (uintptr_t) va_arg(ap, void*);
 					hash = 1;
+				} else if (size == 'z') {
+					v = va_arg(ap, size_t);
 				} else if (size == 'L') {
 					v = va_arg(ap, unsigned long long);
 				} else if (size == 'l') {

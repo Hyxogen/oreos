@@ -4,6 +4,8 @@
 #include <kernel/types.h>
 #include <kernel/kernel.h>
 #include <libc/string.h>
+#include <libc/ctype.h>
+#include <libc/stdlib.h>
 #include "multiboot2.h"
 #include "psf.h"
 
@@ -30,13 +32,30 @@ struct color {
 	};
 };
 
-static const struct color COLOR_PURPLE = {{{ 0xff, 0x00, 0xff }}};
-static const struct color COLOR_BLACK = {{{ 0x00, 0x00, 0x00 }}};
-static const struct color COLOR_WHITE = {{{ 0xff, 0xff, 0xff }}};
+#define COLOR_BLACK 0
+#define COLOR_RED 1
+#define COLOR_GREEN 2
+#define COLOR_YELLOW 3
+#define COLOR_BLUE 4
+#define COLOR_MAGENTA 5
+#define COLOR_CYAN 6
+#define COLOR_WHITE 7
+
+static const struct color ANSI_COLORS[] = {
+	{{{0, 0, 0}}}, // Black
+	{{{170, 0, 0}}}, // Red
+	{{{0, 170, 0}}}, // Green
+	{{{170, 85, 0}}}, // Yellow
+	{{{0, 0, 170}}}, // Blue
+	{{{170, 0, 170}}}, // Magenta
+	{{{0, 170, 170}}}, // Cyan
+	{{{170, 170, 170}}}, // White
+};
 
 extern struct psf2_font _binary_font_psfu_start;
 extern u8 _binary_font_psfu_end;
 static u16 unicode[256];
+static struct psf2_font* font = (struct psf2_font*) &_binary_font_psfu_start;
 
 static u32 term_encode_color(struct color color)
 {
@@ -53,7 +72,6 @@ static u32 term_encode_color(struct color color)
 static void psf_init()
 {
 	//todo check magic
-	struct psf2_font* font = (struct psf2_font*) &_binary_font_psfu_start;
 	if (font->hdr.flags) {
 		for (int i = 0; i < 256; ++i) {
 			unicode[i] = i;
@@ -98,8 +116,6 @@ static void term_putat_encoded(u32 x, u32 y, u32 color)
 
 static void term_putcharat(u32 cx, u32 cy, char c, u32 fg, u32 bg)
 {
-	struct psf2_font* font = (struct psf2_font*) &_binary_font_psfu_start;
-
 	u8* glyph = font->data + unicode[(u8) c] * font->hdr.charsize;
 
 	u32 bytes_per_row = (font->hdr.width + 7) / 8;
@@ -122,7 +138,6 @@ static void term_putcharat(u32 cx, u32 cy, char c, u32 fg, u32 bg)
 
 static void term_fillchar(u32 cx, u32 cy, u32 color)
 {
-	struct psf2_font* font = (struct psf2_font*) &_binary_font_psfu_start;
 	u32 xoff = cx * font->hdr.width;
 	u32 yoff = cy * font->hdr.height;
 
@@ -133,36 +148,45 @@ static void term_fillchar(u32 cx, u32 cy, u32 color)
 
 }
 
-static void term_clear(struct color color)
+static void term_cleararea(u32 x1, u32 y1, u32 x2, u32 y2, u32 color)
 {
-	u32 col = term_encode_color(color);
-
-	for (u32 y = 0; y < term_height; ++y) {
-		for (u32 x = 0; x < term_width; ++x) {
-			term_putat_encoded(x, y, col);
+	for (u32 y = y1; y < y2; ++y) {
+		for (u32 x = x1; x < x2; ++x) {
+			term_putat_encoded(x, y, color);
 		}
 	}
 }
 
-static void term_clearline(u32 cy)
-{
-	struct psf2_font* font = (struct psf2_font*) &_binary_font_psfu_start;
 
-	u32 y = cy * font->hdr.height;
-	u32* start = term_get_pixel(0, y);
-	u32* end = term_get_pixel(term_width, y + font->hdr.height);
-	memset(start, 0, (end - start) * sizeof(u32));
+static void term_clear(u32 color)
+{
+	term_cleararea(0, 0, term_width, term_height, color);
+}
+
+static void term_clearchars(u32 cx1, u32 cy1, u32 cx2, u32 cy2, u32 color)
+{
+	u32 width = font->hdr.width;
+	u32 height = font->hdr.width;
+	term_cleararea(cx1 * width, cy1 * height, cx2 * width, cy2 * height, color);
+}
+
+static void term_clearlines(u32 cy1, u32 cy2, u32 color)
+{
+	term_clearchars(0, cy1, term_charwidth, cy2, color);
+}
+
+static void term_clearline(u32 cy, u32 color)
+{
+	term_clearlines(cy, cy + 1, color);
 }
 
 static void term_scroll(void)
 {
-	struct psf2_font* font = (struct psf2_font*) &_binary_font_psfu_start;
-
 	u32* start = term_get_pixel(0, font->hdr.height);
 	u32* end = term_get_pixel(term_width - 1, term_height - 1);
 	memmove(term_buf, start, (end - start) * sizeof(u32));
 
-	term_clearline(term_charheight - 1);
+	term_clearline(term_charheight - 1, term_bg);
 }
 
 static void term_newline(void)
@@ -174,9 +198,78 @@ static void term_newline(void)
 	}
 }
 
+static void term_exec_escape(const char *str)
+{
+	if (*str++ != '[')
+		return;
+
+	int i = 0;
+
+	if (isdigit((*str))) {
+		i = atoi(str);
+		while (isdigit(*str))
+			str += 1;
+	}
+
+	switch (*str) {
+	case 'H':
+		term_col = 0;
+		term_row = 0;
+		return;
+	case 'J':
+		term_clearlines(term_row + 1, term_charheight, term_bg);
+		__attribute__ ((fallthrough));
+	case 'K':
+		term_clearchars(term_col, term_row, term_width, term_row + 1, term_bg);
+		return;
+	case 'm':
+		if (i == 0) {
+			term_fg = term_encode_color(ANSI_COLORS[COLOR_WHITE]);
+			term_bg = term_encode_color(ANSI_COLORS[COLOR_BLACK]);
+		} else if (i >= 30 && i <= 37) {
+			term_fg = term_encode_color(ANSI_COLORS[COLOR_RED]);
+			//term_fg = term_encode_color(ANSI_COLORS[i - 30]);
+		} else if (i >= 40 && i < 47) {
+			term_bg = term_encode_color(ANSI_COLORS[i - 40]);
+		}
+		break;
+	default:
+		if (isalpha(*str))
+			return; // not supported
+	}
+}
+
+static bool term_put_escaped(int c)
+{
+	static char buf[32];
+	static size_t i = 0;
+
+	if (i < (ARRAY_SIZE(buf) - 1))
+		buf[i++] = (char) c;
+	else
+		return false; // too long
+
+	if (isalpha(c) || c == '~') {
+		//end of escape seq
+		buf[i] = '\0';
+		term_exec_escape(buf);
+		return false;
+	} 
+	return true;
+}
+
 void term_put(int c)
 {
-	if (c == '\n') {
+	if (!c)
+		return;
+
+	static bool escaped = false;
+
+	if (c == ANSI_ESCAPE) {
+		escaped = true;
+	} else if (escaped) {
+		escaped = term_put_escaped(c);
+	} else if (c == '\n') {
 		term_fillchar(term_col, term_row, term_bg);
 		term_newline();
 	} else if (c == '\b') {
@@ -232,14 +325,13 @@ void _term_init(const struct multiboot_info *boot_info)
 			term_height = f->height;
 			term_bpp = f->bpp;
 
-			struct psf2_font* font = (struct psf2_font*) &_binary_font_psfu_start;
 			term_charwidth = term_width / font->hdr.width;
 			term_charheight = term_height / font->hdr.height;
 			term_row = term_col = 0;
-			term_fg = term_encode_color(COLOR_WHITE);
-			term_bg = term_encode_color(COLOR_BLACK);
+			term_fg = term_encode_color(ANSI_COLORS[COLOR_WHITE]);
+			term_bg = term_encode_color(ANSI_COLORS[COLOR_BLACK]);
 
-			term_clear(COLOR_BLACK);
+			term_clear(term_bg);
 			initialized = true;
 			return;
 		}

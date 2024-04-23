@@ -1,5 +1,5 @@
-#ifndef FT_CTYPE_H
-#define FT_CTYPE_H
+#ifndef LIBC_CTYPE_H
+#define LIBC_CTYPE_H
 
 int isalnum(int c);
 int isalpha(int c);

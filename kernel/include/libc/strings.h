@@ -1,5 +1,5 @@
-#ifndef FT_STRINGS_H
-#define FT_STRINGS_H
+#ifndef LIBC_STRINGS_H
+#define LIBC_STRINGS_H
 
 #include <stddef.h>
 
