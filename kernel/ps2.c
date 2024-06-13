@@ -283,7 +283,7 @@ enum keycode ps2_getkey_timeout(void)
 
 static void ps2_init_controller(void)
 {
-	//TODO we should probably check if we even have a controller
+	//TODO check if controller exists once we are using ACPI
 	//TODO also properly test port2
 	
 	ps2_send_cmd(PS2_CMD_DISABLE_PORT1);
