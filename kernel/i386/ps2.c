@@ -32,6 +32,11 @@ void ps2_send(u8 b)
 	sendb(PS2_DATA_PORT, b);
 }
 
+void ps2_send_cmd(u8 b)
+{
+	sendb(PS2_STATUS_PORT, b);
+}
+
 u8 ps2_recv(void)
 {
 	return recvb(PS2_DATA_PORT);

@@ -283,7 +283,57 @@ enum keycode ps2_getkey_timeout(void)
 
 static void ps2_init_controller(void)
 {
-	// TODO
+	//TODO we should probably check if we even have a controller
+	//TODO also properly test port2
+	
+	ps2_send_cmd(PS2_CMD_DISABLE_PORT1);
+	ps2_send_cmd(PS2_CMD_DISABLE_PORT2);
+
+	//flush output buffer, we don't care what we got
+	ps2_recv();
+
+	ps2_send_cmd(PS2_CMD_READ_CONF_BYTE);
+	u8 conf = ps2_recv_timeout();
+
+	//disable interrupts
+	conf &= ~(PS2_CONF_PORT1_IRQ | PS2_CONF_PORT2_IRQ);
+
+	ps2_send_cmd(PS2_CMD_WRITE_CONF_BYTE);
+	if (ps2_send_timeout(conf) < 0) {
+		printk("failed to write ps2 config byte");
+		return;
+	}
+
+	//apparently this might reset the controller, if you have issues with
+	//the keyboard, it's probably a good idea to check here first
+	ps2_send_cmd(PS2_CMD_TEST_CONTROLLER);
+	u8 res = ps2_recv_timeout();
+
+	if (res != PS2_CONTROLLER_OK) {
+		printk("ps2 controller self test failed");
+		return;
+	}
+
+	ps2_send_cmd(PS2_CMD_TEST_PORT1);
+	res = ps2_recv_timeout();
+
+	if (res != PS2_PORT_OK) {
+		printk("ps2 port1 self test failed");
+		return;
+	}
+
+	ps2_send_cmd(PS2_CMD_ENABLE_PORT1);
+
+	ps2_send_timeout(PS2_RESET);
+	if (ps2_send_ack(PS2_RESET) < 0) {
+		printk("failed to reset device on port1");
+		return;
+	}
+
+	if (ps2_recv_timeout() != PS2_PASSED_SELFTEST) {
+		printk("failed selftest after resetting device");
+		return;
+	}
 }
 
 static void ps2_init_devices(void)

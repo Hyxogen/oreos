@@ -192,6 +192,10 @@ static void term_scroll(struct term *term)
 	memmove(term->chars, term_get_char(term, 1, 0),
 		(ARRAY_SIZE(term->chars) - term->width) *
 		    sizeof(term->chars[0]));
+
+	for (int col = 0; col < term->width; col++) {
+		term_clearat(term, term->height - 1, col, TTY_COLOR_BLACK);
+	}
 	term_redraw(term);
 }
 
