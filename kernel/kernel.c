@@ -8,7 +8,9 @@
 void kernel_main(void)
 {
 	struct term *term = term_get_primary();
+	static struct term alt;
 
+	term_init(&alt, fb_get_primary());
 	printk_set_sink(term);
 	printk("\033[31m42\n");
 
@@ -16,6 +18,14 @@ void kernel_main(void)
 
 	while (1) {
 		enum keycode k = ps2_getkey_timeout();
+
+		if (k == KEYCODE_F1) {
+			printk_set_sink(term);
+			term_redraw(term);
+		} else if (k == KEYCODE_F2) {
+			printk_set_sink(&alt);
+			term_redraw(&alt);
+		}
 
 		if (k == KEYCODE_1) {
 			printk("\033[2J");
