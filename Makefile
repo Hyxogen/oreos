@@ -18,7 +18,8 @@ run: $(ISO)
 	qemu-system-i386 -cdrom $(ISO)
 
 debug: $(ISO)
-	qemu-system-i386 -cdrom $(ISO) -s -S
+	qemu-system-i386 -cdrom $(ISO) -s -S &
+	gdb
 
 clean:
 	rm -rf $(ISO_DIR)

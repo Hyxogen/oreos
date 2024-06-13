@@ -1,9 +1,12 @@
 #include <limits.h>
 
+#include <kernel/kernel.h>
 #include <libc/ctype.h>
 #include <libc/strings.h>
 #include <libc/ctype.h>
 #include <libc/string.h>
+#include <libc/assert.h>
+#include <libc/stdlib.h>
 
 int isalnum(int c)
 {
@@ -293,4 +296,20 @@ int atoi(const char *str)
 		str += 1;
 	}
 	return (int) (v * sign);
+}
+
+#ifndef NDEBUG
+void __assert_impl(int c, const char *pred, const char *file, const char *func,
+		   int line)
+{
+	if (!c) {
+		printk("%s:%i: %s: Assertion '%s` failed.\n", file, line, func, pred);
+		abort();
+	}
+}
+#endif
+
+[[noreturn]] void abort(void)
+{
+	panic("aborted");
 }

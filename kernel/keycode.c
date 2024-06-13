@@ -4,8 +4,8 @@ int kc_toascii(enum keycode k)
 {
 	if (k >= KEYCODE_A && k <= KEYCODE_Z)
 		return 'a' + (int) k - (int) KEYCODE_A;
-	if (k >= KEYCODE_0 && k <= KEYCODE_9)
-		return '0' + (int) k - (int) KEYCODE_0;
+	if (kc_isdigit(k))
+		return '0' + kc_todigit(k);
 	switch (k) {
 	case KEYCODE_SPACE:
 		return ' ';
@@ -16,4 +16,14 @@ int kc_toascii(enum keycode k)
 	default:
 		return 0;
 	}
+}
+
+bool kc_isdigit(enum keycode k)
+{
+	return k >= KEYCODE_0 && k <= KEYCODE_9;
+}
+
+int kc_todigit(enum keycode k)
+{
+	return k - (int) KEYCODE_0;
 }

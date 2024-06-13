@@ -5,7 +5,9 @@ __attribute__ ((noreturn)) void _idle();
 
 void panic(const char *fmt, ...)
 {
-	term_print(fmt);
-	term_print("Oops! A kernel panic ocurred :/");
+	struct term *term = term_get_primary();
+
+	term_print(term, fmt);
+	term_print(term, "Oops! A kernel panic ocurred :/");
 	_idle();
 }

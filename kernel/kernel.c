@@ -1,12 +1,18 @@
+#include <stdbool.h>
+
+#include <kernel/framebuf.h>
 #include <kernel/tty.h>
 #include <kernel/ps2.h>
 #include <kernel/kernel.h>
 
 void kernel_main(void)
 {
-	ps2_init();
+	struct term *term = term_get_primary();
 
-	printk("\033[45m%hx\n", (unsigned short) 42);
+	printk_set_sink(term);
+	printk("\033[31m42\n");
+
+	ps2_init();
 
 	while (1) {
 		enum keycode k = ps2_getkey_timeout();
@@ -17,5 +23,4 @@ void kernel_main(void)
 			printk("%c", kc_toascii(k));
 		}
 	}
-	//term_print("Hello\nWorld!");
 }

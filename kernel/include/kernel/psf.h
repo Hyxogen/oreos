@@ -22,4 +22,13 @@ struct psf2_font {
 	u8 data[];
 };
 
+struct font {
+	const struct psf2_font *psf;
+	u8 ascii[256];
+	size_t size;
+};
+
+int font_read_from(struct font *dest, const void *src, size_t size);
+const u8 *font_get_glyph(struct font *font, u32 codepoint);
+
 #endif

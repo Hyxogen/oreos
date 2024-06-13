@@ -11,6 +11,8 @@
 #include <stdio.h>
 #endif
 
+static struct term *printk_out;
+
 static int write_signed(char *dest, intmax_t v)
 {
 	int val = v % 10;
@@ -265,7 +267,7 @@ static int vprintx(const char *fmt, va_list ap, int (*put)(int c, void*), void *
 					radix = 8;
 					if (hash)
 						prefix = "0";
-				} else if (*fmt == 'x') {
+				} else if (*fmt == 'x' || *fmt == 'p') {
 					radix = 16;
 					if (hash)
 						prefix = "0x";
@@ -357,7 +359,7 @@ write_error:
 static int write_to_term(int ch, void *ignored)
 {
 	(void) ignored;
-	term_put(ch);
+	term_put(printk_out, ch);
 	return 1;
 }
 #else
@@ -368,6 +370,11 @@ static int write_to_term(int ch, void *ignored)
 	return 1;
 }
 #endif
+
+void printk_set_sink(struct term *term)
+{
+	printk_out = term;
+}
 
 int printk(const char *fmt, ...)
 {

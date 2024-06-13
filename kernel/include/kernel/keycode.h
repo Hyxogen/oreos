@@ -1,6 +1,8 @@
 #ifndef _KERNEL_KEYCODE_H
 #define _KERNEL_KEYCODE_H
 
+#include <stdbool.h>
+
 enum keycode {
 	KEYCODE_NONE = -1,
 	KEYCODE_UNKNOWN = 0,
@@ -55,8 +57,11 @@ enum keycode {
 	KEYCODE_F10,
 	KEYCODE_F11,
 	KEYCODE_F12,
+	KEYCODE_LCTRL,
 };
 
 int kc_toascii(enum keycode k);
+bool kc_isdigit(enum keycode k);
+int kc_todigit(enum keycode k);
 
 #endif
