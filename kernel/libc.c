@@ -1,12 +1,11 @@
 #include <limits.h>
 
 #include <kernel/kernel.h>
-#include <libc/ctype.h>
-#include <libc/strings.h>
-#include <libc/ctype.h>
-#include <libc/string.h>
 #include <libc/assert.h>
+#include <libc/ctype.h>
 #include <libc/stdlib.h>
+#include <libc/string.h>
+#include <libc/strings.h>
 
 int isalnum(int c)
 {
@@ -282,7 +281,7 @@ int atoi(const char *str)
 	switch (*str) {
 	case '-':
 		sign = -1;
-		__attribute__ ((fallthrough));
+		__attribute__((fallthrough));
 	case '+':
 		str += 1;
 	}
@@ -290,12 +289,12 @@ int atoi(const char *str)
 	while (isdigit(*str)) {
 		v = v * 10 + *str - '0';
 
-		if (v > (long long) UINT_MAX)
+		if (v > (long long)UINT_MAX)
 			return 0;
 
 		str += 1;
 	}
-	return (int) (v * sign);
+	return (int)(v * sign);
 }
 
 #ifndef NDEBUG
@@ -303,7 +302,8 @@ void __assert_impl(int c, const char *pred, const char *file, const char *func,
 		   int line)
 {
 	if (!c) {
-		printk("%s:%i: %s: Assertion '%s` failed.\n", file, line, func, pred);
+		printk("%s:%i: %s: Assertion '%s` failed.\n", file, line, func,
+		       pred);
 		abort();
 	}
 }

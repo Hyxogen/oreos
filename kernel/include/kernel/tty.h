@@ -1,8 +1,8 @@
 #ifndef KERNEL_H
 #define KERNEL_H
 
-#include <kernel/types.h>
 #include <kernel/psf.h>
+#include <kernel/types.h>
 
 #define TERM_WIDTH 80
 #define TERM_HEIGHT 24

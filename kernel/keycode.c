@@ -3,7 +3,7 @@
 int kc_toascii(enum keycode k)
 {
 	if (k >= KEYCODE_A && k <= KEYCODE_Z)
-		return 'a' + (int) k - (int) KEYCODE_A;
+		return 'a' + (int)k - (int)KEYCODE_A;
 	if (kc_isdigit(k))
 		return '0' + kc_todigit(k);
 	switch (k) {
@@ -25,5 +25,5 @@ bool kc_isdigit(enum keycode k)
 
 int kc_todigit(enum keycode k)
 {
-	return k - (int) KEYCODE_0;
+	return k - (int)KEYCODE_0;
 }

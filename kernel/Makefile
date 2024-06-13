@@ -32,6 +32,9 @@ clean:
 	rm -rf build
 	rm -f $(KERNEL)
 
+fmt:
+	clang-format -i $(C_FILES) $(shell find include/ -type f -name '*.h')
+
 -include $(DEP_FILES)
 
-.PHONY: all clean
+.PHONY: all clean fmt

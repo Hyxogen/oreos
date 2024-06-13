@@ -1,9 +1,9 @@
 #include <stdbool.h>
 
 #include <kernel/framebuf.h>
-#include <kernel/tty.h>
-#include <kernel/ps2.h>
 #include <kernel/kernel.h>
+#include <kernel/ps2.h>
+#include <kernel/tty.h>
 
 void kernel_main(void)
 {
@@ -19,7 +19,7 @@ void kernel_main(void)
 
 		if (k == KEYCODE_1) {
 			printk("\033[2J");
-		} else if ((int) k > 0) {
+		} else if ((int)k > 0) {
 			printk("%c", kc_toascii(k));
 		}
 	}

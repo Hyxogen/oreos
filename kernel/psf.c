@@ -3,10 +3,10 @@
 
 int font_read_from(struct font *dest, const void *src, size_t size)
 {
-	dest->psf = (const struct psf2_font *) src;
+	dest->psf = (const struct psf2_font *)src;
 	dest->size = size;
 
-	//todo check magic
+	// todo check magic
 	if (dest->psf->hdr.flags) {
 		for (unsigned i = 0; i < ARRAY_SIZE(dest->ascii); ++i) {
 			dest->ascii[i] = i;
@@ -14,8 +14,9 @@ int font_read_from(struct font *dest, const void *src, size_t size)
 		return 0;
 	}
 
-	const u8* end = dest->psf->data + size;
-	const u8* s = dest->psf->data + dest->psf->hdr.count * dest->psf->hdr.charsize;
+	const u8 *end = dest->psf->data + size;
+	const u8 *s =
+	    dest->psf->data + dest->psf->hdr.count * dest->psf->hdr.charsize;
 	u8 glyph = 0;
 	while (s < end) {
 		u8 b = *s;
@@ -31,7 +32,7 @@ int font_read_from(struct font *dest, const void *src, size_t size)
 		} else if ((b & 0x80) == 0x00) {
 			dest->ascii[b] = glyph;
 		} else {
-			//invalid utf8
+			// invalid utf8
 			continue;
 		}
 
@@ -42,5 +43,6 @@ int font_read_from(struct font *dest, const void *src, size_t size)
 
 const u8 *font_get_glyph(struct font *font, u32 codepoint)
 {
-	return font->psf->data + font->ascii[(u8) codepoint] * font->psf->hdr.charsize;
+	return font->psf->data +
+	       font->ascii[(u8)codepoint] * font->psf->hdr.charsize;
 }

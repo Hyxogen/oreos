@@ -3,8 +3,8 @@
 
 #include <stdbool.h>
 
-#include <kernel/types.h>
 #include <kernel/keycode.h>
+#include <kernel/types.h>
 
 #define PS2_IDENTIFY 0xF2
 #define PS2_ENABLE_SCANNING 0xF4

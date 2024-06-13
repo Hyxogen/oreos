@@ -3,7 +3,7 @@
 
 #include <kernel/types.h>
 
-//TODO check endianes
+// TODO check endianes
 #define PSF2_MAGIC 0x72b54a86
 
 struct psf2_hdr {

@@ -30,7 +30,6 @@ struct term *term_get_primary(void)
 		term_init(&term_main, fb_get_primary());
 	}
 	return &term_main;
-
 }
 
 void term_init(struct term *term, struct framebuf *fb)
@@ -122,7 +121,10 @@ static void term_clearat(struct term *term, int row, int col, int color)
 		   (struct term_char){term->fg_color, color, ' '});
 }
 
-static void term_reset_escape(struct term *term) { term->_escape = -1; }
+static void term_reset_escape(struct term *term)
+{
+	term->_escape = -1;
+}
 
 static void term_exec_escape(struct term *term, const char *str)
 {
