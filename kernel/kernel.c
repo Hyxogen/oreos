@@ -5,6 +5,8 @@
 #include <kernel/ps2.h>
 #include <kernel/tty.h>
 
+void gdt_init(void);
+
 void kernel_main(void)
 {
 	struct term *term = term_get_primary();
@@ -15,6 +17,7 @@ void kernel_main(void)
 	printk("\033[31m42\n");
 
 	ps2_init();
+	gdt_init();
 
 	while (1) {
 		enum keycode k = ps2_getkey_timeout();

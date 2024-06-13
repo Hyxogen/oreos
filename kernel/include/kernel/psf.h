@@ -2,6 +2,7 @@
 #define OREOS_PSF
 
 #include <kernel/types.h>
+#include <stddef.h>
 
 // TODO check endianes
 #define PSF2_MAGIC 0x72b54a86

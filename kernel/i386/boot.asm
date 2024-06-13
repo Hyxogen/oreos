@@ -30,6 +30,11 @@ align 8
 	dd 8
 multiboot_hdr_end:
 
+section .gdt
+gdtd:
+	dw 0
+	dd 0
+
 section .bss
 align 16
 stack_bot:
@@ -45,6 +50,15 @@ _idle:
 	jmp .hang
 .end:
 
+global _load_gdt:function (_load_gdt.end - _load_gdt)
+_load_gdt:
+	mov eax, [esp + 4]
+	mov [gdtd + 2], ax
+	mov ax, [esp + 8]
+	mov [gdtd], ax
+	lgdt [gdtd]
+	ret
+.end:
 
 global _start:function (_start.end - _start)
 _start:
