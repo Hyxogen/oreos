@@ -27,9 +27,7 @@ void kernel_main(void)
 			term_redraw(&alt);
 		}
 
-		if (k == KEYCODE_1) {
-			printk("\033[2J");
-		} else if ((int)k > 0) {
+		if ((int)k > 0) {
 			printk("%c", kc_toascii(k));
 		}
 	}
