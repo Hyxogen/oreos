@@ -35,6 +35,12 @@ gdtd:
 	dw 0
 	dd 0
 
+section .rodata
+global _binary_font_psfu_start, _binary_font_psfu_end
+_binary_font_psfu_start:
+incbin "font.psfu"
+_binary_font_psfu_end:
+
 section .bss
 align 16
 stack_bot:

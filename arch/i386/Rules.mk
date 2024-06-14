@@ -7,12 +7,15 @@ DEPS_$(d)	:= $(OBJS_$(d):%=%.d)
 CLEAN		:= $(CLEAN) $(OBJS_$(d)) $(DEPS_$(d))
 
 #TODO generate on make
-OBJS_$(d)	+= $(d)/font.o
+#OBJS_$(d)	+= $(d)/font.o
 
 OBJS		+= $(OBJS_$(d))
 DEPS		+= $(DEPS_$(d))
 
 LFLAGS		+= -T $(d)/linker.ld
+
+#$(OBJ_DIR)/$(d)/font.o: $(d)/font.psfu
+#	objcopy -O elf32-i386 -B i386 -I binary $< $@
 
 -include $(DEPS_$(d))
 

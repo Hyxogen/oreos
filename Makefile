@@ -14,6 +14,7 @@ LFLAGS		:= -ffreestanding -O2 -nostdlib -lgcc
 
 ISO_DIR		:= isodir/
 
+OBJ_DIR		:= build
 OBJS		:=
 DEPS		:=
 
@@ -28,10 +29,14 @@ include		$(dir)/Rules.mk
 dir		:= kernel
 include		$(dir)/Rules.mk
 
-%.o: %.c
+OBJS		:= $(addprefix $(OBJ_DIR)/, $(OBJS))
+
+$(OBJ_DIR)/%.o: %.c Makefile
+	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-%.o: %.asm
+$(OBJ_DIR)/%.o: %.asm Makefile $(@D)
+	@mkdir -p $(@D)
 	$(AS) $(ASFLAGS) $< -o $@
 
 $(ISO): $(KERNEL) grub.cfg
@@ -51,8 +56,7 @@ debug: $(ISO)
 	gdb
 
 clean:
-	rm -f $(CLEAN)
+	rm -rf $(OBJ_DIR)
 	rm -rf $(ISO_DIR)
-	@${MAKE} -C kernel clean
 
 .PHONY: all run debug clean $(ISO)
