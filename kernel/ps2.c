@@ -1,5 +1,6 @@
-#include <kernel/kernel.h>
 #include <kernel/ps2.h>
+#include <kernel/kernel.h>
+#include <kernel/printk.h>
 
 static u8 ps2_dev_type1, ps2_dev_type2;
 

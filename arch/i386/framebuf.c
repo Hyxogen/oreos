@@ -3,6 +3,7 @@
 #include <kernel/kernel.h>
 #include <libc/assert.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 static bool term_initialized;
 static struct framebuf fb_main;

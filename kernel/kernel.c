@@ -6,6 +6,7 @@
 #include <kernel/ps2.h>
 #include <kernel/tty.h>
 #include <libc/string.h>
+#include <kernel/printk.h>
 
 void gdt_init(void);
 
