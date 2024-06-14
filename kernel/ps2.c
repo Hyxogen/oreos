@@ -90,9 +90,11 @@ static u8 ps2_dev_type1, ps2_dev_type2;
 #define SCANCODE_F12_PRESSED 0x58 // F12 pressed
 #define SCANCODE_RELEASED_OFFSET 0x81
 
+#define PS2_TIMEOUT_TRIES 30
+
 static int ps2_recv_timeout(void)
 {
-	for (int i = 0; i < 30; ++i) {
+	for (int i = 0; i < PS2_TIMEOUT_TRIES; ++i) {
 		if (ps2_canrecv())
 			return ps2_recv();
 	}
@@ -101,9 +103,20 @@ static int ps2_recv_timeout(void)
 
 static int ps2_send_timeout(u8 b)
 {
-	for (int i = 0; i < 30; ++i) {
+	for (int i = 0; i < PS2_TIMEOUT_TRIES; ++i) {
 		if (ps2_cansend()) {
 			ps2_send(b);
+			return 0;
+		}
+	}
+	return -1;
+}
+
+static int ps2_send_cmd_timeout(u8 b)
+{
+	for (int i = 0; i < PS2_TIMEOUT_TRIES; ++i) {
+		if (ps2_cansend()) {
+			ps2_send_cmd(b);
 			return 0;
 		}
 	}
@@ -286,27 +299,44 @@ static void ps2_init_controller(void)
 	//TODO check if controller exists once we are using ACPI
 	//TODO also properly test port2
 	
-	ps2_send_cmd(PS2_CMD_DISABLE_PORT1);
-	ps2_send_cmd(PS2_CMD_DISABLE_PORT2);
+	if (ps2_send_cmd_timeout(PS2_CMD_DISABLE_PORT1)) {
+		printk("failed to disable ps2 port1\n");
+		return;
+	}
+
+	if (ps2_send_cmd_timeout(PS2_CMD_DISABLE_PORT2)) {
+		printk("failed to disable ps2 port2\n");
+		return;
+	}
 
 	//flush output buffer, we don't care what we got
 	ps2_recv();
 
-	ps2_send_cmd(PS2_CMD_READ_CONF_BYTE);
+	if (ps2_send_cmd_timeout(PS2_CMD_READ_CONF_BYTE)) {
+		printk("failed to get ps2 config byte\n");
+		return;
+	}
 	u8 conf = ps2_recv_timeout();
 
 	//disable interrupts
 	conf &= ~(PS2_CONF_PORT1_IRQ | PS2_CONF_PORT2_IRQ);
 
-	ps2_send_cmd(PS2_CMD_WRITE_CONF_BYTE);
+	if (ps2_send_cmd_timeout(PS2_CMD_WRITE_CONF_BYTE)) {
+		printk("failed to write ps2 config byte (1)\n");
+		return;
+	}
+
 	if (ps2_send_timeout(conf) < 0) {
-		printk("failed to write ps2 config byte");
+		printk("failed to write ps2 config byte (2)\n");
 		return;
 	}
 
 	//apparently this might reset the controller, if you have issues with
 	//the keyboard, it's probably a good idea to check here first
-	ps2_send_cmd(PS2_CMD_TEST_CONTROLLER);
+	if (ps2_send_cmd_timeout(PS2_CMD_TEST_CONTROLLER)) {
+		printk("failed to test controller\n");
+		return;
+	}
 	u8 res = ps2_recv_timeout();
 
 	if (res != PS2_CONTROLLER_OK) {
@@ -314,7 +344,10 @@ static void ps2_init_controller(void)
 		return;
 	}
 
-	ps2_send_cmd(PS2_CMD_TEST_PORT1);
+	if (ps2_send_cmd_timeout(PS2_CMD_TEST_PORT1)) {
+		printk("ps2: failed to test port1\n");
+		return;
+	}
 	res = ps2_recv_timeout();
 
 	if (res != PS2_PORT_OK) {
@@ -322,7 +355,10 @@ static void ps2_init_controller(void)
 		return;
 	}
 
-	ps2_send_cmd(PS2_CMD_ENABLE_PORT1);
+	if (ps2_send_cmd_timeout(PS2_CMD_ENABLE_PORT1)) {
+		printk("ps2: failed to enable port1");
+		return;
+	}
 
 	ps2_send_timeout(PS2_RESET);
 	if (ps2_send_ack(PS2_RESET) < 0) {

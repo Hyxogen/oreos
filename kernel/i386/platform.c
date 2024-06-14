@@ -1,13 +1,18 @@
 #include <kernel/kernel.h>
 #include <kernel/tty.h> //TTY will always be available
+#include <kernel/ps2.h>
 
 __attribute__((noreturn)) void _idle();
 
-void panic(const char *fmt, ...)
+void reset(void)
 {
-	struct term *term = term_get_primary();
+	while (!ps2_cansend())
+		continue;
+	ps2_send_cmd(PS2_CMD_RESET);
+	_idle();
+}
 
-	term_print(term, fmt);
-	term_print(term, "Oops! A kernel panic ocurred :/");
+void halt(void)
+{
 	_idle();
 }

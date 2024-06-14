@@ -384,12 +384,18 @@ void printk_set_sink(struct term *term)
 	printk_out = term;
 }
 
+int vprintk(const char *fmt, va_list args)
+{
+	int res = vprintx(fmt, args, write_to_term, NULL);
+	return res;
+}
+
 int printk(const char *fmt, ...)
 {
 	va_list args;
 	va_start(args, fmt);
 
-	int res = vprintx(fmt, args, write_to_term, NULL);
+	int res = vprintk(fmt, args);
 
 	va_end(args);
 	return res;

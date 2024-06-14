@@ -2,6 +2,7 @@
 #define _KERNEL_KERNEL
 
 #include <kernel/tty.h>
+#include <stdarg.h>
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
@@ -9,4 +10,8 @@ __attribute__((noreturn)) void panic(const char *fmt, ...);
 
 void printk_set_sink(struct term *term);
 __attribute__((format(printf, 1, 2))) int printk(const char *fmt, ...);
+int vprintk(const char *fmt, va_list args);
+
+__attribute__((noreturn)) void reset(void);
+__attribute__((noreturn)) void halt(void);
 #endif
