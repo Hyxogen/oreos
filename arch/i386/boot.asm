@@ -38,7 +38,7 @@ gdtd:
 section .rodata
 global _binary_font_psfu_start, _binary_font_psfu_end
 _binary_font_psfu_start:
-incbin "font.psfu"
+incbin "lat0-08.psfu"
 _binary_font_psfu_end:
 
 section .bss
