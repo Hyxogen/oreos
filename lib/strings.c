@@ -1,5 +1,5 @@
-#include <libc/strings.h>
-#include <libc/ctype.h>
+#include <lib/strings.h>
+#include <lib/ctype.h>
 
 int strcasecmp(const char *s1, const char *s2)
 {

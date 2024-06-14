@@ -1,7 +1,7 @@
 #include "multiboot2.h"
 #include <kernel/framebuf.h>
 #include <kernel/kernel.h>
-#include <libc/assert.h>
+#include <lib/assert.h>
 #include <stdbool.h>
 #include <stddef.h>
 

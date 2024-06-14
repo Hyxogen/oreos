@@ -2,7 +2,9 @@ sp		:= $(sp).x
 dirstack_$(sp)	:= $(d)
 d		:= $(dir)
 
-OBJS_$(d)	:= $(d)/assert.o $(d)/ctype.o $(d)/stdlib.o $(d)/string.o $(d)/strings.o
+OBJS_$(d)	:= \
+	$(d)/assert.o $(d)/ctype.o $(d)/stdlib.o $(d)/string.o $(d)/strings.o $(d)/kstrtox.o \
+	$(d)/error.o
 DEPS_$(d)	:= $(OBJS_$(d):%=%.d)
 CLEAN		:= $(CLEAN) $(OBJS_$(d)) $(DEPS_$(d))
 

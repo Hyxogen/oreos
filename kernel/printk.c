@@ -3,8 +3,8 @@
 #ifndef TEST
 #include <kernel/kernel.h>
 #include <kernel/tty.h>
-#include <libc/ctype.h>
-#include <libc/string.h>
+#include <lib/ctype.h>
+#include <lib/string.h>
 #else
 #include <ctype.h>
 #include <stdio.h>

@@ -1,7 +1,8 @@
 #include <limits.h>
 
-#include <libc/stdlib.h>
-#include <libc/ctype.h>
+#include <lib/stdlib.h>
+#include <lib/ctype.h>
+#include <lib/strings.h>
 
 int atoi(const char *str)
 {
@@ -29,4 +30,3 @@ int atoi(const char *str)
 	}
 	return (int)(v * sign);
 }
-

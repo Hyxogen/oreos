@@ -8,7 +8,7 @@ KBD_SHA256	:= 519f8d087aecca7e0a33cd084bef92c066eb19731666653dcc70c9d71aa40926
 CONSOLEFONT	:= lat0-08.psfu
 
 CC		:= $(HOME)/opt/cross/bin/i686-elf-gcc
-CFLAGS		:= -std=c11 -O0 -Wall -Wextra -ffreestanding -masm=intel -g -Iinclude -MMD -Iinclude -Ilibc/include
+CFLAGS		:= -std=c11 -O0 -Wall -Wextra -ffreestanding -masm=intel -g -Iinclude -MMD -Iinclude -Ilib/include
 
 AS		:= nasm
 ASFLAGS		:= -felf32
@@ -30,7 +30,7 @@ all: $(ISO)
 #http://sites.e-advies.nl/nonrecursive-make.html
 dir		:= arch
 include		$(dir)/Rules.mk
-dir		:= libc
+dir		:= lib
 include		$(dir)/Rules.mk
 dir		:= kernel
 include		$(dir)/Rules.mk

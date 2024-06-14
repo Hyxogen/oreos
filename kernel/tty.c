@@ -2,9 +2,9 @@
 #include <kernel/kernel.h>
 #include <kernel/psf.h>
 #include <kernel/tty.h>
-#include <libc/ctype.h>
-#include <libc/stdlib.h>
-#include <libc/string.h>
+#include <lib/ctype.h>
+#include <lib/stdlib.h>
+#include <lib/string.h>
 #include <stdbool.h>
 
 #define TTY_COLOR_BLACK 0

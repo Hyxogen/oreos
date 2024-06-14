@@ -43,9 +43,10 @@ _binary_font_psfu_end:
 
 section .bss
 align 16
-stack_bot:
+_stack_bot:
 resb 0x4000 ; allocate 16 KiB for stack
-stack_top:
+global _stack_top
+_stack_top:
 
 section .text
 
@@ -68,7 +69,7 @@ _load_gdt:
 
 global _start:function (_start.end - _start)
 _start:
-	mov esp, stack_top
+	mov esp, _stack_top
 
 
 	; clear eflags

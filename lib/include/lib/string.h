@@ -1,7 +1,8 @@
-#ifndef LIBC_STRING_H
-#define LIBC_STRING_H
+#ifndef _LIBC_STRING_H
+#define _LIBC_STRING_H
 
 #include <stddef.h>
+#include <lib/error.h>
 
 void *memccpy(void *restrict, const void *restrict, int, size_t);
 void *mempcpy(void *restrict dest, const void *restrict src, size_t n);

@@ -1,4 +1,4 @@
-#include <libc/string.h>
+#include <lib/string.h>
 
 void *memcpy(void *restrict dest, const void *restrict src, size_t n)
 {
@@ -157,4 +157,3 @@ char *strchr(const char *s, int c)
 	}
 	return (char *)s;
 }
-

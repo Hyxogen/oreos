@@ -1,4 +1,4 @@
-#include <libc/ctype.h>
+#include <lib/ctype.h>
 
 int isalnum(int c)
 {
