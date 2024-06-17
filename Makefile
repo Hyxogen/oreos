@@ -82,5 +82,10 @@ debug: $(ISO)
 clean:
 	rm -rf $(OBJ_DIR)
 	rm -rf $(ISO_DIR)
+	rm -rf $(KERNEL)
+
+fclean:
+	${MAKE} clean
+	rm -f  $(ISO)
 
 .PHONY: all run debug clean $(ISO)
