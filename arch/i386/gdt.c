@@ -73,5 +73,5 @@ void gdt_init(void)
 	gdt[5] = gdt_encode(0, 0x000fffff, GDT_DATA(3));
 	gdt[6] = gdt_encode(0, 0x000fffff, GDT_STACK(3));
 
-	_load_gdt((u32) (uintptr_t) &gdt, 6 * sizeof(u64));
+	_load_gdt((u32) (uintptr_t) &gdt, 7 * sizeof(u64));
 }

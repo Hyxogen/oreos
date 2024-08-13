@@ -2,6 +2,8 @@ ENTRY(_start)
 
 _gdt_start = 0x00000800;
 
+_kernel_addr = 0xC0000000;
+
 SECTIONS
 {
 	.gdt _gdt_start :
@@ -9,27 +11,39 @@ SECTIONS
 		*(.gdt)
 	}
 
-	. = 2M;
+	. = 1M;
 
-	.text BLOCK(4K) : ALIGN(4K)
+	_kernel_start = .;
+	.multiboot.rodata : {
+		*(.multiboot.rodata)
+	}
+
+	.multiboot.text : {
+		*(.multiboot.text)
+	}
+
+	. += _kernel_addr;
+	.text ALIGN(4K) : AT (ADDR(.text) - _kernel_addr)
 	{
 		*(.multiboot)
 		*(.text)
 	}
 
-	.rodata BLOCK(4K) : ALIGN(4K)
+	.rodata ALIGN(4K) : AT (ADDR(.rodata) - _kernel_addr) 
 	{
 		*(.rodata)
 	}
 
-	.data BLOCK(4K) : ALIGN(4K)
+	.data ALIGN(4K) : AT (ADDR(.data) - _kernel_addr)
 	{
 		*(.data)
 	}
 
-	.bss BLOCK(4K) : ALIGN(4K)
+	.bss ALIGN(4K) : AT (ADDR(.bss) - _kernel_addr)
 	{
 		*(COMMON)
 		*(.bss)
 	}
+
+	_kernel_end = .;
 }

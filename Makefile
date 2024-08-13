@@ -16,7 +16,7 @@ CFLAGS		:= \
 		   -Ilib/include
 
 AS		:= nasm
-ASFLAGS		:= -felf32
+ASFLAGS		:= -felf32 -g
 
 LD_CMD		:= $(CC)
 LFLAGS		:= -ffreestanding -O2 -nostdlib -lgcc
@@ -73,7 +73,7 @@ $(CONSOLEFONT): $(VENDOR_DIR)/kbd-$(KBD_VER)
 	cp $(VENDOR_DIR)/kbd-$(KBD_VER)/data/consolefonts/$(CONSOLEFONT) .
 
 run: $(ISO)
-	qemu-system-i386 -cdrom $(ISO)
+	qemu-system-i386 -m 2G -cdrom $(ISO)
 
 debug: $(ISO)
 	qemu-system-i386 -cdrom $(ISO) -s -S &

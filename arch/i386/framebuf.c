@@ -58,13 +58,13 @@ void fb_put(struct framebuf *fb, u32 x, u32 y, struct fb_color color)
 	*fb_get_pixel_addr(fb, x, y) = fb_encode_color(fb, color);
 }
 
-void _term_init(const struct multiboot_info *boot_info)
+void _term_init(void)
 {
 	if (term_initialized)
 		return;
 
 	const struct multiboot_tag_base *tag =
-	    (const struct multiboot_tag_base *)boot_info->tags;
+	    (const struct multiboot_tag_base *)_multiboot_data->tags;
 
 	for (; tag->type != MULTIBOOT_TAG_TYPE_END;
 	     tag = MULTIBOOT_NEXT_TAG(tag)) {

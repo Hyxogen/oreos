@@ -4,7 +4,13 @@
 #include <kernel/types.h>
 
 #define MULTIBOOT_TAG_TYPE_END 0
+#define MUTLIBOOT_TAG_TYPE_MMAP 6
 #define MULTIBOOT_TAG_TYPE_FRAMEBUFFER 8
+
+#define MULTIBOOT_MMAP_TYPE_AVAIL 1
+#define MULTIBOOT_MMAP_TYPE_ACPI_RECLAIMABLE 3
+#define MULTIBOOT_MMAP_TYPE_RESERVED_HIBER 4
+#define MULTIBOOT_MMAP_TYPE_BADRAM 5
 
 #define FRAMEBUFFER_TYPE_PALETTE 0
 #define FRAMEBUFFER_TYPE_DIRECT 1
@@ -48,6 +54,20 @@ struct multiboot_direct_rgb {
 	};
 };
 
+struct multiboot_mmap_entry {
+	u64 base_addr;
+	u64 length;
+	u32 type;
+	u32 reserved;
+};
+
+struct multiboot_mmap {
+	struct multiboot_tag_base base;
+	u32 entry_size;
+	u32 entry_version;
+	u8 entries[];
+};
+
 struct multiboot_framebuffer_info {
 	struct multiboot_tag_base base;
 	u64 addr;
@@ -65,5 +85,7 @@ struct multiboot_framebuffer_info {
 
 #define MULTIBOOT_TAG_SIZE(tag) ((((struct multiboot_tag_base*) tag)->size + 7) & ~7)
 #define MULTIBOOT_NEXT_TAG(tag) ((struct multiboot_tag_base*) ((u8*) tag + MULTIBOOT_TAG_SIZE(tag)))
+
+extern const struct multiboot_info *_multiboot_data;
 
 #endif
