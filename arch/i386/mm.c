@@ -281,6 +281,6 @@ void mm_init(const struct mb2_info *mb, size_t mb_size)
 		panic(""); // this should probably never happen, unless the
 			   // kernel code gets too big
 
-	if (mm_read_mmap(mapped_mb) != 0)
+	if (mm_init_phys_mem(mapped_mb))
 		panic(""); // did not find any mappings
 }
