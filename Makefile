@@ -41,6 +41,7 @@ dir		:= kernel
 include		$(dir)/Rules.mk
 
 OBJS		:= $(addprefix $(OBJ_DIR)/, $(OBJS))
+DEPS		:= $(addprefix $(OBJ_DIR)/, $(DEPS))
 
 $(OBJ_DIR)/%.o: %.c Makefile
 	@mkdir -p $(@D)
@@ -51,6 +52,7 @@ $(OBJ_DIR)/%.o: %.asm Makefile $(@D)
 	$(AS) $(ASFLAGS) $< -o $@
 
 $(ISO): $(KERNEL) grub.cfg
+	@echo $(DEPS)
 	mkdir -p $(ISO_DIR)/boot/grub
 	cp grub.cfg $(ISO_DIR)/boot/grub
 	cp $(KERNEL) $(ISO_DIR)/boot
@@ -88,4 +90,5 @@ fclean:
 	${MAKE} clean
 	rm -f  $(ISO)
 
+-include $(DEPS)
 .PHONY: all run debug clean $(ISO)
