@@ -56,11 +56,6 @@ _page_table1:
 
 align 16
 
-; TODO COPY OVER
-global _multiboot_data
-_multiboot_data:
-	resb 0x4
-
 _stack_bot:
 	resb 0x4000 ; allocate 16 KiB for stack
 global _stack_top
@@ -73,14 +68,15 @@ extern _kernel_start, _kernel_end
 section .multiboot.text
 global _start:function (_start.end - _start)
 _start:
-	; NOTE: WE DON'T HAVE A STACK, DON'T TRY TO USE IT!
+	; setup temporary stack
+	mov esp, _stack_top - KERNEL_ADDR
 
 	; multiboot has left our eflags undefined, clear them
 	push dword 0
 	popf
 
-	; TODO copy over multiboot data
-	mov [_multiboot_data], ebx ; store multiboot info struct
+	push dword [ebx] ; store multiboot info struct size
+	push ebx ; store multiboot info struct pointer
 
 	; sanity check, make sure the kernel is not more than 1 MiB as the
 	; bootstrap code does not currently support it
@@ -89,9 +85,7 @@ _start:
 	cmp eax, 0x100000
 	jle .setup
 
-	cli
-.hang:	hlt
-	jmp .hang
+	jmp _idle - KERNEL_ADDR
 
 .setup:
 	; setup loop variables
@@ -122,6 +116,8 @@ _start:
 	mov eax, _page_table1 - KERNEL_ADDR + 0b0011
 	mov [_page_dir - KERNEL_ADDR + 0], eax
 	mov [_page_dir - KERNEL_ADDR + 768 * KERNEL_PTE_SIZE], eax
+	; setup recursive page table
+	mov dword [_page_dir - KERNEL_ADDR + 1023 * KERNEL_PTE_SIZE], _page_dir - KERNEL_ADDR + 0b0011
 
 	; set cr3 to the address of the page table directory
 	lea eax, [_page_dir - KERNEL_ADDR]
@@ -132,23 +128,22 @@ _start:
 	or eax, 0x80000001
 	mov cr0, eax
 
+	; jump to virtual address
 	jmp _start_paged
-	; setup paging
-	;;TODO 
 .end:
 
 section .text
 _start_paged:
-	; TODO remove identity mapping
+	; setup stack with virtual address
+	add esp, KERNEL_ADDR
 
-	mov esp, _stack_top
-
-	; TODO remove
-	call _idle
+	; Unmap identity mapping
+	mov [_page_dir], dword 0
+	call _flush_tlb
 
 	; we're using paging now, start early initialization
-	extern _term_init
-	call _term_init
+	extern early_main
+	call early_main
 
 	; early init done, call main
 	extern kernel_main
@@ -157,7 +152,6 @@ _start_paged:
 	; we're done
 	call _idle
 .end:
-
 
 global _idle:function (_idle.end - _idle)
 _idle:
@@ -177,3 +171,9 @@ _load_gdt:
 	ret
 .end:
 
+global _flush_tlb:function (_flush_tlb.end - _flush_tlb)
+_flush_tlb:
+	mov eax, cr3
+	mov cr3, eax
+	ret
+.end:

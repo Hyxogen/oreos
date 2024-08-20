@@ -2,7 +2,7 @@ sp		:= $(sp).x
 dirstack_$(sp)	:= $(d)
 d		:= $(dir)
 
-OBJS_$(d)	:= $(d)/framebuf.o $(d)/gdt.o $(d)/platform.o $(d)/ps2.o $(d)/boot.o $(d)/mman.o
+OBJS_$(d)	:= $(d)/framebuf.o $(d)/gdt.o $(d)/platform.o $(d)/ps2.o $(d)/boot.o $(d)/mm.o $(d)/multiboot2.o $(d)/early.o
 DEPS_$(d)	:= $(OBJS_$(d):%=%.d)
 CLEAN		:= $(CLEAN) $(OBJS_$(d)) $(DEPS_$(d))
 

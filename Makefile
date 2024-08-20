@@ -12,7 +12,7 @@ CFLAGS		:= \
 		   -std=c11 -O0 -Wall -Wextra -ffreestanding \
 		   -fno-builtin -fno-exceptions -fno-stack-protector \
 		   -nostdlib -nodefaultlibs \
-		   -masm=intel -g -Iinclude -MMD -Iinclude \
+		   -masm=intel -g3 -Iinclude -MMD -Iinclude \
 		   -Ilib/include
 
 AS		:= nasm

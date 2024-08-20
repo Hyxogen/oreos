@@ -5,24 +5,24 @@
 
 static void sendb(u16 port, u8 b)
 {
-	__asm__("mov %%dx, %0\n\t"
-		"mov %%al, %1\n\t"
-		"out %%dx, %%al"
-		:
-		: "r"(port), "r"(b)
-		: "dx", "al");
+	__asm__ volatile("mov %%dx, %0\n\t"
+			 "mov %%al, %1\n\t"
+			 "out %%dx, %%al"
+			 :
+			 : "r"(port), "r"(b)
+			 : "dx", "al");
 }
 
 static u8 recvb(u16 port)
 {
 	u8 b;
 
-	__asm__("mov %%dx, %1\n\t"
-		"in %%al, %%dx\n\t"
-		"mov %0, %%al"
-		: "=r"(b)
-		: "r"(port)
-		: "dx", "al");
+	__asm__ volatile("mov %%dx, %1\n\t"
+			 "in %%al, %%dx\n\t"
+			 "mov %0, %%al"
+			 : "=r"(b)
+			 : "r"(port)
+			 : "dx", "al");
 
 	return b;
 }

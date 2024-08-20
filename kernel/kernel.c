@@ -6,7 +6,6 @@
 #include <kernel/printk.h>
 #include <kernel/ps2.h>
 #include <kernel/tty.h>
-#include <kernel/mman.h>
 #include <lib/ctype.h>
 #include <lib/kstrtox.h>
 #include <lib/string.h>
@@ -125,8 +124,6 @@ void kernel_main(void)
 
 	ps2_init();
 	gdt_init();
-
-	mman_dump();
 
 	bool shell = false;
 	char buf[80];
