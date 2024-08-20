@@ -123,7 +123,6 @@ void kernel_main(void)
 	printk("\033[31m42\n");
 
 	ps2_init();
-	gdt_init();
 
 	bool shell = false;
 	char buf[80];

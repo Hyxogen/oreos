@@ -1,6 +1,8 @@
 #include "multiboot2.h"
+#include "mm.h"
 #include <kernel/framebuf.h>
 #include <kernel/kernel.h>
+#include <kernel/align.h>
 #include <lib/assert.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -77,7 +79,10 @@ void fb_init(struct mb2_info *mb)
 		    f->color_info.direct.colors[i].mask_size;
 	}
 
-	fb_main.data = (u8 *)(uintptr_t)f->addr;
+	size_t total_size = f->width * f->height * (f->bpp / 8);
+
+
+	fb_main.data = mm_map_physical((uintptr_t)f->addr, ALIGN_UP(total_size, MM_PAGESIZE) / MM_PAGESIZE, 0);
 	fb_main.width = f->width;
 	fb_main.height = f->height;
 	fb_main.bpp = f->bpp;

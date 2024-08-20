@@ -1,6 +1,7 @@
 // https://f.osdev.org/viewtopic.php?p=230374&sid=99b22aa6f322a817de79fb61778e78c6#p230374
 
 #include "multiboot2.h"
+#include "mm.h"
 
 #include <kernel/align.h>
 #include <kernel/kernel.h>
@@ -10,7 +11,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-#define MM_PAGESIZE 0x1000
 #define MM_PTE_OFFSET 12
 #define MM_PDE_OFFSET (MM_PTE_OFFSET + 10)
 #define MM_MAX_PAGES (1024 * 1024)
@@ -21,12 +21,10 @@
 #define MM_PTE_IDX(vaddr) (((uintptr_t)(vaddr) & MM_PTE_MASK) >> MM_PTE_OFFSET)
 #define MM_PDE_IDX(vaddr) (((uintptr_t)(vaddr) & MM_PDE_MASK) >> MM_PDE_OFFSET)
 
-#define MM_MAP_RDONLY 0x1
-#define MM_MAP_NOALLOC 0x2
-
 #define MM_PADDR_TO_PFN(paddr) ((paddr) >> (MM_PTE_OFFSET))
 
 #define MM_INVALID_PFN ((size_t) - 1)
+#define MM_INVALID_PAGE ((void*) -1)
 
 struct mm_pte {
 	bool present : 1;
@@ -150,10 +148,15 @@ static void mm_flush_tlb(void)
 	mm_write_cr3(mm_read_cr3());
 }
 
-static struct mm_pde *mm_get_pde(const void *vaddr)
+static struct mm_pde *mm_get_pde_at(int pde_idx)
 {
 	return (struct mm_pde *)((uintptr_t)0xfffff000 |
-				 (MM_PDE_IDX(vaddr) * sizeof(struct mm_pde)));
+				 (pde_idx * sizeof(struct mm_pde)));
+}
+
+static struct mm_pde *mm_get_pde(const void *vaddr)
+{
+	return mm_get_pde_at(MM_PDE_IDX(vaddr));
 }
 
 static struct mm_pte *mm_get_pte(const void *vaddr)
@@ -192,10 +195,10 @@ static int mm_map_one(void *vaddr, uintptr_t paddr, u32 flags)
 	return 0;
 }
 
-static int mm_map(void *vaddr, uintptr_t paddr, size_t length, u32 flags)
+static int mm_map(void *vaddr, uintptr_t paddr, size_t len, u32 flags)
 {
 	u8 *vaddr_c = vaddr;
-	u8 *vaddr_c_end = PTR_ALIGN_UP(vaddr_c + length, MM_PAGESIZE);
+	u8 *vaddr_c_end = PTR_ALIGN_UP(vaddr_c + len, MM_PAGESIZE);
 	vaddr_c = PTR_ALIGN_DOWN(vaddr_c, MM_PAGESIZE);
 
 	for (; vaddr_c != vaddr_c_end;
@@ -208,6 +211,81 @@ static int mm_map(void *vaddr, uintptr_t paddr, size_t length, u32 flags)
 
 	mm_flush_tlb();
 	return 0;
+}
+
+void *mm_find_pages(size_t n)
+{
+	if (n > 1024)
+		return (void*) -1; //currently not supported
+
+	u8* addr = (u8*) &_kernel_addr;
+	size_t page = (uintptr_t) addr / MM_PAGESIZE;
+
+	void *best;
+	size_t len = 0;
+
+	for (; page < MM_MAX_PAGES; page++, addr += MM_PAGESIZE) {
+		struct mm_pde *pde = mm_get_pde(addr);
+
+		if (!pde->present) {
+			len = 0;
+			continue;
+		}
+
+		struct mm_pte *pte = mm_get_pte(addr);
+		if (pte->present) {
+			len = 0;
+			continue;
+		}
+
+		if (!len)
+			best = addr;
+
+		len += 1;
+
+		if (len == n)
+			return best;
+	}
+	return (void*) -1;
+}
+
+void *mm_map_physical(uintptr_t paddr, size_t count, u32 flags)
+{
+	paddr = PTR_ALIGN_DOWN(paddr, MM_PAGESIZE);
+
+	void *vaddr = mm_find_pages(count);
+
+	if (vaddr == MM_INVALID_PAGE) {
+		if (flags & MM_MAP_NOALLOC)
+			return vaddr;
+
+		size_t pfn = mm_alloc_pageframe(1);
+		if (pfn == MM_INVALID_PFN)
+			return MM_INVALID_PAGE;
+
+		int i = 768;
+		//TODO don't hardcode
+		for (; i < 1024; ++i) {
+			struct mm_pde *pde = mm_get_pde_at(i);
+			if (pde->present)
+				continue;
+
+			pde->pfn = pfn;
+			pde->present = 1;
+			pde->rw = true;
+
+			vaddr = (void*) ((size_t) i * MM_PAGESIZE * 1024);
+			break;
+		}
+
+		if (i == 1024)
+			return MM_INVALID_PAGE;
+	}
+
+	if (mm_map(vaddr, paddr, count * MM_PAGESIZE, flags))
+		return NULL;
+
+	return vaddr;
 }
 
 // **********************************************************************
@@ -249,7 +327,7 @@ static int mm_init_phys_mem(const struct mb2_info *mb)
 
 	//mark kernel code as used
 
-	size_t pfn_beg = MM_PADDR_TO_PFN(&_kernel_start  - &_kernel_addr);
+	size_t pfn_beg = MM_PADDR_TO_PFN((uintptr_t)&_kernel_start);
 	//+1 is for the just mapped multiboot struct
 	size_t pfn_end = MM_PADDR_TO_PFN(&_kernel_end  - &_kernel_addr) + 1;
 
@@ -258,24 +336,24 @@ static int mm_init_phys_mem(const struct mb2_info *mb)
 	return 0;
 }
 
-static const struct mb2_info *mm_map_multiboot(const struct mb2_info *mb,
+static struct mb2_info *mm_map_multiboot(const struct mb2_info *mb,
 					       size_t mb_size)
 {
 	u8 *end = PTR_ALIGN_UP(&_kernel_end, MM_PAGESIZE);
+	size_t off = ((uintptr_t) mb) & 0xfff;
 
 	int rc;
-	rc = mm_map(end, (uintptr_t)mb, mb_size, MM_MAP_NOALLOC);
+	rc = mm_map(end + off, (uintptr_t)mb, mb_size, MM_MAP_NOALLOC);
 
 	if (rc)
 		return NULL;
 
-	size_t off = mb - PTR_ALIGN_DOWN(mb, MM_PAGESIZE);
-	return (struct mb2_info *)end + off;
+	return (struct mb2_info *) (end + off);
 }
 
-void mm_init(const struct mb2_info *mb, size_t mb_size)
+struct mb2_info *mm_init(struct mb2_info *mb, size_t mb_size)
 {
-	const struct mb2_info *mapped_mb = mm_map_multiboot(mb, mb_size);
+	struct mb2_info *mapped_mb = mm_map_multiboot(mb, mb_size);
 
 	if (!mapped_mb)
 		panic(""); // this should probably never happen, unless the
@@ -283,4 +361,6 @@ void mm_init(const struct mb2_info *mb, size_t mb_size)
 
 	if (mm_init_phys_mem(mapped_mb))
 		panic(""); // did not find any mappings
+
+	return mapped_mb;
 }

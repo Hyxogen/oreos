@@ -1,16 +1,9 @@
 ENTRY(_start)
 
-_gdt_start = 0x00000800;
-
 _kernel_addr = 0xC0000000;
 
 SECTIONS
 {
-	.gdt _gdt_start :
-	{
-		*(.gdt)
-	}
-
 	. = 1M;
 
 	_kernel_start = .;
