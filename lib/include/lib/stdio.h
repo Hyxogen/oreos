@@ -1,4 +1,4 @@
-#ifndef _LIB_STDIO_H
-#define _LIB_STDIO_H
+#ifndef __LIB_STDIO_H
+#define __LIB_STDIO_H
 
 #endif

@@ -1,5 +1,5 @@
-#ifndef OREOS_PSF
-#define OREOS_PSF
+#ifndef __KERNEL_PSF
+#define __KERNEL_PSF
 
 #include <kernel/types.h>
 #include <stddef.h>

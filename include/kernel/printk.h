@@ -1,5 +1,5 @@
-#ifndef KERNEL_KERNEL_H
-#define KERNEL_KERNEL_H
+#ifndef __KERNEL_KERNEL_H
+#define __KERNEL_KERNEL_H
 
 #include <kernel/tty.h>
 #include <stdarg.h>

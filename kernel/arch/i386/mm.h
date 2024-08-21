@@ -1,5 +1,5 @@
-#ifndef __ARCH_I386_MM_H
-#define __ARCH_I386_MM_H
+#ifndef __KERNEL_ARCH_I386_MM_H
+#define __KERNEL_ARCH_I386_MM_H
 
 #include <stddef.h>
 #include <stdint.h>

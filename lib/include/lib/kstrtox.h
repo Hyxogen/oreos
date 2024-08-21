@@ -1,5 +1,5 @@
-#ifndef _LIB_KSTRTOX_H
-#define _LIB_KSTRTOX_H
+#ifndef __LIB_KSTRTOX_H
+#define __LIB_KSTRTOX_H
 
 #include <lib/error.h>
 

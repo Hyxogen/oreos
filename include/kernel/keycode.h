@@ -1,5 +1,5 @@
-#ifndef _KERNEL_KEYCODE_H
-#define _KERNEL_KEYCODE_H
+#ifndef __KERNEL_KEYCODE_H
+#define __KERNEL_KEYCODE_H
 
 #include <stdbool.h>
 

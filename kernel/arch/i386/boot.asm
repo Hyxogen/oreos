@@ -49,12 +49,11 @@ _page_table1:
 	align 0x1000
 	resb 0x1000
 
+align 16
 gdtd:
-	dw 0
-	dd 0
+	resb 6
 
 align 16
-
 _stack_bot:
 	resb 0x4000 ; allocate 16 KiB for stack
 global _stack_top
@@ -62,8 +61,6 @@ _stack_top:
 
 extern _kernel_start, _kernel_end
 
-;TODO the start function needs to be placed differently than all the other
-;functions
 section .multiboot.text
 global _start:function (_start.end - _start)
 _start:

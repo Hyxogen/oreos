@@ -1,5 +1,5 @@
-#ifndef LIBC_ASSERT_H
-#define LIBC_ASSERT_H
+#ifndef __LIB_ASSERT_H
+#define __LIB_ASSERT_H
 
 #ifndef NDEBUG
 void __assert_impl(int c, const char *pred, const char *file, const char *func,

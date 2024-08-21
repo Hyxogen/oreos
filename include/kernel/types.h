@@ -1,4 +1,5 @@
-#ifndef TYPES_H
+#ifndef __KERNEL_TYPES_H
+#define __KERNEL_TYPES_H
 
 #include <stdint.h>
 

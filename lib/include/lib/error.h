@@ -1,5 +1,5 @@
-#ifndef _LIB_ERROR_H
-#define _LIB_ERROR_H
+#ifndef __LIB_ERROR_H
+#define __LIB_ERROR_H
 
 enum lib_error {
 	LIB_OK = 0,

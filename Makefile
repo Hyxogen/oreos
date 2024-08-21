@@ -33,8 +33,6 @@ all: $(ISO)
 
 #non-recursive make
 #http://sites.e-advies.nl/nonrecursive-make.html
-dir		:= arch
-include		$(dir)/Rules.mk
 dir		:= lib
 include		$(dir)/Rules.mk
 dir		:= kernel

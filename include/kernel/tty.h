@@ -1,5 +1,5 @@
-#ifndef KERNEL_H
-#define KERNEL_H
+#ifndef __KERNEL_TTY_H
+#define __KERNEL_TTY_H
 
 #include <kernel/psf.h>
 #include <kernel/types.h>

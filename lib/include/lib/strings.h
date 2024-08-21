@@ -1,5 +1,5 @@
-#ifndef LIBC_STRINGS_H
-#define LIBC_STRINGS_H
+#ifndef __LIB_STRINGS_H
+#define __LIB_STRINGS_H
 
 #include <stddef.h>
 

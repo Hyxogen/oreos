@@ -1,5 +1,5 @@
-#ifndef _KERNEL_PS2_H
-#define _KERNEL_PS2_H
+#ifndef __KERNEL_PS2_H
+#define __KERNEL_PS2_H
 
 #include <stdbool.h>
 

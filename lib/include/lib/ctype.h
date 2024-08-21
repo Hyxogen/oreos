@@ -1,5 +1,5 @@
-#ifndef LIBC_CTYPE_H
-#define LIBC_CTYPE_H
+#ifndef __LIB_CTYPE_H
+#define __LIB_CTYPE_H
 
 int isalnum(int c);
 int isalpha(int c);

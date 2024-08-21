@@ -9,6 +9,9 @@ CLEAN		:= $(CLEAN) $(OBJS_$(d)) $(DEPS_$(d))
 OBJS		+= $(OBJS_$(d))
 DEPS		+= $(DEPS_$(d))
 
+dir		:= $(d)/arch
+include		$(dir)/Rules.mk
+
 -include $(DEPS_$(d))
 
 d		:= $(dirstack_$(sp))

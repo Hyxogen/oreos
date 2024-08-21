@@ -1,5 +1,5 @@
-#ifndef KERNEL_FRAMEBUF_H
-#define KERNEL_FRAMEBUF_H
+#ifndef __KERNEL_FRAMEBUF_H
+#define __KERNEL_FRAMEBUF_H
 
 #include <kernel/types.h>
 

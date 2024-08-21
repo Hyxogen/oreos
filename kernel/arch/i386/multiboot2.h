@@ -1,5 +1,5 @@
-#ifndef OREOS_MULTIBOOT2
-#define OREOS_MULTIBOOT2
+#ifndef __KERNEL_MULTIBOOT2
+#define __KERNEL_MULTIBOOT2
 
 #include <kernel/types.h>
 
