@@ -1,4 +1,4 @@
-#include "multiboot2.h"
+#include <boot/multiboot2.h>
 
 #include <stddef.h>
 

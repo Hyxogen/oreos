@@ -37,6 +37,8 @@ dir		:= lib
 include		$(dir)/Rules.mk
 dir		:= kernel
 include		$(dir)/Rules.mk
+dir		:= boot
+include		$(dir)/Rules.mk
 
 OBJS		:= $(addprefix $(OBJ_DIR)/, $(OBJS))
 DEPS		:= $(addprefix $(OBJ_DIR)/, $(DEPS))

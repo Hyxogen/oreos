@@ -1,6 +1,6 @@
 // https://f.osdev.org/viewtopic.php?p=230374&sid=99b22aa6f322a817de79fb61778e78c6#p230374
 
-#include "multiboot2.h"
+#include <boot/multiboot2.h>
 #include "mm.h"
 
 #include <kernel/align.h>

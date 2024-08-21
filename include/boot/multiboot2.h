@@ -1,5 +1,5 @@
-#ifndef __KERNEL_MULTIBOOT2
-#define __KERNEL_MULTIBOOT2
+#ifndef __BOOT_MULTIBOOT2
+#define __BOOT_MULTIBOOT2
 
 #include <kernel/types.h>
 
@@ -14,7 +14,7 @@
 
 #define FRAMEBUFFER_TYPE_PALETTE 0
 #define FRAMEBUFFER_TYPE_DIRECT 1
-#define FRAMEBUFFER_TYPE_EGA	2
+#define FRAMEBUFFER_TYPE_EGA 2
 
 struct mb2_info {
 	u32 total_size;
@@ -83,8 +83,9 @@ struct mb2_framebuf_info {
 	} color_info;
 };
 
-#define MB2_TAG_SIZE(tag) ((((struct mb2_tag_base*) tag)->size + 7) & ~7)
-#define MB2_NEXT_TAG(tag) ((struct mb2_tag_base*) ((u8*) tag + MB2_TAG_SIZE(tag)))
+#define MB2_TAG_SIZE(tag) ((((struct mb2_tag_base *)tag)->size + 7) & ~7)
+#define MB2_NEXT_TAG(tag) \
+	((struct mb2_tag_base *)((u8 *)tag + MB2_TAG_SIZE(tag)))
 
 struct mb2_tag_base *mb2_find(const struct mb2_info *info, u32 type);
 
