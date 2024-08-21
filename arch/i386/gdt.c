@@ -68,10 +68,10 @@ void gdt_init(void)
 	gdt[0] = gdt_encode(0, 0, 0);
 	gdt[1] = gdt_encode(0, 0x000fffff, GDT_CODE(0));
 	gdt[2] = gdt_encode(0, 0x000fffff, GDT_DATA(0));
-	gdt[3] = gdt_encode(0, 0x000fffff, GDT_STACK(0));
-	gdt[4] = gdt_encode(0, 0x000fffff, GDT_CODE(3));
-	gdt[5] = gdt_encode(0, 0x000fffff, GDT_DATA(3));
-	gdt[6] = gdt_encode(0, 0x000fffff, GDT_STACK(3));
+	gdt[3] = gdt_encode(0, 0x000fffff, GDT_CODE(3));
+	gdt[4] = gdt_encode(0, 0x000fffff, GDT_DATA(3));
 
-	_load_gdt((u32) (uintptr_t) &gdt, 7 * sizeof(u64));
+	_load_gdt((u32) (uintptr_t) &gdt, 5 * sizeof(u64));
 }
+//TODO this file is kind of linked with boot.asm as that assumes where the code
+//and data sections are, maybe just hardcode the values?

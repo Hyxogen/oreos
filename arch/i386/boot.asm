@@ -34,11 +34,6 @@ align 8
 	dd 8
 multiboot_hdr_end:
 
-section .gdt
-gdtd:
-	dw 0
-	dd 0
-
 section .rodata
 global _binary_font_psfu_start, _binary_font_psfu_end
 _binary_font_psfu_start:
@@ -53,6 +48,10 @@ _page_dir:
 _page_table1:
 	align 0x1000
 	resb 0x1000
+
+gdtd:
+	dw 0
+	dd 0
 
 align 16
 
@@ -164,7 +163,7 @@ global _load_gdt:function (_load_gdt.end - _load_gdt)
 _load_gdt:
 	;TODO make sure that interrupts are disabled
 	mov eax, [esp + 4]
-	mov [gdtd + 2], ax
+	mov [gdtd + 2], eax
 	mov ax, [esp + 8]
 	mov [gdtd], ax
 	lgdt [gdtd]
