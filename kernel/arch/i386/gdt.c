@@ -63,7 +63,7 @@ static u64 gdt_encode(u32 base, u32 limit, u16 flags)
 
 void _load_gdt(u32 base, u16 limit);
 
-void gdt_init(void)
+void init_segments(void)
 {
 	gdt[0] = gdt_encode(0, 0, 0);
 	gdt[1] = gdt_encode(0, 0x000fffff, GDT_CODE(0));

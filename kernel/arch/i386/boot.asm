@@ -41,14 +41,6 @@ incbin "lat0-08.psfu"
 _binary_font_psfu_end:
 
 section .bss
-
-_page_dir:
-	align 0x1000
-	resb 0x1000
-_page_table1:
-	align 0x1000
-	resb 0x1000
-
 align 16
 gdtd:
 	resb 6
@@ -71,77 +63,33 @@ _start:
 	push dword 0
 	popf
 
-	push dword [ebx] ; store multiboot info struct size
 	push ebx ; store multiboot info struct pointer
 
-	; sanity check, make sure the kernel is not more than 1 MiB as the
-	; bootstrap code does not currently support it
-	mov eax, _kernel_end
-	sub eax, _kernel_start
-	cmp eax, 0x100000
-	jle .setup
+	extern setup_paging
+	call setup_paging
+.end:
 
-	jmp _idle - KERNEL_ADDR
-
-.setup:
-	; setup loop variables
-	xor eax, eax ; current address
-	mov ebx, _page_table1 - KERNEL_ADDR ; current PTE address
-
-.loop:
-	cmp eax, _kernel_start
-	jl .next_page
-
-	cmp eax, _kernel_end - KERNEL_ADDR
-	jge .done
-
-	mov edx, eax
-	or edx, 0b0011 ; enable read/write and present
-	; TODO do not map rodata and text as write
-	mov [ebx], edx
-
-.next_page:
-	add eax, KERNEL_PAGESIZE
-	add ebx, KERNEL_PTE_SIZE
-	jmp .loop
-
-.done:
-	; done setting up PTEs
-
-	; map the PDEs
-	mov eax, _page_table1 - KERNEL_ADDR + 0b0011
-	mov [_page_dir - KERNEL_ADDR + 0], eax
-	mov [_page_dir - KERNEL_ADDR + 768 * KERNEL_PTE_SIZE], eax
-	; setup recursive page table
-	mov dword [_page_dir - KERNEL_ADDR + 1023 * KERNEL_PTE_SIZE], _page_dir - KERNEL_ADDR + 0b0011
-
-	; set cr3 to the address of the page table directory
-	lea eax, [_page_dir - KERNEL_ADDR]
-	mov cr3, eax
-
-	; enable paging
+global enable_paging_and_jump_to_kmain:function (enable_paging_and_jump_to_kmain.end - enable_paging_and_jump_to_kmain)
+enable_paging_and_jump_to_kmain:
 	mov eax, cr0
 	or eax, 0x80000001
 	mov cr0, eax
 
-	; jump to virtual address
 	jmp _start_paged
 .end:
 
 section .text
 _start_paged:
 	; setup stack with virtual address
-	add esp, KERNEL_ADDR
+	mov esp, _stack_top
+	;add esp, KERNEL_ADDR
 
+	extern _multiboot_info
+	push dword [_multiboot_info]
 	; Unmap identity mapping
-	mov [_page_dir], dword 0
-	call _flush_tlb
+	; mov [_page_dir], dword 0
+	; call _flush_tlb
 
-	; we're using paging now, start early initialization
-	extern early_main
-	call early_main
-
-	; early init done, call main
 	extern kernel_main
 	call kernel_main
 

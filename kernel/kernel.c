@@ -6,6 +6,7 @@
 #include <kernel/printk.h>
 #include <kernel/ps2.h>
 #include <kernel/tty.h>
+#include <kernel/mm.h>
 #include <lib/ctype.h>
 #include <lib/kstrtox.h>
 #include <lib/string.h>
@@ -113,59 +114,65 @@ void panic(const char *fmt, ...)
 	halt();
 }
 
-void kernel_main(void)
+void init_paging(void);
+void init_segments(void);
+void init_framebuf(struct mb2_info *info);
+
+static struct term *term = NULL;
+
+void init_consoles(struct mb2_info *info)
 {
-	struct term *term = term_get_primary();
-	static struct term alt;
+	init_framebuf(info);
 
-	term_init(&alt, fb_get_primary());
+	term = term_get_primary();
 	printk_set_sink(term);
-	printk("\033[31m42\n");
-
 	ps2_init();
+}
 
-	bool shell = false;
+void start_shell(void)
+{
 	char buf[80];
 	unsigned i = 0;
 
 	buf[0] = 0;
 
-	printk("main: %p\n", (void*)kernel_main);
-
 	while (1) {
 		enum keycode k = ps2_getkey_timeout();
-
-		if (k == KEYCODE_F1) {
-			printk_set_sink(term);
-			term_redraw(term);
-			shell = false;
-		} else if (k == KEYCODE_F2) {
-			printk_set_sink(&alt);
-			term_redraw(&alt);
-			shell = true;
-		}
 
 		if ((int)k > 0) {
 			int ch = kc_toascii(k);
 
 			printk("%c", ch);
 
-			if (shell) {
-				if (i >= sizeof(buf) - 1) {
-					printk("command too long\n");
-					i = 0;
+			if (i >= sizeof(buf) - 1) {
+				printk("command too long\n");
+				i = 0;
+				buf[0] = '\0';
+			} else if (ch) {
+				if ((char)ch == '\n') {
+					exec_cmd(buf);
 					buf[0] = '\0';
-				} else if (ch) {
-					if ((char)ch == '\n') {
-						exec_cmd(buf);
-						buf[0] = '\0';
-						i = 0;
-					} else {
-						buf[i++] = (char)ch;
-						buf[i] = '\0';
-					}
+					i = 0;
+				} else {
+					buf[i++] = (char)ch;
+					buf[i] = '\0';
 				}
 			}
 		}
 	}
+}
+
+void kernel_main(struct mb2_info *info)
+{
+	//TODO rename mm to mmu
+	init_paging();
+	init_segments();
+	init_mm(info);
+	init_consoles(info);
+	//init_printk(); TODO
+
+	//unmap(info, info->total_size); // we're done with multiboot, free it
+
+	printk("done!\n");
+	start_shell();
 }

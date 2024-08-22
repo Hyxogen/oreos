@@ -7,9 +7,13 @@ SECTIONS
 	/* skip over firmware stuff */
 	. = 1M;
 
-	_kernel_start = .;
+	_kernel_pstart = .;
 	.multiboot.rodata : {
 		*(.multiboot.rodata)
+	}
+
+	.multiboot.data : {
+		*(.multiboot.data)
 	}
 
 	.multiboot.text : {
@@ -17,6 +21,7 @@ SECTIONS
 	}
 
 	. += _kernel_addr;
+	_kernel_vstart = .;
 	.text ALIGN(4K) : AT (ADDR(.text) - _kernel_addr)
 	{
 		*(.multiboot)
@@ -39,5 +44,5 @@ SECTIONS
 		*(.bss)
 	}
 
-	_kernel_end = .;
+	_kernel_vend = .;
 }

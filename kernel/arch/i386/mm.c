@@ -1,7 +1,7 @@
 // https://f.osdev.org/viewtopic.php?p=230374&sid=99b22aa6f322a817de79fb61778e78c6#p230374
 
 #include <boot/multiboot2.h>
-#include "mm.h"
+#include <kernel/arch/i386/mm.h>
 
 #include <kernel/align.h>
 #include <kernel/kernel.h>
@@ -10,54 +10,6 @@
 #include <lib/string.h>
 #include <stdbool.h>
 #include <stddef.h>
-
-#define MM_PTE_OFFSET 12
-#define MM_PDE_OFFSET (MM_PTE_OFFSET + 10)
-#define MM_MAX_PAGES (1024 * 1024)
-
-#define MM_PTE_MASK (0x3ff << MM_PTE_OFFSET)
-#define MM_PDE_MASK (0x3ff << MM_PDE_OFFSET)
-
-#define MM_PTE_IDX(vaddr) (((uintptr_t)(vaddr) & MM_PTE_MASK) >> MM_PTE_OFFSET)
-#define MM_PDE_IDX(vaddr) (((uintptr_t)(vaddr) & MM_PDE_MASK) >> MM_PDE_OFFSET)
-
-#define MM_PADDR_TO_PFN(paddr) ((paddr) >> (MM_PTE_OFFSET))
-
-#define MM_INVALID_PFN ((size_t) - 1)
-#define MM_INVALID_PAGE ((void*) -1)
-
-struct mm_pte {
-	bool present : 1;
-	bool rw : 1;
-	bool user : 1;
-	uint32_t pwt : 1;
-	uint32_t pcd : 1;
-	bool accessed : 1;
-	bool dirty : 1;
-	uint32_t pat : 1;
-	bool global : 1;
-	uint32_t avl : 3;
-	uint32_t pfn : 20;
-};
-
-struct mm_pde {
-	bool present : 1;
-	bool rw : 1;
-	bool user : 1;
-	bool pwt : 1;
-	bool pcd : 1;
-	bool accessed : 1;
-	uint32_t avl2 : 1;
-	uint32_t ps : 1;
-	uint32_t avl1 : 4;
-	uint32_t pfn : 20;
-};
-
-_Static_assert(sizeof(struct mm_pte) == sizeof(u32), "basic assumption");
-
-extern u8 _kernel_addr;
-extern u8 _kernel_start;
-extern u8 _kernel_end;
 
 // **********************************************************************
 // Physical memory
@@ -143,7 +95,7 @@ uintptr_t mm_read_cr3(void)
 	return p;
 }
 
-static void mm_flush_tlb(void)
+void mm_flush_tlb(void)
 {
 	mm_write_cr3(mm_read_cr3());
 }
@@ -292,13 +244,14 @@ void *mm_map_physical(uintptr_t paddr, size_t count, u32 flags)
 // Init
 // **********************************************************************
 
-static int mm_read_mmap(const struct mb2_info *mb)
+static void mm_read_mmap(const struct mb2_info *info)
 {
 	const struct mb2_mmap *map =
-	    (const struct mb2_mmap *)mb2_find(mb, MB2_TAG_TYPE_MMAP);
+	    (const struct mb2_mmap *)mb2_find(info, MB2_TAG_TYPE_MMAP);
 
 	if (!map)
-		return -1;
+		panic(""); // multiboot gave us no information about the memory
+			   // map, we can't continue
 
 	u32 size = map->base.size - sizeof(map->base) -
 		   sizeof(map->entry_size) - sizeof(map->entry_version);
@@ -316,51 +269,34 @@ static int mm_read_mmap(const struct mb2_info *mb)
 			mm_free_pageframe(pfn_beg, pfn_end - pfn_beg);
 		}
 	}
-
-	return 0;
 }
 
-static int mm_init_phys_mem(const struct mb2_info *mb)
+static void mm_mark_kernel_code(void)
 {
-	if (mm_read_mmap(mb))
-		return -1;
-
 	//mark kernel code as used
 
-	size_t pfn_beg = MM_PADDR_TO_PFN((uintptr_t)&_kernel_start);
-	//+1 is for the just mapped multiboot struct
-	size_t pfn_end = MM_PADDR_TO_PFN(&_kernel_end  - &_kernel_addr) + 1;
+	size_t pfn_beg = MM_PADDR_TO_PFN(&_kernel_vstart - &_kernel_addr);
+	size_t pfn_end = MM_PADDR_TO_PFN(&_kernel_vend  - &_kernel_addr);
 
 	__mm_mark_pageframe(pfn_beg, pfn_end - pfn_beg, true);
-
-	return 0;
 }
 
-static struct mb2_info *mm_map_multiboot(const struct mb2_info *mb,
-					       size_t mb_size)
+static void mm_mark_multiboot(const struct mb2_info *info)
 {
-	u8 *end = PTR_ALIGN_UP(&_kernel_end, MM_PAGESIZE);
-	size_t off = ((uintptr_t) mb) & 0xfff;
+	size_t pfn = mm_get_pte(info)->pfn;
+	size_t page_count =
+	    PTR_ALIGN_UP((u8 *)info + info->total_size, MM_PAGESIZE) -
+	    PTR_ALIGN_DOWN((u8 *)info, MM_PAGESIZE);
 
-	int rc;
-	rc = mm_map(end + off, (uintptr_t)mb, mb_size, MM_MAP_NOALLOC);
-
-	if (rc)
-		return NULL;
-
-	return (struct mb2_info *) (end + off);
+	__mm_mark_pageframe(pfn, page_count, true);
 }
 
-struct mb2_info *mm_init(struct mb2_info *mb, size_t mb_size)
+void init_mm(const struct mb2_info *info)
 {
-	struct mb2_info *mapped_mb = mm_map_multiboot(mb, mb_size);
-
-	if (!mapped_mb)
-		panic(""); // this should probably never happen, unless the
-			   // kernel code gets too big
-
-	if (mm_init_phys_mem(mapped_mb))
-		panic(""); // did not find any mappings
-
-	return mapped_mb;
+	// read available physical memory regions
+	mm_read_mmap(info);
+	// mark the kernel code in physical memory as unavailable
+	mm_mark_kernel_code();
+	// temporarily mark the multiboot data as unavailable
+	mm_mark_multiboot(info);
 }
