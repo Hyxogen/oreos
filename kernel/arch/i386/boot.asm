@@ -4,7 +4,6 @@ I386_ARCH		equ 0
 MULTIBOOT2_HEADER_TAG_END equ 0
 MULTIBOOT2_HEADER_TAG_FRAMEBUFFER equ 5
 MULTIBOOT2_HEADER_TAG_OPTIONAL equ 1
-KERNEL_ADDR equ 0xC0000000
 KERNEL_PAGESIZE	equ 4096
 KERNEL_PTE_SIZE	equ 4
 
@@ -51,17 +50,18 @@ _stack_bot:
 global _stack_top
 _stack_top:
 
-extern _kernel_start, _kernel_end
+extern _kernel_start, _kernel_end, _kernel_addr
 
 section .multiboot.text
 global _start:function (_start.end - _start)
 _start:
-	; setup temporary stack
-	mov esp, _stack_top - KERNEL_ADDR
-
 	; multiboot has left our eflags undefined, clear them
 	push dword 0
 	popf
+
+	; setup temporary stack
+	mov esp, _stack_top
+	sub esp, _kernel_addr
 
 	push ebx ; store multiboot info struct pointer
 
@@ -82,7 +82,6 @@ section .text
 _start_paged:
 	; setup stack with virtual address
 	mov esp, _stack_top
-	;add esp, KERNEL_ADDR
 
 	extern _multiboot_info
 	push dword [_multiboot_info]
