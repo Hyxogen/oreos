@@ -27,8 +27,8 @@ BOOTSTRAP_CODE __attribute__((noreturn)) void early_panic(void)
 
 BOOTSTRAP_CODE void setup_early_pagetables(void)
 {
-	volatile struct mmu_pde *_phys_page_dir = VADDR_TO_PADDR(_page_dir);
-	volatile struct mmu_pte *_phys_page_table1 = VADDR_TO_PADDR(_page_table1);
+	struct mmu_pde *_phys_page_dir = VADDR_TO_PADDR(_page_dir);
+	struct mmu_pte *_phys_page_table1 = VADDR_TO_PADDR(_page_table1);
 	
 	size_t size = PTR_ALIGN_UP(&_kernel_vend, MMU_PAGESIZE) - PTR_ALIGN_DOWN(&_kernel_vstart, MMU_PAGESIZE);
 	size_t pages = size / MMU_PAGESIZE;
@@ -37,7 +37,7 @@ BOOTSTRAP_CODE void setup_early_pagetables(void)
 
 	//TODO map rodata als readonly
 	for (size_t i = 0, off = 0; i < pages; i++, off += MMU_PAGESIZE) {
-		volatile struct mmu_pte *pte = &_phys_page_table1[pte_off + i];
+		struct mmu_pte *pte = &_phys_page_table1[pte_off + i];
 
 		pte->pfn = MMU_PADDR_TO_PFN(&_kernel_pstart + off);
 		pte->present = true;
@@ -78,7 +78,7 @@ BOOTSTRAP_CODE void setup_multiboot_pagetables(struct mb2_info *info)
 	    (PTR_ALIGN_UP((u8 *)info + info->total_size, MMU_PAGESIZE) -
 	    PTR_ALIGN_DOWN((u8 *)info, MMU_PAGESIZE)) / MMU_PAGESIZE;
 
-	volatile struct mmu_pte *_phys_page_table1 = VADDR_TO_PADDR(_page_table1);
+	struct mmu_pte *_phys_page_table1 = VADDR_TO_PADDR(_page_table1);
 
 	void *page_addr = PTR_ALIGN_UP(&_kernel_vend, MMU_PAGESIZE);
 	size_t pte_idx = MMU_PTE_IDX(page_addr);
