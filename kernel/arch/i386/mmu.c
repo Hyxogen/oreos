@@ -13,16 +13,6 @@ static struct page mmu_pages[MMU_MAX_PAGES] __attribute__((section("bss")));
 #define MMU_RECURSIVE_PTE_ADDR 0xffc00000
 #define MMU_RECURSIVE_PDE_ADDR 0xfffff000
 
-#define MMU_VADDR_TO_PTE(vaddr)                              \
-	((struct mmu_pte *)(MMU_RECURSIVE_PTE_ADDR |         \
-			    ((MMU_PDE_IDX((vaddr))) << 12) | \
-			    ((MMU_PTE_IDX((vaddr))) *        \
-			     sizeof(struct mmu_pte))))
-
-#define MMU_VADDR_TO_PDE(vaddr)                      \
-	((struct mmu_pde *)(MMU_RECURSIVE_PDE_ADDR | \
-			    (MMU_PDE_IDX(vaddr) * sizeof(struct mmu_pde))))
-
 #define MMU_PTE_COUNT 1024
 #define MMU_PAGETABLE_SIZE (MMU_PTE_COUNT * sizeof(struct mmu_pte))
 
@@ -42,6 +32,31 @@ void mmu_flush_tlb(void)
 {
 	mmu_write_cr3(mmu_read_cr3());
 }
+
+static struct mmu_pte *mmu_pte_at(size_t pde_idx, size_t pte_idx)
+{
+	return (struct mmu_pte *)((uintptr_t) MMU_RECURSIVE_PTE_ADDR |
+				  (pde_idx << MMU_PTE_SHIFT) | (pte_idx * sizeof(struct mmu_pte)));
+}
+
+static struct mmu_pte *mmu_vaddr_to_pte(const void *vaddr)
+{
+	return mmu_pte_at(MMU_PDE_IDX(vaddr), MMU_PTE_IDX(vaddr));
+}
+
+static struct mmu_pde *mmu_vaddr_to_pde(const void *vaddr)
+{
+	return (
+	    struct mmu_pde *)(MMU_RECURSIVE_PDE_ADDR |
+			      (MMU_PDE_IDX(vaddr) * sizeof(struct mmu_pde)));
+}
+
+static struct mmu_pte *mmu_get_pagetable(const struct mmu_pde *pde)
+{
+	size_t idx = ((uintptr_t)pde & (MMU_PAGESIZE - 1)) / sizeof(*pde);
+	return mmu_pte_at(idx, 0);
+}
+
 
 /* atm this just marks the pageframe as used, but in the future(TM) it will
  * increase the reference counting for shared pages etc. */
@@ -132,17 +147,10 @@ void mmu_free_pageframe(struct page *page, size_t nframes)
 	mmu_release_pageframe(page, nframes);
 }
 
-struct mmu_pte *mmu_get_pagetable(const struct mmu_pde *pde)
-{
-	size_t idx = ((uintptr_t)pde & (MMU_PAGESIZE - 1)) / sizeof(*pde);
-	return (struct mmu_pte *)((uintptr_t) MMU_RECURSIVE_PTE_ADDR |
-				  (idx << 12));
-}
-
 /* requires tlb flush */
 static void mmu_unmap_one(void *vaddr)
 {
-	struct mmu_pte *pte = MMU_VADDR_TO_PTE(vaddr);
+	struct mmu_pte *pte = mmu_vaddr_to_pte(vaddr);
 
 	if (!pte->present) {
 		// TODO make this a warning function
@@ -191,7 +199,7 @@ static int mmu_alloc_pagetable(struct mmu_pde *pde)
 /* requires tlb flush to take effect */
 static int mmu_map_one(void *vaddr, struct page *page, int addrspace, u32 flags)
 {
-	struct mmu_pde *pde = MMU_VADDR_TO_PDE(vaddr);
+	struct mmu_pde *pde = mmu_vaddr_to_pde(vaddr);
 
 	if (!pde->present) {
 		if (flags & MMU_MAP_NOALLOC)
@@ -202,7 +210,7 @@ static int mmu_map_one(void *vaddr, struct page *page, int addrspace, u32 flags)
 			return rc;
 	}
 
-	struct mmu_pte *pte = MMU_VADDR_TO_PTE(vaddr);
+	struct mmu_pte *pte = mmu_vaddr_to_pte(vaddr);
 
 	memset(pte, 0, sizeof(*pte));
 
@@ -244,10 +252,10 @@ static inline void *mmu_addrspace_end(int addrspace)
 
 static inline void *mmu_pagenum_to_entry(size_t pagenum)
 {
-	// TODO refactor MMU_VADDR_TO_PTE/PDE to something more generic
+	// TODO refactor mmu_vaddr_to_pte/PDE to something more generic
 	if (mmu_pagenum_is_pde(pagenum))
-		return MMU_VADDR_TO_PDE(mmu_pagenum_to_vaddr(pagenum));
-	return MMU_VADDR_TO_PTE(mmu_pagenum_to_vaddr(pagenum));
+		return mmu_vaddr_to_pde(mmu_pagenum_to_vaddr(pagenum));
+	return mmu_vaddr_to_pte(mmu_pagenum_to_vaddr(pagenum));
 }
 
 /* assumption: address spaces are on a 1024 * 4096 boundary */
@@ -307,8 +315,8 @@ static inline bool mmu_check_addrspace(const void *vaddr, int addrspace)
 /*
  * map a physical address to a vaddr
  */
-void *mmu_map(void *vaddr, struct page *frame, size_t nframes, int addrspace,
-	      u32 flags)
+void *mmu_map_pages(void *vaddr, struct page *frame, size_t nframes,
+		    int addrspace, u32 flags)
 {
 	if (!addrspace) {
 		// invalid addrspace
@@ -338,6 +346,17 @@ void *mmu_map(void *vaddr, struct page *frame, size_t nframes, int addrspace,
 
 	mmu_flush_tlb();
 	return vaddr;
+}
+
+void *mmu_map(void *vaddr, uintptr_t paddr, size_t len, int addrspace, u32 flags)
+{
+	uintptr_t pfn_end = ALIGN_UP(paddr + len, MMU_PAGESIZE);
+	paddr = ALIGN_DOWN(paddr, MMU_PAGESIZE);
+
+	size_t nframes = (pfn_end - paddr) / MMU_PAGESIZE;
+
+	struct page *page = mmu_paddr_to_page(paddr);
+	return mmu_map_pages(vaddr, page, nframes, addrspace, flags);
 }
 
 static void mmu_read_mmap(const struct mb2_info *info)
@@ -382,7 +401,7 @@ static void mmu_mark_kernel_code(void)
 
 static void mmu_mark_multiboot(const struct mb2_info *info)
 {
-	size_t pfn = MMU_VADDR_TO_PTE(info)->pfn;
+	size_t pfn = mmu_vaddr_to_pte(info)->pfn;
 	size_t page_count =
 	    PTR_ALIGN_UP((u8 *)info + info->total_size, MMU_PAGESIZE) -
 	    PTR_ALIGN_DOWN((u8 *)info, MMU_PAGESIZE);

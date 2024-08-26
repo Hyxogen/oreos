@@ -84,12 +84,8 @@ void init_framebuf(struct mb2_info *mb)
 
 	size_t total_size = f->width * f->height * (f->bpp / 8);
 
-	BOCHS_BREAK;
 	fb_main.data =
-	    mmu_map(NULL, mmu_paddr_to_page(f->addr),
-		    ALIGN_UP(total_size, MMU_PAGESIZE) / MMU_PAGESIZE,
-		    MMU_ADDRSPACE_KERNEL, 0);
-	BOCHS_BREAK;
+	    mmu_map(NULL, f->addr, total_size, MMU_ADDRSPACE_KERNEL, 0);
 	fb_main.width = f->width;
 	fb_main.height = f->height;
 	fb_main.bpp = f->bpp;
