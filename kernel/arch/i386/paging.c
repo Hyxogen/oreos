@@ -25,23 +25,10 @@ BOOTSTRAP_CODE __attribute__((noreturn)) void early_panic(void)
 		continue;
 }
 
-BOOTSTRAP_CODE
-volatile void *early_memset(volatile void *dest, int c, size_t n)
-{
-	volatile unsigned char *d = dest;
-
-	while (n--)
-		*d++ = (unsigned char)c;
-	return dest;
-}
-
 BOOTSTRAP_CODE void setup_early_pagetables(void)
 {
 	volatile struct mmu_pde *_phys_page_dir = VADDR_TO_PADDR(_page_dir);
 	volatile struct mmu_pte *_phys_page_table1 = VADDR_TO_PADDR(_page_table1);
-
-	early_memset(_phys_page_dir, 0, MMU_PAGESIZE);
-	early_memset(_phys_page_table1, 0, MMU_PAGESIZE);
 	
 	size_t size = PTR_ALIGN_UP(&_kernel_vend, MMU_PAGESIZE) - PTR_ALIGN_DOWN(&_kernel_vstart, MMU_PAGESIZE);
 	size_t pages = size / MMU_PAGESIZE;
