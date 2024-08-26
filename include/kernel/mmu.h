@@ -31,7 +31,7 @@ uintptr_t mmu_page_to_paddr(const struct page *page);
 void *mmu_map_pages(void *vaddr, struct page *frame, size_t nframes, int addrspace,
 	      u32 flags);
 void *mmu_map(void *vaddr, uintptr_t paddr, size_t len, int addrspace, u32 flags);
-void mmu_unmap(void *vaddr, size_t len);
+int mmu_unmap(void *vaddr, size_t len);
 
 void init_mmu(const struct mb2_info *info);
 

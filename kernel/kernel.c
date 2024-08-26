@@ -1,6 +1,7 @@
 #include <stdarg.h>
 #include <stdbool.h>
 
+#include <kernel/debug.h>
 #include <kernel/framebuf.h>
 #include <kernel/kernel.h>
 #include <kernel/printk.h>
@@ -10,6 +11,7 @@
 #include <lib/ctype.h>
 #include <lib/kstrtox.h>
 #include <lib/string.h>
+#include <kernel/malloc/malloc.h>
 
 void gdt_init(void);
 
@@ -180,6 +182,8 @@ void start_shell(void)
 	}
 }
 
+void mmu_flush_tlb(void);
+
 void kernel_main(struct mb2_info *info)
 {
 	//TODO rename mm to mmu
@@ -192,5 +196,12 @@ void kernel_main(struct mb2_info *info)
 	//unmap(info, info->total_size); // we're done with multiboot, free it
 
 	printk("done!\n");
+
+	BOCHS_BREAK;
+	mmu_flush_tlb();
+	void* p = kmalloc(16);
+	mmu_flush_tlb();
+	BOCHS_BREAK;
+	printk("kmalloc(16)=%p\n ", p);
 	start_shell();
 }

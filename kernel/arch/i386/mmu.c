@@ -8,7 +8,8 @@
 #include <kernel/types.h>
 #include <lib/string.h>
 
-static struct page mmu_pages[MMU_MAX_PAGES] __attribute__((section("bss")));
+//TODO check if actually in bss
+static struct page mmu_pages[MMU_MAX_PAGES] __attribute__((section(".bss")));
 
 #define MMU_RECURSIVE_PTE_ADDR 0xffc00000
 #define MMU_RECURSIVE_PDE_ADDR 0xfffff000
@@ -163,7 +164,7 @@ static void mmu_unmap_one(void *vaddr)
 	mmu_free_pageframe(mmu_pfn_to_page(pte->pfn), 1);
 }
 
-void mmu_unmap(void *vaddr, size_t len)
+int mmu_unmap(void *vaddr, size_t len)
 {
 	u8 *vaddr_c = vaddr;
 	u8 *vaddr_c_end = PTR_ALIGN_UP(vaddr_c + len, MMU_PAGESIZE);
@@ -174,6 +175,7 @@ void mmu_unmap(void *vaddr, size_t len)
 	}
 
 	mmu_flush_tlb();
+	return 0;
 }
 
 static int mmu_alloc_pagetable(struct mmu_pde *pde)
@@ -392,8 +394,8 @@ static void mmu_mark_kernel_code(void)
 {
 	// mark kernel code as used
 
-	size_t pfn_beg = MMU_PADDR_TO_PFN(&_kernel_vstart - &_kernel_addr);
-	size_t pfn_end = MMU_PADDR_TO_PFN(&_kernel_vend - &_kernel_addr);
+	size_t pfn_beg = MMU_PADDR_TO_PFN(PTR_ALIGN_DOWN(&_kernel_vstart, MMU_PAGESIZE) - &_kernel_addr);
+	size_t pfn_end = MMU_PADDR_TO_PFN(PTR_ALIGN_UP(&_kernel_vend, MMU_PAGESIZE) - &_kernel_addr);
 
 	mmu_alloc_pageframe(MMU_PFN_TO_PADDR(pfn_beg), pfn_end - pfn_beg,
 			    MMU_ALLOC_FIXED);

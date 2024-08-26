@@ -12,6 +12,9 @@ DEPS		+= $(DEPS_$(d))
 dir		:= $(d)/arch
 include		$(dir)/Rules.mk
 
+dir		:= $(d)/malloc
+include		$(dir)/Rules.mk
+
 -include $(DEPS_$(d))
 
 d		:= $(dirstack_$(sp))

@@ -11,4 +11,7 @@
 #define PTR_ALIGN_DOWN(p, boundary) \
 	((__typeof__(p)) ALIGN_DOWN((uintptr_t)(p), (boundary)))
 
+#define IS_ALIGNED(p, boundary) (((p) & ((__typeof__(boundary))(boundary) - 1)) == 0)
+#define PTR_IS_ALIGNED(p, boundary) IS_ALIGNED((uintptr_t)(p), (boundary))
+
 #endif

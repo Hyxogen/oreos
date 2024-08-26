@@ -3,5 +3,6 @@
 
 #define ENOMEM 12
 #define EINVAL 22
+#define ENOTSUP 95
 
 #endif
