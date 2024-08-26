@@ -197,11 +197,9 @@ void kernel_main(struct mb2_info *info)
 
 	printk("done!\n");
 
-	BOCHS_BREAK;
 	mmu_flush_tlb();
 	void* p = kmalloc(16);
 	mmu_flush_tlb();
-	BOCHS_BREAK;
-	printk("kmalloc(16)=%p\n ", p);
+	printk("kmalloc(16)=%p\n", p);
 	start_shell();
 }
