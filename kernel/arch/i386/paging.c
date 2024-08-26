@@ -14,7 +14,6 @@
 #define BOOTSTRAP_CODE __attribute__((section(".multiboot.text")))
 #define BOOTSTRAP_DATA __attribute__((section(".multiboot.data")))
 
-// TODO place in bss? (it doesn't seem to work lol)
 static struct mmu_pde _page_dir[1024] __attribute__((aligned(MMU_PAGESIZE)));
 static struct mmu_pte _page_table1[1024] __attribute__((aligned(MMU_PAGESIZE)));
 BOOTSTRAP_DATA struct mb2_info *_multiboot_info = NULL;
