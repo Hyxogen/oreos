@@ -114,6 +114,24 @@ void panic(const char *fmt, ...)
 	halt();
 }
 
+void oops(const char *fmt, ...)
+{
+	struct term *term = term_get_primary();
+
+	term_redraw(term);
+	printk_set_sink(term);
+
+	printk("OOPS! Something went wrong!\n");
+
+	va_list args;
+	va_start(args, fmt);
+
+	vprintk(fmt, args);
+	va_end(args);
+
+	halt();
+}
+
 void init_paging(void);
 void init_segments(void);
 void init_framebuf(struct mb2_info *info);

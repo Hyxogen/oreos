@@ -5,6 +5,7 @@
 
 //TODO common function that will trap the debugger when one of these is called?
 __attribute__((noreturn)) void panic(const char *fmt, ...);
+void oops(const char *fmt, ...);
 
 __attribute__((noreturn)) void reset(void);
 __attribute__((noreturn)) void halt(void);

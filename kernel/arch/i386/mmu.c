@@ -154,7 +154,7 @@ static void mmu_unmap_one(void *vaddr)
 
 	if (!pte->present) {
 		// TODO make this a warning function
-		printk("WARNING: attempt to unmap memory that wasn't mapped");
+		oops("WARNING: attempt to unmap memory that wasn't mapped");
 		return;
 	}
 
