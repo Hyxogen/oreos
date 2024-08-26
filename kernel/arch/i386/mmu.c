@@ -8,8 +8,7 @@
 #include <kernel/types.h>
 #include <lib/string.h>
 
-//TODO check if actually in bss
-static struct page mmu_pages[MMU_MAX_PAGES] __attribute__((section(".bss")));
+static struct page mmu_pages[MMU_MAX_PAGES];
 
 #define MMU_RECURSIVE_PTE_ADDR 0xffc00000
 #define MMU_RECURSIVE_PDE_ADDR 0xfffff000
