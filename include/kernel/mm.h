@@ -10,7 +10,6 @@
 #define MM_MAP_FAILED ((void*) -1)
 #define MM_PAGESIZE 0x1000
 
-
 void mm_flush_tlb(void);
 void *mm_map_physical(uintptr_t paddr, size_t count, u32 flags);
 

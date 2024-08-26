@@ -6,7 +6,7 @@
 #include <kernel/printk.h>
 #include <kernel/ps2.h>
 #include <kernel/tty.h>
-#include <kernel/mm.h>
+#include <kernel/mmu.h>
 #include <lib/ctype.h>
 #include <lib/kstrtox.h>
 #include <lib/string.h>
@@ -167,7 +167,7 @@ void kernel_main(struct mb2_info *info)
 	//TODO rename mm to mmu
 	init_paging();
 	init_segments();
-	init_mm(info);
+	init_mmu(info);
 	init_consoles(info);
 	//init_printk(); TODO
 

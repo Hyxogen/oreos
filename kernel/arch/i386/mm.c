@@ -134,6 +134,9 @@ static int mm_map_one(void *vaddr, uintptr_t paddr, u32 flags)
 		pde->pfn = pfn;
 
 		mm_flush_tlb();
+
+		struct mm_pte *pte = mm_get_pte((void*) ((uintptr_t) vaddr & ~0xfff));
+		memset(pte, 0, sizeof(*pte) * 1024);
 	}
 
 	struct mm_pte *pte = mm_get_pte(vaddr);

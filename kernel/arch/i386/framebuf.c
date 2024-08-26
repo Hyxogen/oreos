@@ -1,11 +1,12 @@
 #include <boot/multiboot2.h>
-#include <kernel/mm.h>
+#include <kernel/align.h>
 #include <kernel/framebuf.h>
 #include <kernel/kernel.h>
-#include <kernel/align.h>
+#include <kernel/mmu.h>
 #include <lib/assert.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <kernel/debug.h>
 
 static bool term_initialized;
 static struct framebuf fb_main;
@@ -60,12 +61,14 @@ void fb_put(struct framebuf *fb, u32 x, u32 y, struct fb_color color)
 	*fb_get_pixel_addr(fb, x, y) = fb_encode_color(fb, color);
 }
 
+//0xfd00 0000 (phys)
 void init_framebuf(struct mb2_info *mb)
 {
 	if (term_initialized)
 		return;
 
-	struct mb2_framebuf_info *f = (struct mb2_framebuf_info*) mb2_find(mb, MB2_TAG_TYPE_FRAMEBUF);
+	struct mb2_framebuf_info *f =
+	    (struct mb2_framebuf_info *)mb2_find(mb, MB2_TAG_TYPE_FRAMEBUF);
 	if (!f)
 		panic(""); // no framebuffer present
 
@@ -81,8 +84,12 @@ void init_framebuf(struct mb2_info *mb)
 
 	size_t total_size = f->width * f->height * (f->bpp / 8);
 
-
-	fb_main.data = mm_map_physical((uintptr_t)f->addr, ALIGN_UP(total_size, MM_PAGESIZE) / MM_PAGESIZE, 0);
+	BOCHS_BREAK;
+	fb_main.data =
+	    mmu_map(NULL, mmu_paddr_to_page(f->addr),
+		    ALIGN_UP(total_size, MMU_PAGESIZE) / MMU_PAGESIZE,
+		    MMU_ADDRSPACE_KERNEL, 0);
+	BOCHS_BREAK;
 	fb_main.width = f->width;
 	fb_main.height = f->height;
 	fb_main.bpp = f->bpp;

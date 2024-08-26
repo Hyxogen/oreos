@@ -46,19 +46,19 @@ struct mm_pde {
 
 _Static_assert(sizeof(struct mm_pte) == sizeof(u32), "basic assumption");
 
-#define MM_PTE_OFFSET 12
-#define MM_PDE_OFFSET (MM_PTE_OFFSET + 10)
+#define MM_PTE_SHIFT 12
+#define MM_PDE_SHIFT (MM_PTE_SHIFT + 10)
 #define MM_MAX_PAGES (1024 * 1024)
 
-#define MM_PTE_MASK (0x3ff << MM_PTE_OFFSET)
-#define MM_PDE_MASK (0x3ff << MM_PDE_OFFSET)
+#define MM_PTE_MASK (0x3ff << MM_PTE_SHIFT)
+#define MM_PDE_MASK (0x3ff << MM_PDE_SHIFT)
 
-#define MM_PTE_IDX(vaddr) (((uintptr_t)(vaddr) & MM_PTE_MASK) >> MM_PTE_OFFSET)
-#define MM_PDE_IDX(vaddr) (((uintptr_t)(vaddr) & MM_PDE_MASK) >> MM_PDE_OFFSET)
+#define MM_PTE_IDX(vaddr) (((uintptr_t)(vaddr) & MM_PTE_MASK) >> MM_PTE_SHIFT)
+#define MM_PDE_IDX(vaddr) (((uintptr_t)(vaddr) & MM_PDE_MASK) >> MM_PDE_SHIFT)
 
 #define MM_INVALID_PFN ((size_t) - 1)
 #define MM_INVALID_PAGE ((void*) -1)
 
-#define MM_PADDR_TO_PFN(paddr) ((uintptr_t) (paddr) >> (MM_PTE_OFFSET))
+#define MM_PADDR_TO_PFN(paddr) ((uintptr_t) (paddr) >> (MM_PTE_SHIFT))
 
 #endif
