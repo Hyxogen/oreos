@@ -186,7 +186,6 @@ void mmu_flush_tlb(void);
 
 void kernel_main(struct mb2_info *info)
 {
-	//TODO rename mm to mmu
 	init_paging();
 	init_segments();
 	init_mmu(info);

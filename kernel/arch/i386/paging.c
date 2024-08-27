@@ -18,7 +18,6 @@ static struct mmu_pde _page_dir[1024] __attribute__((aligned(MMU_PAGESIZE)));
 static struct mmu_pte _page_table1[1024] __attribute__((aligned(MMU_PAGESIZE)));
 BOOTSTRAP_DATA struct mb2_info *_multiboot_info = NULL;
 
-
 BOOTSTRAP_CODE __attribute__((noreturn)) void early_panic(void)
 {
 	while (1)
@@ -35,7 +34,6 @@ BOOTSTRAP_CODE void setup_early_pagetables(void)
 
 	size_t pte_off = MMU_PTE_IDX(&_kernel_pstart);
 
-	//TODO map rodata als readonly
 	for (size_t i = 0, off = 0; i < pages; i++, off += MMU_PAGESIZE) {
 		struct mmu_pte *pte = &_phys_page_table1[pte_off + i];
 
@@ -43,6 +41,7 @@ BOOTSTRAP_CODE void setup_early_pagetables(void)
 		pte->pfn = MMU_PADDR_TO_PFN(&_kernel_pstart + off);
 		pte->present = true;
 
+		// map readonly sections as readonly
 		u8 *vaddr = &_kernel_vstart + off;
 		if (vaddr < &_kernel_vro_start || vaddr >= &_kernel_vro_end)
 			pte->rw = true;
@@ -53,10 +52,8 @@ BOOTSTRAP_CODE void setup_early_pagetables(void)
 	_phys_page_dir[0].present = true;
 	_phys_page_dir[0].rw = true;
 
-	//TODO remove 1024 magic number
-
 	// setup higher half kernel mapping
-	size_t higher_mem = (uintptr_t)&_kernel_addr / (MMU_PAGESIZE * 1024);
+	size_t higher_mem = MMU_PDE_IDX(&_kernel_addr);
 	_phys_page_dir[higher_mem].pfn = MMU_PADDR_TO_PFN(_phys_page_table1);
 	_phys_page_dir[higher_mem].present = true;
 	_phys_page_dir[higher_mem].rw = true;
@@ -70,7 +67,7 @@ BOOTSTRAP_CODE void setup_early_pagetables(void)
 BOOTSTRAP_CODE void check_size(struct mb2_info *info)
 {
 	size_t size = &_kernel_vend - &_kernel_vstart;
-	if (size + info->total_size > 1024 * MMU_PAGESIZE) {
+	if (size + info->total_size > MMU_PAGEDIR_SIZE) {
 		// kernel is too large to load into memory
 		early_panic();
 	}

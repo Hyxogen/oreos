@@ -69,4 +69,6 @@ void mmu_flush_tlb(void);
 #define MMU_PADDR_TO_PFN(paddr) ((uintptr_t) (paddr) >> (MMU_PTE_SHIFT))
 #define MMU_PFN_TO_PADDR(pfn)   ((uintptr_t) (pfn) << (MMU_PTE_SHIFT))
 
+#define MMU_PAGEDIR_SIZE (1024 * MMU_PAGESIZE)
+
 #endif

@@ -153,7 +153,6 @@ static void mmu_unmap_one(void *vaddr)
 	struct mmu_pte *pte = mmu_vaddr_to_pte(vaddr);
 
 	if (!pte->present) {
-		// TODO make this a warning function
 		oops("WARNING: attempt to unmap memory that wasn't mapped");
 		return;
 	}
@@ -254,7 +253,6 @@ static inline void *mmu_addrspace_end(int addrspace)
 
 static inline void *mmu_pagenum_to_entry(size_t pagenum)
 {
-	// TODO refactor mmu_vaddr_to_pte/PDE to something more generic
 	if (mmu_pagenum_is_pde(pagenum))
 		return mmu_vaddr_to_pde(mmu_pagenum_to_vaddr(pagenum));
 	return mmu_vaddr_to_pte(mmu_pagenum_to_vaddr(pagenum));
