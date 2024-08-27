@@ -9,7 +9,7 @@ void *kaligned_alloc(size_t align, size_t size)
 {
 	return ma_aligned_alloc(align, size);
 }
-size_t kmalloc_usable_size(void *p) { return ma_malloc_usable_size(p); };
+size_t ksize(void *p) { return ma_malloc_usable_size(p); };
 void *kmemalign(size_t align, size_t size) { return ma_memalign(align, size); }
 void *kvalloc(size_t size) { return ma_valloc(size); }
 void *kpvalloc(size_t size) { return ma_pvalloc(size); }

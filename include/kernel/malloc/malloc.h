@@ -23,7 +23,7 @@ void *kcalloc(size_t nmemb, size_t size);
 void *krealloc(void *p, size_t size);
 
 void *kaligned_alloc(size_t align, size_t size);
-size_t kmalloc_usable_size(void *p);
+size_t ksize(void *p);
 void *kmemalign(size_t align, size_t size);
 void *kvalloc(size_t size);
 void *kpvalloc(size_t size);
