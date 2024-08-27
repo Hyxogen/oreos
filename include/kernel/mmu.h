@@ -25,6 +25,12 @@ struct page {
 struct page *mmu_alloc_pageframe(uintptr_t hint, size_t nframes, u32 flags);
 void mmu_free_pageframe(struct page *page, size_t nframes);
 
+static inline int mmu_pageframe_size(struct page * page)
+{
+	(void)page;
+	return MMU_PAGESIZE;
+}
+
 struct page *mmu_paddr_to_page(uintptr_t paddr);
 uintptr_t mmu_page_to_paddr(const struct page *page);
 
