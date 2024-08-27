@@ -193,7 +193,7 @@ void kernel_main(struct mb2_info *info)
 	init_consoles(info);
 	//init_printk(); TODO
 
-	//unmap(info, info->total_size); // we're done with multiboot, free it
+	mmu_unmap(info, info->total_size); // we're done with multiboot, free it
 
 	printk("done!\n");
 

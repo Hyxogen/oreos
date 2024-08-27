@@ -39,9 +39,13 @@ BOOTSTRAP_CODE void setup_early_pagetables(void)
 	for (size_t i = 0, off = 0; i < pages; i++, off += MMU_PAGESIZE) {
 		struct mmu_pte *pte = &_phys_page_table1[pte_off + i];
 
+
 		pte->pfn = MMU_PADDR_TO_PFN(&_kernel_pstart + off);
 		pte->present = true;
-		pte->rw = true;
+
+		u8 *vaddr = &_kernel_vstart + off;
+		if (vaddr < &_kernel_vro_start || vaddr >= &_kernel_vro_end)
+			pte->rw = true;
 	}
 
 	// identity mapping

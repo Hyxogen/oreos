@@ -17,6 +17,11 @@ extern u8 _kernel_vend;
 // the start of the VIRTUAL address for kernel stuff
 extern u8 _kernel_addr;
 
+// the VIRTUAL address where read-only data starts
+extern u8 _kernel_vro_start;
+// the VIRTUAL address where read-only data ends
+extern u8 _kernel_vro_end;
+
 struct mmu_pte {
 	bool present : 1;
 	bool rw : 1;

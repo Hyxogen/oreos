@@ -185,6 +185,7 @@ static int mmu_alloc_pagetable(struct mmu_pde *pde)
 		return ENOMEM;
 
 	pde->present = true;
+	pde->rw = true;
 	pde->pfn = mmu_page_to_pfn(page);
 
 	mmu_flush_tlb();

@@ -22,6 +22,7 @@ SECTIONS
 
 	. += _kernel_addr;
 	_kernel_vstart = .;
+	_kernel_vro_start = .;
 	.text ALIGN(4K) : AT (ADDR(.text) - _kernel_addr)
 	{
 		*(.multiboot)
@@ -32,6 +33,7 @@ SECTIONS
 	{
 		*(.rodata)
 	}
+	_kernel_vro_end = .;
 
 	.data ALIGN(4K) : AT (ADDR(.data) - _kernel_addr)
 	{

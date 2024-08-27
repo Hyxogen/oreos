@@ -72,7 +72,7 @@ _start:
 global enable_paging_and_jump_to_kmain:function (enable_paging_and_jump_to_kmain.end - enable_paging_and_jump_to_kmain)
 enable_paging_and_jump_to_kmain:
 	mov eax, cr0
-	or eax, 0x80000001
+	or eax, 0x80010001
 	mov cr0, eax
 
 	jmp _start_paged
