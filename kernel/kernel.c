@@ -67,6 +67,8 @@ static void exec_cmd(const char *str)
 		reset();
 	} else if (!strcmp(str, "halt")) {
 		halt();
+	} else if (!strcmp(str, "debug")) {
+		dump_registers();
 	} else if (!strncmp(str, "dumpstack", 9)) {
 		if (!str[9]) {
 			printk("usage: dumpstack <offset> [nbytes]\n");
@@ -94,6 +96,32 @@ static void exec_cmd(const char *str)
 		}
 
 		print_hexdump((char *)&_stack_top - offset, n);
+	} else if (!strncmp(str, "memdump", 7)) {
+		if (!str[7]) {
+			printk("usage: memdump <addr> [nbytes: default=4]\n");
+			return;
+		}
+
+		char *end;
+		unsigned long addr;
+
+		enum lib_error res = kstrtoul(&str[8], &end, 0, &addr);
+		if (res != LIB_OK) {
+			kperror("memdump", res);
+			return;
+		}
+
+		while (isspace(*end))
+			end++;
+
+		unsigned long nbytes = 4;
+		if (*end) {
+			if ((res = kstrtoul(end, NULL, 0, &nbytes))) {
+				kperror("memdump", res);
+				return;
+			}
+		}
+		print_hexdump((void*) addr, nbytes);
 	} else {
 		printk("unknown command: '%s'\n", str);
 	}

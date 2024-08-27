@@ -9,4 +9,6 @@ void oops(const char *fmt, ...);
 
 __attribute__((noreturn)) void reset(void);
 __attribute__((noreturn)) void halt(void);
+
+void dump_registers(void);
 #endif
