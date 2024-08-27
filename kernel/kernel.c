@@ -224,9 +224,13 @@ void kernel_main(struct mb2_info *info)
 
 	printk("done!\n");
 
-	mmu_flush_tlb();
 	void* p = kmalloc(16);
-	mmu_flush_tlb();
 	printk("kmalloc(16)=%p\n", p);
+	printk("ksize(%p)=%zu\n", p, ksize(p));
+	kfree(p);
+
+	p = kmalloc(16);
+	printk("kmalloc(16)=%p\n", p);
+
 	start_shell();
 }
