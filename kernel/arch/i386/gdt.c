@@ -70,6 +70,7 @@ void init_segments(void)
 	gdt[2] = gdt_encode(0, 0x000fffff, GDT_DATA(0));
 	gdt[3] = gdt_encode(0, 0x000fffff, GDT_CODE(3));
 	gdt[4] = gdt_encode(0, 0x000fffff, GDT_DATA(3));
+	//TODO TSS segment
 
 	_load_gdt((u32) (uintptr_t) &gdt, 5 * sizeof(u64));
 }

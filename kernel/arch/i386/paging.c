@@ -108,7 +108,6 @@ BOOTSTRAP_CODE void setup_paging(struct mb2_info *info)
 	check_size(info);
 	setup_early_pagetables();
 	setup_multiboot_pagetables(info);
-	BOCHS_BREAK;
 	load_pagedir();
 
 	enable_paging_and_jump_to_kmain();

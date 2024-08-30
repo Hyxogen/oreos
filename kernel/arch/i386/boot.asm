@@ -103,6 +103,7 @@ _idle:
 	jmp .hang
 .end:
 
+; TODO this needs to move out of boot.asm
 global _load_gdt:function (_load_gdt.end - _load_gdt)
 _load_gdt:
 	;TODO make sure that interrupts are disabled

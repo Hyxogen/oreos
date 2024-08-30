@@ -182,12 +182,13 @@ void start_shell(void)
 	}
 }
 
-void mmu_flush_tlb(void);
+void init_irq_handler(void);
 
 void kernel_main(struct mb2_info *info)
 {
 	init_paging();
 	init_segments();
+	init_irq_handler();
 	init_mmu(info);
 	init_consoles(info);
 	//init_printk(); TODO
