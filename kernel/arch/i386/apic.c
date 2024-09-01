@@ -1,4 +1,5 @@
 #include <kernel/printk.h>
+#include <kernel/mmu.h>
 #include <kernel/arch/i386/apic.h>
 #include <kernel/arch/i386/io.h>
 
@@ -10,6 +11,8 @@
 #define PIC_ICW1_START_INIT 0x10
 #define PIC_ICW1_ICW4 0x01
 #define PIC_ICW4_8086_MODE 0x01
+
+#define LAPIC_SPURRIOUS_IVR 0xF0
 
 static void outb_and_wait(u16 port, u8 b)
 {
@@ -55,10 +58,43 @@ static void pic_disable(void)
 	outb(PIC_SLAVE_DATA_PORT, 0xff);
 }
 
+static volatile u32* lapic_get_reg(void *base_addr, u32 reg)
+{
+	return (volatile u32 *)((u8 *)base_addr + reg);
+}
+
+static void lapic_write(void *base_addr, u32 reg, u32 val)
+{
+	volatile u32 *p = lapic_get_reg(base_addr, reg);
+	*p = val;
+}
+
+static u32 lapic_read(void *base_addr, u32 reg)
+{
+	return *lapic_get_reg(base_addr, reg);
+}
+
+static void lapic_init(void *base_addr)
+{
+	u32 val = lapic_read(base_addr, LAPIC_SPURRIOUS_IVR);
+
+	val |= 0x0FF; /* set IRQ number */
+	val |= 0x100; /* enable */
+	lapic_write(base_addr, LAPIC_SPURRIOUS_IVR, val);
+}
+
 void apic_init(struct madt *madt)
 {
+	//TODO keep track somewhere of these offsets
 	pic_remap(0x20, 0x28);
 	printk("remapped PIC offsets to 0x20 and 0x28\n");
 	pic_disable();
 	printk("disabled PICs\n");
+
+	void *p = mmu_map(NULL, madt->lapic_addr, MMU_PAGESIZE, MMU_ADDRSPACE_KERNEL, 0);
+
+	if (p != MMU_MAP_FAILED)
+		lapic_init(p);
+	else
+		printk("failed to map lapic addr\n");
 }

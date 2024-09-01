@@ -12,12 +12,14 @@ void *ma_sysalloc(size_t size)
 {
 	size_t nframes = size / ma_sysalloc_granularity();
 	struct page *page = mmu_alloc_pageframe(16 * 1024 * 1024, nframes, 0);
+	if (!page)
+		return MA_SYSALLOC_FAILED;
 
 	void *p = mmu_map_pages(NULL, page, nframes, MMU_ADDRSPACE_KERNEL, 0);
 	if (p == (void*) -1) //TODO use MMU_INVALID_PAGE
 		return MA_SYSALLOC_FAILED;
 
-	memset(p, 0, size);
+	memset(p, 0, nframes * ma_sysalloc_granularity());
 	return p;
 }
 

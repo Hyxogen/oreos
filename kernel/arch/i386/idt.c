@@ -1,6 +1,7 @@
 #include <kernel/kernel.h>
 #include <kernel/types.h>
 #include <kernel/printk.h>
+#include <kernel/acpi.h>
 
 #include <kernel/arch/i386/apic.h>
 
@@ -69,15 +70,20 @@ static void load_idt(void)
 void irq_callback(struct cpu_state *state)
 {
 	(void) state;
-	printk("got a irq\n");
+	printk("got a irq: vec_num: 0x%lx, err: 0x%lx\n", state->vec_num,
+	       state->err_code);
 }
 
-void init_irq_handler(void)
+void init_irq_handler(struct acpi_table *table)
 {
 	for (unsigned i = 0; i < ARRAY_SIZE(__idt); i++) {
 		__idt[i] = encode_idt((u32) vector_0_handler + i * 16, 0x08, IDT_INTR_FLAGS(0));
 	}
 	load_idt();
 
-	apic_init(NULL); //TODO pass MADT
+	struct madt *madt = (struct madt*) acpi_find(table, ACPI_TAG_APIC);
+	if (!madt)
+		panic("no madt\n");
+
+	apic_init(madt); //TODO pass MADT
 }

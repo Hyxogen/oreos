@@ -18,6 +18,8 @@
 #define MADT_TYPE_LAPIC_ADDR_OVERRIDE 5
 #define MADT_TYPE_2XLAPIC 9
 
+#define ACPI_TAG_APIC "APIC"
+
 struct rsdp {
 	char signature[8];
 	u8 checksum;
@@ -71,6 +73,17 @@ struct acpi_table {
 	size_t count;
 	struct sdt_hdr **entries;
 };
+
+struct madt_record {
+	u8 type;
+	u8 len;
+};
+
+struct madt_lapic {
+	u8 apic_cpu_id;
+	u8 apic_id;
+	u32 flags;
+} __attribute__((packed));
 
 bool acpi_validate(const void *data, size_t len);
 /* this validates the rsdp/xsdp and maps the sdt */

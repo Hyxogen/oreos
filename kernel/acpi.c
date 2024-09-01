@@ -70,7 +70,7 @@ static bool read_rsdt_entries(struct acpi_table *table, struct rsdt *rsdt)
 		return false;
 	}
 
-	printk("found %zu ACPI table entries\n", table->count);
+	printk("found %zu ACPI table entries\n", count);
 	for (; table->count < count; table->count++) {
 		table->entries[table->count] =
 		    copy_sdt_entry(rsdt->entry_ptrs[table->count]);

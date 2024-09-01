@@ -89,6 +89,8 @@ _start_paged:
 	; mov [_page_dir], dword 0
 	; call _flush_tlb
 
+	; zero ebp for stack unwinding
+	xor ebp, ebp
 	extern kernel_main
 	call kernel_main
 

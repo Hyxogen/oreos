@@ -13,7 +13,9 @@ CFLAGS		:= \
 		   -fno-builtin -fno-exceptions -fno-stack-protector \
 		   -nostdlib -nodefaultlibs \
 		   -masm=intel -g3 -Iinclude -MMD -Iinclude \
-		   -Ilib/include
+		   -Ilib/include -fno-omit-frame-pointer
+
+QEMU_OPTS	:= -m 1G
 
 AS		:= nasm
 ASFLAGS		:= -felf32 -g
@@ -75,10 +77,10 @@ $(CONSOLEFONT): $(VENDOR_DIR)/kbd-$(KBD_VER)
 	cp $(VENDOR_DIR)/kbd-$(KBD_VER)/data/consolefonts/$(CONSOLEFONT) .
 
 run: $(ISO)
-	qemu-system-i386 -m 2G -machine pc-q35-9.0 -cdrom $(ISO)
+	qemu-system-i386 $(QEMU_OPTS) -cdrom $(ISO)
 
 debug: $(ISO)
-	qemu-system-i386 -cdrom $(ISO) -s -S &
+	qemu-system-i386 $(QEMU_OPTS) -cdrom $(ISO) -s -S &
 	gdb
 
 clean:

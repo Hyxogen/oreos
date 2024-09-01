@@ -102,6 +102,8 @@ static void exec_cmd(const char *str)
 	}
 }
 
+void dump_stacktrace(void);
+void dump_registers(void);
 void panic(const char *fmt, ...)
 {
 	struct term *term = term_get_primary();
@@ -116,6 +118,9 @@ void panic(const char *fmt, ...)
 	va_end(args);
 
 	printk("Oops! A kernel panic ocurred :/\n");
+
+	printk("stacktrace:\n");
+	dump_stacktrace();
 	halt();
 }
 
@@ -185,10 +190,9 @@ void start_shell(void)
 	}
 }
 
-void read_acpi(struct mb2_info *info)
+void read_acpi(struct acpi_table *table, struct mb2_info *info)
 {
 	struct mb2_acpi_new *acpi = (void*) mb2_find(info, MB2_TAG_TYPE_ACPI_NEW);
-	struct acpi_table table = {};
 
 	if (!acpi) {
 		printk("could not find ACPI tag\n");
@@ -197,25 +201,27 @@ void read_acpi(struct mb2_info *info)
 		if (old) {
 			printk("did find legacy\n");
 
-			acpi_read(&table, old->rsdp);
+			acpi_read(table, old->rsdp);
 		}
 		return;
 	}
 
 
-	acpi_read(&table, acpi->xsdp);
+	acpi_read(table, acpi->xsdp);
 }
 
-void init_irq_handler(void);
+void init_irq_handler(struct acpi_table *table);
 
 void kernel_main(struct mb2_info *info)
 {
+	struct acpi_table table = {};
+
 	init_paging();
 	init_segments();
 	init_mmu(info);
 	init_consoles(info);
-	read_acpi(info);
-	init_irq_handler();
+	read_acpi(&table, info);
+	init_irq_handler(&table);
 	//init_printk(); TODO
 
 	mmu_unmap(info, info->total_size); // we're done with multiboot, free it
