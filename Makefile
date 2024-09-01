@@ -75,7 +75,7 @@ $(CONSOLEFONT): $(VENDOR_DIR)/kbd-$(KBD_VER)
 	cp $(VENDOR_DIR)/kbd-$(KBD_VER)/data/consolefonts/$(CONSOLEFONT) .
 
 run: $(ISO)
-	qemu-system-i386 -m 2G -cdrom $(ISO)
+	qemu-system-i386 -m 2G -machine pc-q35-9.0 -cdrom $(ISO)
 
 debug: $(ISO)
 	qemu-system-i386 -cdrom $(ISO) -s -S &

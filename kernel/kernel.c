@@ -13,6 +13,9 @@
 #include <lib/string.h>
 #include <kernel/malloc/malloc.h>
 
+
+#include <kernel/acpi.h>
+
 void gdt_init(void);
 
 static void print_hexdump(const void *p, size_t n)
@@ -182,28 +185,42 @@ void start_shell(void)
 	}
 }
 
+void read_acpi(struct mb2_info *info)
+{
+	struct mb2_acpi_new *acpi = (void*) mb2_find(info, MB2_TAG_TYPE_ACPI_NEW);
+	struct acpi_table table = {};
+
+	if (!acpi) {
+		printk("could not find ACPI tag\n");
+
+		struct mb2_acpi_old *old = (void*) mb2_find(info, MB2_TAG_TYPE_ACPI_OLD);
+		if (old) {
+			printk("did find legacy\n");
+
+			acpi_read(&table, old->rsdp);
+		}
+		return;
+	}
+
+
+	acpi_read(&table, acpi->xsdp);
+}
+
 void init_irq_handler(void);
 
 void kernel_main(struct mb2_info *info)
 {
 	init_paging();
 	init_segments();
-	init_irq_handler();
 	init_mmu(info);
 	init_consoles(info);
+	read_acpi(info);
+	init_irq_handler();
 	//init_printk(); TODO
 
 	mmu_unmap(info, info->total_size); // we're done with multiboot, free it
 
 	printk("done!\n");
-
-	void* p = kmalloc(16);
-	printk("kmalloc(16)=%p\n", p);
-	printk("ksize(%p)=%zu\n", p, ksize(p));
-	kfree(p);
-
-	p = kmalloc(16);
-	printk("kmalloc(16)=%p\n", p);
 
 	start_shell();
 }

@@ -123,6 +123,16 @@ size_t strlen(const char *str)
 	return tmp - str;
 }
 
+size_t strnlen(const char *str, size_t maxlen)
+{
+	const char *tmp = str;
+
+	while (maxlen-- && *tmp)
+		++tmp;
+	return tmp - str;
+
+}
+
 int strcmp(const char *s1, const char *s2)
 {
 	const unsigned char *p1 = (const unsigned char *)s1;

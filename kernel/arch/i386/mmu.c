@@ -299,19 +299,6 @@ static void *mmu_find_pages(void *hint, size_t count, int addrspace)
 	return MMU_INVALID_PAGE;
 }
 
-static inline bool mmu_check_addrspace(const void *vaddr, int addrspace)
-{
-	void *beg = mmu_addrspace_beg(addrspace);
-	void *end = mmu_addrspace_end(addrspace);
-
-	if (vaddr < beg || vaddr >= end) {
-		printk("ERROR: vaddr out of address space! %8p [%8p, %8p)\n",
-		       vaddr, beg, end);
-		return false;
-	}
-	return true;
-}
-
 /*
  * map a physical address to a vaddr
  */
@@ -328,9 +315,6 @@ void *mmu_map_pages(void *vaddr, struct page *frame, size_t nframes,
 		vaddr = mmu_find_pages(vaddr, nframes, addrspace);
 		if (vaddr == MMU_INVALID_PAGE)
 			return MMU_INVALID_PAGE; /* oom */
-	} else {
-		if (!mmu_check_addrspace(vaddr, addrspace))
-			return MMU_INVALID_PAGE; /* invalid vaddr */
 	}
 
 	u8 *vaddr_c = vaddr;
@@ -350,13 +334,19 @@ void *mmu_map_pages(void *vaddr, struct page *frame, size_t nframes,
 
 void *mmu_map(void *vaddr, uintptr_t paddr, size_t len, int addrspace, u32 flags)
 {
+	size_t off = PAGE_OFFSET(paddr);
+
 	uintptr_t pfn_end = ALIGN_UP(paddr + len, MMU_PAGESIZE);
 	paddr = ALIGN_DOWN(paddr, MMU_PAGESIZE);
 
 	size_t nframes = (pfn_end - paddr) / MMU_PAGESIZE;
 
 	struct page *page = mmu_paddr_to_page(paddr);
-	return mmu_map_pages(vaddr, page, nframes, addrspace, flags);
+
+	void *res = mmu_map_pages(vaddr, page, nframes, addrspace, flags);
+	if (res == MMU_INVALID_PAGE)
+		return res;
+	return (u8*) res + off;
 }
 
 static void mmu_read_mmap(const struct mb2_info *info)

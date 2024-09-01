@@ -91,6 +91,8 @@ static u8 ps2_dev_type1, ps2_dev_type2;
 #define SCANCODE_F12_PRESSED 0x58 // F12 pressed
 #define SCANCODE_RELEASED_OFFSET 0x81
 
+/* TODO 30 tries is not enough for VirtualBox, increase the number or write
+ * proper interrupt driver */
 #define PS2_TIMEOUT_TRIES 30
 
 static int ps2_recv_timeout(void)
@@ -341,7 +343,7 @@ static void ps2_init_controller(void)
 	u8 res = ps2_recv_timeout();
 
 	if (res != PS2_CONTROLLER_OK) {
-		printk("ps2 controller self test failed");
+		printk("ps2 controller self test failed\n");
 		return;
 	}
 
@@ -352,23 +354,24 @@ static void ps2_init_controller(void)
 	res = ps2_recv_timeout();
 
 	if (res != PS2_PORT_OK) {
-		printk("ps2 port1 self test failed");
+		printk("ps2 port1 self test failed\n");
 		return;
 	}
 
 	if (ps2_send_cmd_timeout(PS2_CMD_ENABLE_PORT1)) {
-		printk("ps2: failed to enable port1");
+		printk("ps2: failed to enable port1\n");
 		return;
 	}
 
 	ps2_send_timeout(PS2_RESET);
 	if (ps2_send_ack(PS2_RESET) < 0) {
-		printk("failed to reset device on port1");
+		printk("failed to reset device on port1\n");
 		return;
 	}
 
-	if (ps2_recv_timeout() != PS2_PASSED_SELFTEST) {
-		printk("failed selftest after resetting device");
+	int tmp;
+	if ((tmp = ps2_recv_timeout()) != PS2_PASSED_SELFTEST) {
+		printk("failed selftest after resetting device: %i\n", tmp);
 		return;
 	}
 }

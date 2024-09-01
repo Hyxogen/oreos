@@ -64,7 +64,7 @@ void mmu_flush_tlb(void);
 #define MMU_PDE_IDX(vaddr) (((uintptr_t)(vaddr) & MMU_PDE_MASK) >> MMU_PDE_SHIFT)
 
 #define MMU_INVALID_PFN ((size_t) - 1)
-#define MMU_INVALID_PAGE ((void*) -1)
+#define MMU_INVALID_PAGE MMU_MAP_FAILED
 
 #define MMU_PADDR_TO_PFN(paddr) ((uintptr_t) (paddr) >> (MMU_PTE_SHIFT))
 #define MMU_PFN_TO_PADDR(pfn)   ((uintptr_t) (pfn) << (MMU_PTE_SHIFT))

@@ -18,6 +18,10 @@
 
 #define MMU_ALLOC_FIXED 0x1
 
+#define PAGE_OFFSET(addr) ((uintptr_t) (addr) & (MMU_PAGESIZE - 1))
+
+#define MMU_MAP_FAILED ((void*) -1)
+
 struct page {
 	u8 flags;
 };
@@ -31,6 +35,7 @@ uintptr_t mmu_page_to_paddr(const struct page *page);
 void *mmu_map_pages(void *vaddr, struct page *frame, size_t nframes, int addrspace,
 	      u32 flags);
 void *mmu_map(void *vaddr, uintptr_t paddr, size_t len, int addrspace, u32 flags);
+void *mmu_ident_map(uintptr_t paddr, size_t len, int addrspace, u32 flags);
 int mmu_unmap(void *vaddr, size_t len);
 
 void init_mmu(const struct mb2_info *info);

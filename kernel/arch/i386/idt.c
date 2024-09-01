@@ -2,7 +2,7 @@
 #include <kernel/types.h>
 #include <kernel/printk.h>
 
-#include <kernel/debug.h>
+#include <kernel/arch/i386/apic.h>
 
 #define IDT_SIZE_16BIT 0x06
 #define IDT_SIZE_32BIT 0x0e
@@ -78,4 +78,6 @@ void init_irq_handler(void)
 		__idt[i] = encode_idt((u32) vector_0_handler + i * 16, 0x08, IDT_INTR_FLAGS(0));
 	}
 	load_idt();
+
+	apic_init(NULL); //TODO pass MADT
 }

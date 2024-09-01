@@ -6,6 +6,8 @@
 #define MB2_TAG_TYPE_END 0
 #define MB2_TAG_TYPE_MMAP 6
 #define MB2_TAG_TYPE_FRAMEBUF 8
+#define MB2_TAG_TYPE_ACPI_OLD 14
+#define MB2_TAG_TYPE_ACPI_NEW 15
 
 #define MB2_MMAP_TYPE_AVAIL 1
 #define MB2_MMAP_TYPE_ACPI_RECLAIMABLE 3
@@ -81,6 +83,16 @@ struct mb2_framebuf_info {
 		struct mb2_palette palette;
 		struct mb2_direct_rgb direct;
 	} color_info;
+};
+
+struct mb2_acpi_new {
+	struct mb2_tag_base base;
+	u8 xsdp[];
+};
+
+struct mb2_acpi_old {
+	struct mb2_tag_base base;
+	u8 rsdp[];
 };
 
 #define MB2_TAG_SIZE(tag) ((((struct mb2_tag_base *)tag)->size + 7) & ~7)

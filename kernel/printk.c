@@ -294,8 +294,7 @@ static int vprintx(const char *fmt, va_list ap, int (*put)(int c, void *),
 		}
 		case 's': {
 			const char *s = va_arg(ap, const char *);
-			size_t slen = strlen(s);
-			size_t len = (size_t)prec < slen ? (size_t)prec : slen;
+			size_t len = prec < 0 ? strlen(s) : strnlen(s, prec);
 			size_t padlen = (width > 0 && len < (size_t)width)
 					    ? width - len
 					    : 0;
