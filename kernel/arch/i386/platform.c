@@ -17,17 +17,23 @@ void halt(void)
 	_idle();
 }
 
-void dump_stacktrace(void)
+void dump_stacktrace_from(const void *ebpp)
 {
-	u32 *ebp;
-	__asm__ volatile("mov %0,%%ebp" : "=r"(ebp));
+	const u32* ebp = ebpp;
 	unsigned level = 0;
 
 	while (ebp) {
 		printk("%03d: 0x%08lx\n", level, *(ebp + 1));
-		ebp = (u32*) *ebp;
+		ebp = (const u32*) *ebp;
 		level += 1;
 	}
+}
+
+void dump_stacktrace(void)
+{
+	u32 *ebp;
+	__asm__ volatile("mov %0,%%ebp" : "=r"(ebp));
+	dump_stacktrace_from(ebp);
 }
 
 #define DUMP_REGISTER(reg)                                         \

@@ -65,7 +65,8 @@ struct madt {
 
 	u32 lapic_addr;
 	u32 flags;
-};
+	u8 records[];
+} __attribute__((packed));
 
 struct acpi_table {
 	int version;
@@ -77,11 +78,28 @@ struct acpi_table {
 struct madt_record {
 	u8 type;
 	u8 len;
-};
+} __attribute__((packed));
+
+struct madt_ioapic {
+	struct madt_record record;
+	u8 ioapic_id;
+	u8 reserved;
+	u32 ioapic_addr;
+	u32 global_system_interrupt_base;
+} __attribute__((packed));
+
+struct madt_ioapic_override {
+	struct madt_record record;
+	u8 bus_src;
+	u8 irq_src;
+	u32 global_system_interrupt;
+	u16 flags;
+} __attribute__((packed));
 
 struct madt_lapic {
-	u8 apic_cpu_id;
-	u8 apic_id;
+	struct madt_record record;
+	u8 lapic_cpu_id;
+	u8 lapic_id;
 	u32 flags;
 } __attribute__((packed));
 
@@ -90,5 +108,8 @@ bool acpi_validate(const void *data, size_t len);
 bool acpi_read(struct acpi_table *table, void *rsdpp);
 void acpi_free(struct acpi_table *table);
 struct sdt_hdr *acpi_find(const struct acpi_table *table, const char *signature);
+
+struct madt_record *madt_find(const struct madt *madt, u8 type);
+void madt_dump(const struct madt *madt);
 
 #endif

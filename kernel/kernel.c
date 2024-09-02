@@ -12,7 +12,7 @@
 #include <lib/kstrtox.h>
 #include <lib/string.h>
 #include <kernel/malloc/malloc.h>
-
+#include <kernel/timer.h>
 
 #include <kernel/acpi.h>
 
@@ -222,7 +222,12 @@ void kernel_main(struct mb2_info *info)
 	init_consoles(info);
 	read_acpi(&table, info);
 	init_irq_handler(&table);
+	timer_init(&table);
 	//init_printk(); TODO
+	
+	printk("a\n");
+	timer_sleep(180);
+	printk("b\n");
 
 	mmu_unmap(info, info->total_size); // we're done with multiboot, free it
 

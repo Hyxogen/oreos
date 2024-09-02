@@ -4,6 +4,7 @@
 #include <kernel/mmu.h>
 #include <kernel/printk.h>
 #include <lib/string.h>
+#include <lib/assert.h>
 
 bool acpi_validate(const void *data, size_t len)
 {
@@ -158,4 +159,73 @@ struct sdt_hdr *acpi_find(const struct acpi_table *table, const char *signature)
 		}
 	}
 	return NULL;
+}
+
+struct madt_record *madt_find(const struct madt *madt, u8 type)
+{
+	size_t rem = madt->hdr.len - sizeof(*madt);
+	const u8 *cur = madt->records;
+
+	while (rem) {
+		assert(rem > sizeof(struct madt_record));
+		struct madt_record *record = (struct madt_record*) cur;
+
+		if (record->type == type)
+			return record;
+
+		assert(rem >= record->len);
+		cur += record->len;
+		rem -= record->len;
+	}
+	return NULL;
+}
+
+void madt_record_dump(const struct madt_record *record)
+{
+	switch (record->type) {
+	case MADT_TYPE_LAPIC: {
+		const struct madt_lapic *lapic = (struct madt_lapic *)record;
+		printk(
+		    "lapic acpi_processor_id=%hhu apic_id=%hhu flags=0x%08lx\n",
+		    lapic->lapic_cpu_id, lapic->lapic_id, lapic->flags);
+		break;
+	}
+	case MADT_TYPE_IOAPIC: {
+		const struct madt_ioapic *ioapic = (struct madt_ioapic *)record;
+		printk("ioapic ");
+		printk("ioapic_id=%hhu ", ioapic->ioapic_id);
+		printk("ioapic_addr=0x%08lx ", ioapic->ioapic_addr);
+		printk("gsib=0x%08lx\n", ioapic->global_system_interrupt_base);
+		break;
+	}
+	case MADT_TYPE_IOAPIC_SRC_OVERRIDE: {
+		const struct madt_ioapic_override *ioapic = (struct madt_ioapic_override*)record;
+		printk("ioapic_src_override ");
+		printk("bus_src=%hhu ", ioapic->bus_src);
+		printk("irq_src=%hhu ", ioapic->irq_src);
+		printk("gsi=0x%08lx ", ioapic->global_system_interrupt);
+		printk("flags=0x%04hx\n", ioapic->flags);
+		break;
+	}
+	default:
+		printk("OTHER type=%hhu\n", record->type);
+		break;
+	}
+}
+
+void madt_dump(const struct madt *madt)
+{
+	size_t rem = madt->hdr.len - sizeof(*madt);
+	const u8 *cur = madt->records;
+
+	while (rem) {
+		assert(rem > sizeof(struct madt_record));
+		struct madt_record *record = (struct madt_record*) cur;
+
+		madt_record_dump(record);
+
+		assert(rem >= record->len);
+		cur += record->len;
+		rem -= record->len;
+	}
 }

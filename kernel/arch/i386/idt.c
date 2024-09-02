@@ -4,6 +4,7 @@
 #include <kernel/acpi.h>
 
 #include <kernel/arch/i386/apic.h>
+#include <kernel/timer.h>
 
 #define IDT_SIZE_16BIT 0x06
 #define IDT_SIZE_32BIT 0x0e
@@ -41,6 +42,24 @@ struct cpu_state {
 	u16 cs;
 };
 
+static void dump_state(const struct cpu_state *state)
+{
+
+	printk("edi: 0x%08lx ", state->edi);
+	printk("esi: 0x%08lx ", state->esi);
+	printk("ebp: 0x%08lx\n", state->ebp);
+	printk("esp: 0x%08lx ", state->esp);
+	printk("ebx: 0x%08lx ", state->ebx);
+	printk("edx: 0x%08lx\n", state->edx);
+	printk("ecx: 0x%08lx ", state->ecx);
+	printk("eax: 0x%08lx ", state->eax);
+	printk("eip: 0x%08lx\n", state->eip);
+	printk("cs: 0x%04hx\n", state->cs);
+
+	printk("vec_num: 0x%08lx ", state->vec_num);
+	printk("err_code: 0x%08lx\n", state->err_code);
+}
+
 static u64 __idt[256];
 
 static u64 encode_idt(u32 offset, u16 selector, u8 flags)
@@ -67,11 +86,27 @@ static void load_idt(void)
 	__asm__ volatile("lidt %0" : : "m"(idtr));
 }
 
-void irq_callback(struct cpu_state *state)
+void dump_stacktrace_from(const void *ebp);
+
+void* irq_callback(struct cpu_state *state)
 {
-	(void) state;
-	printk("got a irq: vec_num: 0x%lx, err: 0x%lx\n", state->vec_num,
-	       state->err_code);
+	switch (state->vec_num) {
+	case 0x48:
+		//printk("timer tick\n");
+		timer_tick();
+		lapic_eoi(); //TODO where to place this?
+		break;
+	case 0x20 ... 0x28:
+		printk("uninteresting interrupt\n");
+		break;
+	default:
+		printk("irq stackstrace:\n");
+		dump_stacktrace_from((void*) state->ebp);
+		printk("cpu state:\n");
+		dump_state(state);
+		panic("unhandled interrupt: 0x%x (%d)\n", state->vec_num, state->vec_num);
+	}
+	return state;
 }
 
 void init_irq_handler(struct acpi_table *table)
@@ -85,5 +120,6 @@ void init_irq_handler(struct acpi_table *table)
 	if (!madt)
 		panic("no madt\n");
 
-	apic_init(madt); //TODO pass MADT
+	apic_init(madt);
+	__asm__ volatile("sti" : : : "memory");
 }

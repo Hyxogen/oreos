@@ -9,7 +9,7 @@ CONSOLEFONT	:= lat0-08.psfu
 
 CC		:= $(HOME)/opt/cross/bin/i686-elf-gcc
 CFLAGS		:= \
-		   -std=c11 -Og -Wall -Wextra -ffreestanding \
+		   -std=c11 -O0 -Wall -Wextra -ffreestanding \
 		   -fno-builtin -fno-exceptions -fno-stack-protector \
 		   -nostdlib -nodefaultlibs \
 		   -masm=intel -g3 -Iinclude -MMD -Iinclude \

@@ -9,6 +9,10 @@ __common_interrupt:
 
 	extern irq_callback
 	call irq_callback
+	mov esp, eax
+
+	; pop stack pointer
+	; pop esp
 
 	; pop registers from the stack
 	popa
@@ -81,7 +85,7 @@ DEFINE_ISR_NOCODE	31
 
 %assign i 32
 %rep 256-32
-	DEFINE_ISR_CODE i
+	DEFINE_ISR_NOCODE i
 %assign i i+1
 %endrep
 
