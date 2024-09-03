@@ -32,10 +32,6 @@ mb2_hdr_end:
 
 section .bss
 align 16
-gdtd: ; TODO remove, this register can just be allocated on the stack
-	resb 6
-
-align 16
 _stack_bot:
 	resb 0x4000 ; allocate 16 KiB for stack
 global _stack_top
@@ -79,11 +75,13 @@ _start_paged:
 
 	; zero ebp for stack unwinding
 	xor ebp, ebp
+
 	extern kernel_main
 	call kernel_main
 
 	; we're done
 	call _idle
+
 .end:
 
 global _idle:function (_idle.end - _idle)
@@ -91,25 +89,4 @@ _idle:
 	cli
 .hang:	hlt
 	jmp .hang
-.end:
-
-; TODO this needs to move out of boot.asm
-global _load_gdt:function (_load_gdt.end - _load_gdt)
-_load_gdt:
-	;TODO make sure that interrupts are disabled
-	mov eax, [esp + 4]
-	mov [gdtd + 2], eax
-	mov ax, [esp + 8]
-	mov [gdtd], ax
-	lgdt [gdtd]
-.reload_segments:
-	jmp 0x08:.reload_cs
-.reload_cs:
-	mov ax, 0x10
-	mov ds, ax
-	mov es, ax
-	mov fs, ax
-	mov gs, ax
-	mov ss, ax
-	ret
 .end:
