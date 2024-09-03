@@ -2,7 +2,7 @@
 #define __LIB_STRING_H
 
 #include <stddef.h>
-#include <lib/error.h>
+#include <kernel/libc/error.h>
 
 void *memccpy(void *restrict, const void *restrict, int, size_t);
 void *mempcpy(void *restrict dest, const void *restrict src, size_t n);

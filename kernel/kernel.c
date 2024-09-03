@@ -8,9 +8,9 @@
 #include <kernel/ps2.h>
 #include <kernel/tty.h>
 #include <kernel/mmu.h>
-#include <lib/ctype.h>
-#include <lib/kstrtox.h>
-#include <lib/string.h>
+#include <kernel/libc/ctype.h>
+#include <kernel/libc/kstrtox.h>
+#include <kernel/libc/string.h>
 #include <kernel/malloc/malloc.h>
 #include <kernel/timer.h>
 

@@ -35,8 +35,6 @@ all: $(ISO)
 
 #non-recursive make
 #http://sites.e-advies.nl/nonrecursive-make.html
-dir		:= lib
-include		$(dir)/Rules.mk
 dir		:= kernel
 include		$(dir)/Rules.mk
 dir		:= boot

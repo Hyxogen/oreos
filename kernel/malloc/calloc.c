@@ -1,6 +1,6 @@
 #include <kernel/malloc/ma/internal.h>
 
-#include <lib/string.h>
+#include <kernel/libc/string.h>
 
 void *ma_calloc(size_t nmemb, size_t size)
 {

@@ -1,18 +1,18 @@
 #include <kernel/malloc/ma/internal.h>
 
 /* #include <errno.h> currently not supported */
-#include <lib/ctype.h>
+#include <kernel/libc/ctype.h>
 
 #if MA_TRACES
 #include <fcntl.h>
 #endif
 
 #if MA_TRACK_CHUNKS
-#include <lib/string.h>
+#include <kernel/libc/string.h>
 #endif
 
 #if FT_BONUS || 1 // OREOS: we have abort
-#include <lib/stdlib.h>
+#include <kernel/libc/stdlib.h>
 #else
 #include <signal.h>
 #endif

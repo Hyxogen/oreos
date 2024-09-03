@@ -1,7 +1,7 @@
 #include <kernel/malloc/ma/internal.h>
 
 #include <kernel/mmu.h>
-#include <lib/string.h>
+#include <kernel/libc/string.h>
 
 int ma_sysalloc_granularity(void)
 {

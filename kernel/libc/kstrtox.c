@@ -1,6 +1,6 @@
-#include <lib/ctype.h>
-#include <lib/kstrtox.h>
-#include <lib/strings.h>
+#include <kernel/libc/ctype.h>
+#include <kernel/libc/kstrtox.h>
+#include <kernel/libc/strings.h>
 #include <limits.h>
 
 static const unsigned char table[] = {

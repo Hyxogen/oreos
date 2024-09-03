@@ -1,6 +1,6 @@
 #include <kernel/malloc/ma/internal.h>
 
-#include <lib/stdlib.h>
+#include <kernel/libc/stdlib.h>
 
 static struct ma_opts *ma_get_opts_mut(void)
 {

@@ -1,8 +1,8 @@
 #include <limits.h>
 
-#include <lib/stdlib.h>
-#include <lib/ctype.h>
-#include <lib/strings.h>
+#include <kernel/libc/stdlib.h>
+#include <kernel/libc/ctype.h>
+#include <kernel/libc/strings.h>
 
 int atoi(const char *str)
 {

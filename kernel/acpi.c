@@ -3,8 +3,8 @@
 #include <kernel/malloc/malloc.h>
 #include <kernel/mmu.h>
 #include <kernel/printk.h>
-#include <lib/string.h>
-#include <lib/assert.h>
+#include <kernel/libc/string.h>
+#include <kernel/libc/assert.h>
 
 bool acpi_validate(const void *data, size_t len)
 {

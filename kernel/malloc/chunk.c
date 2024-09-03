@@ -1,6 +1,6 @@
 #include <kernel/malloc/ma/internal.h>
 
-#include <lib/string.h>
+#include <kernel/libc/string.h>
 
 static size_t ma_set_bit(size_t string, size_t mask, bool v)
 {

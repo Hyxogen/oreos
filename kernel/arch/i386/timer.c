@@ -2,7 +2,7 @@
 #include <kernel/timer.h>
 #include <kernel/arch/i386/io.h>
 #include <kernel/arch/i386/apic.h>
-#include <lib/assert.h>
+#include <kernel/libc/assert.h>
 #include <kernel/mmu.h>
 #include <kernel/printk.h>
 

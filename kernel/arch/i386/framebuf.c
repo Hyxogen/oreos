@@ -3,7 +3,7 @@
 #include <kernel/framebuf.h>
 #include <kernel/kernel.h>
 #include <kernel/mmu.h>
-#include <lib/assert.h>
+#include <kernel/libc/assert.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <kernel/debug.h>

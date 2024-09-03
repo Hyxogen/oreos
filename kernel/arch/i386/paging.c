@@ -1,7 +1,7 @@
 #include <boot/multiboot2.h>
 #include <kernel/align.h>
 #include <kernel/arch/i386/mmu.h>
-#include <lib/string.h>
+#include <kernel/libc/string.h>
 
 #include <kernel/debug.h>
 

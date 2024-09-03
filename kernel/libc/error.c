@@ -1,4 +1,4 @@
-#include <lib/error.h>
+#include <kernel/libc/error.h>
 #include <kernel/printk.h>
 
 const char *kstrerr(enum lib_error err)

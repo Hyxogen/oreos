@@ -1,6 +1,6 @@
 #include <kernel/malloc/ma/internal.h>
 
-#include <lib/string.h>
+#include <kernel/libc/string.h>
 
 static void *ma_realloc_slow(struct ma_arena *arena, struct ma_hdr *old_chunk,
 			     size_t new_size)

@@ -1,6 +1,6 @@
 #include <kernel/kernel.h>
 #include <kernel/printk.h>
-#include <lib/stdlib.h>
+#include <kernel/libc/stdlib.h>
 
 #ifndef NDEBUG
 void __assert_impl(int c, const char *pred, const char *file, const char *func,

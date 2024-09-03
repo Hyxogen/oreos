@@ -6,7 +6,7 @@
 #include <kernel/kernel.h>
 #include <kernel/printk.h>
 #include <kernel/types.h>
-#include <lib/string.h>
+#include <kernel/libc/string.h>
 
 static struct page mmu_pages[MMU_MAX_PAGES];
 

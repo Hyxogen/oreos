@@ -1,6 +1,6 @@
 #include <kernel/malloc/ma/internal.h>
 
-#include <lib/stdlib.h>
+#include <kernel/libc/stdlib.h>
 
 // At the moment, the get_current_arena and get_arena functions don't do
 // anything special, these are just placeholder functions for when I want to add
