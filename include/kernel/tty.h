@@ -1,7 +1,7 @@
 #ifndef __KERNEL_TTY_H
 #define __KERNEL_TTY_H
 
-#include <kernel/psf.h>
+#include <kernel/font/psf.h>
 #include <kernel/types.h>
 
 #define TERM_WIDTH 80

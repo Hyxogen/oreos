@@ -1,5 +1,5 @@
 #include <kernel/kernel.h>
-#include <kernel/psf.h>
+#include <kernel/font/psf.h>
 
 int font_read_from(struct font *dest, const void *src, size_t size)
 {

@@ -7,6 +7,9 @@
 // TODO check endianes
 #define PSF2_MAGIC 0x72b54a86
 
+extern unsigned char psf2_default_font[];
+extern unsigned int psf2_default_font_len;
+
 struct psf2_hdr {
 	u32 magic;
 	u32 version;

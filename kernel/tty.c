@@ -1,6 +1,6 @@
 #include <kernel/framebuf.h>
 #include <kernel/kernel.h>
-#include <kernel/psf.h>
+#include <kernel/font/psf.h>
 #include <kernel/tty.h>
 #include <kernel/libc/ctype.h>
 #include <kernel/libc/stdlib.h>
@@ -15,9 +15,6 @@
 #define TTY_COLOR_MAGENTA 5
 #define TTY_COLOR_CYAN 6
 #define TTY_COLOR_WHITE 7
-
-extern const struct psf2_font _binary_font_psfu_start;
-extern const u8 _binary_font_psfu_end;
 
 static bool term_initialized;
 static struct term term_main;
@@ -41,9 +38,7 @@ void term_init(struct term *term, struct framebuf *fb)
 	term->_fb = fb;
 	term->_escape = -1;
 
-	font_read_from(&term->_font, &_binary_font_psfu_start,
-		       &_binary_font_psfu_end -
-			   (unsigned char *)&_binary_font_psfu_start);
+	font_read_from(&term->_font, psf2_default_font, psf2_default_font_len);
 
 	term->width = fb->width / term->_font.psf->hdr.width;
 	term->height = fb->height / term->_font.psf->hdr.height;

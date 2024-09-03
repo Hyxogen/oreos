@@ -58,21 +58,8 @@ $(ISO): $(KERNEL) grub.cfg
 	cp $(KERNEL) $(ISO_DIR)/boot
 	grub-mkrescue -o $@ $(ISO_DIR)
 
-$(KERNEL): $(CONSOLEFONT) $(OBJS) Makefile
+$(KERNEL): $(OBJS) Makefile
 	$(LD_CMD) -o $@ $(OBJS) $(LFLAGS)
-
-$(VENDOR_DIR)/kbd-$(KBD_VER):
-	mkdir -p $(@D)
-	wget --no-clobber -P $(VENDOR_DIR) "https://mirrors.edge.kernel.org/pub/linux/utils/kbd/kbd-$(KBD_VER).tar.xz"
-	echo "$(KBD_SHA256) $(VENDOR_DIR)/kbd-$(KBD_VER).tar.xz" > $(VENDOR_DIR)/kbd-sha256sum.txt
-	sha256sum --strict --check $(VENDOR_DIR)/kbd-sha256sum.txt
-	rm -f kbd-sha256sum.txt
-	tar -C $(VENDOR_DIR) -xvf $(VENDOR_DIR)/kbd-$(KBD_VER).tar.xz > /dev/null
-	rm -f $(VENDOR_DIR)/kbd-$(KBD_VER).tar.xz
-	rm -f $(VENDOR_DIR)/kbd-sha256sum.txt
-
-$(CONSOLEFONT): $(VENDOR_DIR)/kbd-$(KBD_VER)
-	cp $(VENDOR_DIR)/kbd-$(KBD_VER)/data/consolefonts/$(CONSOLEFONT) .
 
 run: $(ISO)
 	qemu-system-i386 $(QEMU_OPTS) -cdrom $(ISO)

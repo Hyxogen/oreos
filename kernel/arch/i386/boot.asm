@@ -30,12 +30,6 @@ align 8
 	dd 8
 mb2_hdr_end:
 
-section .rodata
-global _binary_font_psfu_start, _binary_font_psfu_end
-_binary_font_psfu_start:
-incbin "lat0-08.psfu"
-_binary_font_psfu_end:
-
 section .bss
 align 16
 gdtd: ; TODO remove, this register can just be allocated on the stack
