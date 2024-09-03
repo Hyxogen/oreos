@@ -48,7 +48,7 @@ struct gdtr {
 	u32 base;
 } __attribute__((packed));
 
-static u64 gdt[16];
+static u64 _gdt[16];
 
 static u64 gdt_encode(u32 base, u32 limit, u16 flags)
 {
@@ -79,22 +79,20 @@ static void lgdt(u32 base, u16 limit)
 
 void _reload_segments(u16 code, u16 data);
 
-static void load_gdt(size_t entries, u16 code, u16 data)
+static void load_gdt(u64 *gdt, size_t entries)
 {
-	lgdt((u32)(uintptr_t)&gdt, (entries * sizeof(u64)) - 1);
-	_reload_segments(code, data);
+	lgdt((u32)(uintptr_t)gdt, (entries * sizeof(*gdt)) - 1);
 }
 
 void init_segments(void)
 {
-	gdt[0] = gdt_encode(0, 0, 0);
-	gdt[1] = gdt_encode(0, 0x000fffff, GDT_CODE(0));
-	gdt[2] = gdt_encode(0, 0x000fffff, GDT_DATA(0));
-	gdt[3] = gdt_encode(0, 0x000fffff, GDT_CODE(3));
-	gdt[4] = gdt_encode(0, 0x000fffff, GDT_DATA(3));
+	_gdt[0] = gdt_encode(0, 0, 0);
+	_gdt[1] = gdt_encode(0, 0x000fffff, GDT_CODE(0));
+	_gdt[2] = gdt_encode(0, 0x000fffff, GDT_DATA(0));
+	_gdt[3] = gdt_encode(0, 0x000fffff, GDT_CODE(3));
+	_gdt[4] = gdt_encode(0, 0x000fffff, GDT_DATA(3));
 	// TODO TSS segment
 
-	load_gdt(5, 0x08, 0x10);
+	load_gdt(_gdt, 5);
+	_reload_segments(0x08, 0x10);
 }
-// TODO this file is kind of linked with boot.asm as that assumes where the code
-// and data sections are, maybe just hardcode the values?
