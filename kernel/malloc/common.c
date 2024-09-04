@@ -39,7 +39,8 @@ bool ma_check_requestsize(size_t size)
 		return false;
 	}
 
-#if !MA_GLIBC_COMPATIBLE
+	/* we only want to return null in kmalloc if OOM */
+#if !MA_GLIBC_COMPATIBLE || 1
 	if (!size)
 		return false;
 #endif
