@@ -81,8 +81,7 @@ void timer_init(struct acpi_table *table)
 	//TODO make sure to get currect ioapic
 	
 	//TODO unmap ioapic_addr
-	void *p = mmu_map(NULL, ioapic->ioapic_addr, MMU_PAGESIZE, MMU_ADDRSPACE_KERNEL, 0);
-	assert(p != MMU_MAP_FAILED);
+	void *p = (void*) ioapic->ioapic_addr;
 
 	u64 v = IOAPIC_PRIO_NORMAL | IOAPIC_DEST_PHYSICAL |
 		IOAPIC_POLARITY_HIGHACTIVE | IOAPIC_TRIGGER_EDGE |

@@ -1,7 +1,7 @@
 #ifndef __KERNEL_APIC_H
 #define __KERNEL_APIC_H
 
-#include <kernel/acpi.h>
+#include <kernel/acpi/acpi.h>
 
 #define IOAPIC_PRIO_NORMAL 0x0000 
 #define IOAPIC_PRIO_LOW 0x0100 

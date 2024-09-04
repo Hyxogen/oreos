@@ -88,6 +88,31 @@ static void lapic_init(void *base_addr)
 
 static void *__base_addr;
 
+static void apic_map_memory(struct madt *madt)
+{
+	struct madt_record *record = madt_first(madt);
+
+	__base_addr = mmu_map(NULL, madt->lapic_addr, MMU_PAGESIZE, MMU_ADDRSPACE_KERNEL, 0);
+	assert(__base_addr != MMU_MAP_FAILED);
+
+	while (record) {
+		switch (record->type) {
+		case MADT_TYPE_IOAPIC: {
+			//TODO check if with multiple ioapics the ioapic
+			//physicals addresses might overlap
+
+			struct madt_ioapic *ioapic = (struct madt_ioapic*) record;
+			void *p = mmu_map(NULL, ioapic->ioapic_addr, MMU_PAGESIZE, MMU_ADDRSPACE_KERNEL, 0);
+			assert(p != MMU_MAP_FAILED);
+
+			ioapic->ioapic_addr = (u32) p;
+			break;
+		}
+		}
+		record = madt_next(madt, record);
+	}
+}
+
 void apic_init(struct madt *madt)
 {
 	//TODO keep track somewhere of these offsets
@@ -96,12 +121,9 @@ void apic_init(struct madt *madt)
 	pic_disable();
 	printk("disabled PICs\n");
 
-	__base_addr = mmu_map(NULL, madt->lapic_addr, MMU_PAGESIZE, MMU_ADDRSPACE_KERNEL, 0);
+	apic_map_memory(madt);
 
-	if (__base_addr != MMU_MAP_FAILED)
-		lapic_init(__base_addr);
-	else
-		printk("failed to map lapic addr\n");
+	lapic_init(__base_addr);
 }
 
 void lapic_eoi(void)

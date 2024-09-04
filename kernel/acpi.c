@@ -1,4 +1,4 @@
-#include <kernel/acpi.h>
+#include <kernel/acpi/acpi.h>
 #include <kernel/align.h>
 #include <kernel/malloc/malloc.h>
 #include <kernel/mmu.h>
@@ -161,21 +161,32 @@ struct sdt_hdr *acpi_find(const struct acpi_table *table, const char *signature)
 	return NULL;
 }
 
-struct madt_record *madt_find(const struct madt *madt, u8 type)
+struct madt_record *madt_first(const struct madt *madt)
+{
+	if (madt->hdr.len == sizeof(*madt))
+		return NULL;
+	return (struct madt_record*) madt->records;
+}
+
+struct madt_record *madt_next(const struct madt *madt, const struct madt_record *cur)
 {
 	size_t rem = madt->hdr.len - sizeof(*madt);
-	const u8 *cur = madt->records;
+	assert((u8*)cur >= madt->records);
 
-	while (rem) {
-		assert(rem > sizeof(struct madt_record));
-		struct madt_record *record = (struct madt_record*) cur;
+	rem -= (u8*)cur - madt->records;
+	if (rem)
+		return (struct madt_record*) ((u8*)cur + cur->len);
+	return NULL;
+}
 
-		if (record->type == type)
-			return record;
+struct madt_record *madt_find(const struct madt *madt, u8 type)
+{
+	struct madt_record *cur = madt_first(madt);
 
-		assert(rem >= record->len);
-		cur += record->len;
-		rem -= record->len;
+	while (cur) {
+		if (cur->type == type)
+			return cur;
+		cur = madt_next(madt, cur);
 	}
 	return NULL;
 }

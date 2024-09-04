@@ -110,6 +110,8 @@ void acpi_free(struct acpi_table *table);
 struct sdt_hdr *acpi_find(const struct acpi_table *table, const char *signature);
 
 struct madt_record *madt_find(const struct madt *madt, u8 type);
+struct madt_record *madt_first(const struct madt *madt);
+struct madt_record *madt_next(const struct madt *madt, const struct madt_record *record);
 void madt_dump(const struct madt *madt);
 
 #endif

@@ -1,7 +1,7 @@
 #include <kernel/kernel.h>
 #include <kernel/types.h>
 #include <kernel/printk.h>
-#include <kernel/acpi.h>
+#include <kernel/acpi/acpi.h>
 
 #include <kernel/arch/i386/apic.h>
 #include <kernel/timer.h>

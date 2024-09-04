@@ -15,7 +15,7 @@
 #include <kernel/timer.h>
 #include <kernel/platform.h>
 
-#include <kernel/acpi.h>
+#include <kernel/acpi/acpi.h>
 
 void gdt_init(void);
 
