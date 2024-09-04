@@ -80,12 +80,12 @@ _start_paged:
 	call kernel_main
 
 	; we're done
-	call _idle
+	call idle
 
 .end:
 
-global _idle:function (_idle.end - _idle)
-_idle:
+global idle:function (idle.end - idle)
+idle:
 	cli
 .hang:	hlt
 	jmp .hang

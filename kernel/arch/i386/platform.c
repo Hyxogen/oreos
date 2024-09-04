@@ -2,19 +2,14 @@
 #include <kernel/tty.h> //TTY will always be available
 #include <kernel/ps2.h>
 #include <kernel/printk.h>
-__attribute__((noreturn)) void _idle();
+#include <kernel/platform.h>
 
 void reset(void)
 {
 	while (!ps2_cansend())
 		continue;
 	ps2_send_cmd(PS2_CMD_RESET);
-	_idle();
-}
-
-void halt(void)
-{
-	_idle();
+	idle();
 }
 
 void dump_stacktrace_from(const void *ebpp)
@@ -53,4 +48,14 @@ void dump_registers(void)
 	DUMP_REGISTER("edi");
 	DUMP_REGISTER("esi");
 	DUMP_REGISTER("ebp");
+}
+
+void disable_irqs(void)
+{
+	__asm__ volatile("cli");
+}
+
+void enable_irqs(void)
+{
+	__asm__ volatile("sti");
 }

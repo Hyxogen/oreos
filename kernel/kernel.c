@@ -13,6 +13,7 @@
 #include <kernel/libc/string.h>
 #include <kernel/malloc/malloc.h>
 #include <kernel/timer.h>
+#include <kernel/platform.h>
 
 #include <kernel/acpi.h>
 
@@ -69,7 +70,7 @@ static void exec_cmd(const char *str)
 	} else if (!strcmp(str, "reboot")) {
 		reset();
 	} else if (!strcmp(str, "halt")) {
-		halt();
+		idle();
 	} else if (!strncmp(str, "dumpstack", 9)) {
 		if (!str[9]) {
 			printk("usage: dumpstack <offset> [nbytes]\n");
@@ -100,46 +101,6 @@ static void exec_cmd(const char *str)
 	} else {
 		printk("unknown command: '%s'\n", str);
 	}
-}
-
-void dump_stacktrace(void);
-void dump_registers(void);
-void panic(const char *fmt, ...)
-{
-	struct term *term = term_get_primary();
-
-	term_redraw(term);
-	printk_set_sink(term);
-
-	va_list args;
-	va_start(args, fmt);
-
-	vprintk(fmt, args);
-	va_end(args);
-
-	printk("Oops! A kernel panic ocurred :/\n");
-
-	printk("stacktrace:\n");
-	dump_stacktrace();
-	halt();
-}
-
-void oops(const char *fmt, ...)
-{
-	struct term *term = term_get_primary();
-
-	term_redraw(term);
-	printk_set_sink(term);
-
-	printk("OOPS! Something went wrong!\n");
-
-	va_list args;
-	va_start(args, fmt);
-
-	vprintk(fmt, args);
-	va_end(args);
-
-	halt();
 }
 
 void init_paging(void);
