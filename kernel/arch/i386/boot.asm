@@ -42,13 +42,13 @@ extern _kernel_start, _kernel_end, _kernel_addr
 section .multiboot.text
 global _start:function (_start.end - _start)
 _start:
-	; multiboot has left our eflags undefined, clear them
-	push dword 0
-	popf
-
 	; setup temporary stack
 	mov esp, _stack_top
 	sub esp, _kernel_addr
+
+	; multiboot has left our eflags undefined, clear them
+	push dword 0
+	popf
 
 	push ebx ; store multiboot info struct pointer
 
