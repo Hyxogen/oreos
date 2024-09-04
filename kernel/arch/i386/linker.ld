@@ -5,7 +5,7 @@ _kernel_addr = 0xC0000000;
 SECTIONS
 {
 	/* skip over firmware stuff */
-	. = 1M;
+	. = 2M;
 
 	_kernel_pstart = .;
 	.multiboot.rodata : {
