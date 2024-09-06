@@ -187,7 +187,7 @@ void kernel_main(struct mb2_info *info)
 	//init_printk(); TODO
 	
 	printk("a\n");
-	timer_sleep(180);
+	timer_sleep(2000);
 	printk("b\n");
 
 	mmu_unmap(info, info->total_size); // we're done with multiboot, free it

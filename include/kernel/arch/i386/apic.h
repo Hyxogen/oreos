@@ -27,9 +27,11 @@
 
 #define IOAPIC_VECTOR(i) (i)
 
+#define IOAPIC_REG_VERSION 0x01
+
 void apic_init(struct madt *madt);
 void lapic_eoi(void);
 
-void ioapic_set_redir(void *ioapic, u8 idx, u64 val);
+bool ioapic_set_redir(u8 idx, u64 val);
 
 #endif

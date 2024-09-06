@@ -2,6 +2,7 @@
 #include <kernel/types.h>
 #include <kernel/printk.h>
 #include <kernel/acpi/acpi.h>
+#include <kernel/platform.h>
 
 #include <kernel/arch/i386/apic.h>
 #include <kernel/timer.h>
@@ -121,5 +122,5 @@ void init_irq_handler(struct acpi_table *table)
 		panic("no madt\n");
 
 	apic_init(madt);
-	__asm__ volatile("sti" : : : "memory");
+	enable_irqs();
 }

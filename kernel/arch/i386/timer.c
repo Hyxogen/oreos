@@ -31,6 +31,8 @@
 #define PIT_MODE_BINARY 0x00
 #define PIT_MODE_BCD 0x01
 
+#define PIT_CH0_IRQ 0x0
+
 static void pit_setup(u16 count)
 {
 	outb(PIT_MODECMD_REG, PIT_CMD_CH0 | PIT_ACCESS_LOHIBYTE |
@@ -67,26 +69,27 @@ void timer_sleep(u32 millis)
 void timer_init(struct acpi_table *table)
 {
 	(void)table;
-	pit_setup((u16)-1);
+	/*
+	 * The PIT has a frequency of about 1.193182 MHz
+	 *
+	 * So if we want it to tick every millisecond we should set the
+	 * frequency divider to:
+	 * 1193182/1000=~1193
+	 */
+	pit_setup(1193);
 
 	struct madt *madt = (struct madt*) acpi_find(table, ACPI_TAG_APIC);
 	assert(madt);
-	struct madt_ioapic *ioapic = (struct madt_ioapic*) madt_find(madt, MADT_TYPE_IOAPIC);
-	assert(ioapic);
+	//TODO don't find the first best lapic but the lapic we actually want
 	struct madt_lapic *lapic = (struct madt_lapic*) madt_find(madt, MADT_TYPE_LAPIC);
 	assert(lapic);
 
 	madt_dump(madt);
-
-	//TODO make sure to get currect ioapic
-	
-	//TODO unmap ioapic_addr
-	void *p = (void*) ioapic->ioapic_addr;
 
 	u64 v = IOAPIC_PRIO_NORMAL | IOAPIC_DEST_PHYSICAL |
 		IOAPIC_POLARITY_HIGHACTIVE | IOAPIC_TRIGGER_EDGE |
 		IOAPIC_PHYSICAL_ID(lapic->lapic_id) | IOAPIC_VECTOR(0x48);
 
 	printk("ioapic: 0x%016llx\n", v);
-	ioapic_set_redir(p, 2, v);
+	ioapic_set_redir(PIT_CH0_IRQ, v);
 }

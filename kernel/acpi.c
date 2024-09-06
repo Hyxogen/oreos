@@ -191,6 +191,19 @@ struct madt_record *madt_find(const struct madt *madt, u8 type)
 	return NULL;
 }
 
+size_t madt_count(const struct madt *madt, u8 type)
+{
+	size_t n = 0;
+	struct madt_record *cur = madt_first(madt);
+
+	while (cur) {
+		if (cur->type == type)
+			n += 1;
+		cur = madt_next(madt, cur);
+	}
+	return n;
+}
+
 void madt_record_dump(const struct madt_record *record)
 {
 	switch (record->type) {
