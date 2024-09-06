@@ -14,6 +14,8 @@
 #include <kernel/malloc/malloc.h>
 #include <kernel/timer.h>
 #include <kernel/platform.h>
+#include <kernel/sched.h>
+#include <kernel/libc/assert.h>
 
 #include <kernel/acpi/acpi.h>
 
@@ -120,6 +122,7 @@ void init_consoles(struct mb2_info *info)
 
 void start_shell(void)
 {
+	printk("shell started\n");
 	char buf[80];
 	unsigned i = 0;
 
@@ -173,6 +176,14 @@ void read_acpi(struct acpi_table *table, struct mb2_info *info)
 
 void init_irq_handler(struct acpi_table *table);
 
+void dummy(void)
+{
+	while (1) {
+		printk("dummy\n");
+		__asm__ volatile("hlt");
+	}
+}
+
 void kernel_main(struct mb2_info *info)
 {
 	struct acpi_table table = {};
@@ -187,12 +198,21 @@ void kernel_main(struct mb2_info *info)
 	//init_printk(); TODO
 	
 	printk("a\n");
-	timer_sleep(2000);
+	//timer_sleep(2000);
 	printk("b\n");
 
 	mmu_unmap(info, info->total_size); // we're done with multiboot, free it
 
 	printk("done!\n");
+	sched_init();
 
-	start_shell();
+	struct cpu_state *state = proc_create(start_shell);
+	assert(state);
+	struct cpu_state *dummystate = proc_create(dummy);
+	assert(dummystate);
+
+	assert(!sched_proc(state));
+	assert(!sched_proc(dummystate));
+
+	sched_start();
 }

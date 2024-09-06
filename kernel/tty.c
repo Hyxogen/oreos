@@ -5,6 +5,7 @@
 #include <kernel/libc/ctype.h>
 #include <kernel/libc/stdlib.h>
 #include <kernel/libc/string.h>
+#include <kernel/platform.h>
 #include <stdbool.h>
 
 #define TTY_COLOR_BLACK 0
@@ -51,6 +52,8 @@ void term_init(struct term *term, struct framebuf *fb)
 	for (unsigned i = 0; i < ARRAY_SIZE(term->chars); i++)
 		term->chars[i] =
 		    (struct term_char){term->fg_color, term->bg_color, ' '};
+
+	spinlock_init(&term->mtx);
 }
 
 static struct fb_color term_conv_color(u8 col)
@@ -208,6 +211,8 @@ void term_put(struct term *term, int ch)
 	if (!ch)
 		return;
 
+	spinlock_lock(&term->mtx);
+
 	if (term->_escape >= 0) {
 		term_put_escaped(term, ch);
 	} else if ((char)ch == TTY_ESCAPE) {
@@ -228,6 +233,7 @@ void term_put(struct term *term, int ch)
 		}
 	}
 	term_clearat(term, term->row, term->col, term->fg_color);
+	spinlock_unlock(&term->mtx);
 }
 
 void term_write(struct term *term, const char *data, size_t n)

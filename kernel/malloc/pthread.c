@@ -1,5 +1,5 @@
 #include <kernel/malloc/ma/internal.h>
-
+#include <kernel/platform.h>
 
 #if MA_USE_PTHREAD
 #include <pthread.h>
@@ -13,22 +13,17 @@ int ma_unlock_mutex(ma_mtx *mtx) { return pthread_mutex_unlock(mtx); }
 
 int ma_init_mutex(ma_mtx *mtx)
 {
-	*mtx = 0;
-	return 0;
+	return spinlock_init(mtx);
 }
 
 int ma_lock_mutex(ma_mtx *mtx)
 {
-	ma_assert(!*mtx && "already locked");
-	*mtx = 1;
-	return 0;
+	return spinlock_lock(mtx);
 }
 
 int ma_unlock_mutex(ma_mtx *mtx)
 {
-	ma_assert(*mtx && "not locked");
-	*mtx = 0;
-	return 0;
+	return spinlock_unlock(mtx);
 }
 
 #endif

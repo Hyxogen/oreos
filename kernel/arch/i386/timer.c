@@ -5,6 +5,7 @@
 #include <kernel/libc/assert.h>
 #include <kernel/mmu.h>
 #include <kernel/printk.h>
+#include <kernel/platform.h>
 
 #define PIT_CH0_DATA_PORT 0x40
 #define PIT_CH1_DATA_PORT 0x41
@@ -41,22 +42,40 @@ static void pit_setup(u16 count)
 	outb(PIT_CH0_DATA_PORT, count >> 8);
 }
 
-static atomic_uint_least32_t  __ticks = 0;
+struct timer {
+	atomic_uint_least32_t ticks;
+	bool _armed;
+};
 
-void timer_tick(void)
+static struct timer __timer;
+
+/*static void timer_on_timeout(void)
 {
-	if (timer_poll() > 0)
-		atomic_fetch_sub_explicit(&__ticks, 1, memory_order_relaxed);
+	if (__timer._armed) {
+		__asm__ volatile("int 0x49");
+		__timer._armed = false;
+	}
+}*/
+
+bool timer_tick(void)
+{
+	if (timer_poll() > 0) {
+		if (atomic_fetch_sub_explicit(&__timer.ticks, 1, memory_order_relaxed) == 1) {
+			return __timer._armed;
+		}
+		return false;
+	}
+	return __timer._armed;
 }
 
 u32 timer_poll(void)
 {
-	return atomic_load_explicit(&__ticks, memory_order_relaxed);
+	return atomic_load_explicit(&__timer.ticks, memory_order_relaxed);
 }
 
 u32 timer_set(u32 ticks)
 {
-	return atomic_exchange_explicit(&__ticks, ticks, memory_order_relaxed);
+	return atomic_exchange_explicit(&__timer.ticks, ticks, memory_order_relaxed);
 }
 
 void timer_sleep(u32 millis)
@@ -92,4 +111,15 @@ void timer_init(struct acpi_table *table)
 
 	printk("ioapic: 0x%016llx\n", v);
 	ioapic_set_redir(PIT_CH0_IRQ, v);
+}
+
+void timer_sched_int(u32 millis)
+{
+	__timer._armed = true;
+	if (!millis) {
+		__asm__ volatile("int 0x48");
+	} else {
+		//TODO shoudl we disable IRQs?
+		timer_set(millis);
+	}
 }

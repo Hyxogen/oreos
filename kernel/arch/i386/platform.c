@@ -12,6 +12,11 @@ void reset(void)
 	idle();
 }
 
+void halt(void)
+{
+	__asm__ volatile("hlt");
+}
+
 void dump_stacktrace_from(const void *ebpp)
 {
 	const u32* ebp = ebpp;

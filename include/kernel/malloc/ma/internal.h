@@ -16,7 +16,8 @@
 #include <pthread.h>
 typedef pthread_mutex_t ma_mtx;
 #else
-typedef int ma_mtx;
+#include <kernel/spinlock.h>
+typedef struct spinlock ma_mtx;
 #endif
 
 /*

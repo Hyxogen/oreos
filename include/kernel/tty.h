@@ -3,6 +3,7 @@
 
 #include <kernel/font/psf.h>
 #include <kernel/types.h>
+#include <kernel/spinlock.h>
 
 #define TERM_WIDTH 80
 #define TERM_HEIGHT 24
@@ -29,6 +30,7 @@ struct term {
 	struct framebuf *_fb;
 
 	struct term_char chars[TERM_WIDTH * TERM_HEIGHT];
+	struct spinlock mtx;
 };
 
 struct term *term_get_primary(void);

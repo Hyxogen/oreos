@@ -2,7 +2,9 @@
 #include <kernel/types.h>
 #include <kernel/printk.h>
 #include <kernel/acpi/acpi.h>
-#include <kernel/platform.h>
+#include <kernel/arch/i386/platform.h>
+#include <kernel/sched.h>
+#include <kernel/libc/assert.h>
 
 #include <kernel/arch/i386/apic.h>
 #include <kernel/timer.h>
@@ -25,23 +27,6 @@ struct idtr {
 	u16 limit;
 	u32 base;
 } __attribute__((packed));
-
-struct cpu_state {
-	u32 edi;
-	u32 esi;
-	u32 ebp;
-	u32 esp;
-	u32 ebx;
-	u32 edx;
-	u32 ecx;
-	u32 eax;
-
-	u32 vec_num;
-	u32 err_code;
-
-	u32 eip;
-	u16 cs;
-};
 
 static void dump_state(const struct cpu_state *state)
 {
@@ -94,11 +79,14 @@ void* irq_callback(struct cpu_state *state)
 	switch (state->vec_num) {
 	case 0x48:
 		//printk("timer tick\n");
-		timer_tick();
+		if (timer_tick()) {
+			state = do_schedule(state);
+			assert(state);
+		}
 		lapic_eoi(); //TODO where to place this?
 		break;
-	case 0x20 ... 0x28:
-		printk("uninteresting interrupt\n");
+	case 0x20 ... 0x28: /* PIC spurrious IRQ */
+	case 0xff: /* APIC spurrious IRQ */
 		break;
 	default:
 		printk("irq stackstrace:\n");

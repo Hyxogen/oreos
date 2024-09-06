@@ -90,3 +90,11 @@ idle:
 .hang:	hlt
 	jmp .hang
 .end:
+
+global _get_eflags:function (_get_eflags.end - _get_eflags)
+_get_eflags:
+	pushf
+	mov eax, [esp]
+	add esp, 4
+	ret
+.end:
