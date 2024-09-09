@@ -72,7 +72,7 @@ bool irq_should_ignore(unsigned irq)
 void init_irq_handler(struct acpi_table *table)
 {
 	for (unsigned i = 0; i < ARRAY_SIZE(__idt); i++) {
-		__idt[i] = encode_idt((u32) vector_0_handler + i * 16, 0x08, IDT_INTR_FLAGS(0));
+		__idt[i] = encode_idt((u32) vector_0_handler + i * 16, I386_KERNEL_CODE_SELECTOR, IDT_INTR_FLAGS(0));
 	}
 	load_idt();
 
