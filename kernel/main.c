@@ -90,10 +90,6 @@ void kernel_main(struct mb2_info *info)
 	init_timer(&_acpi_table);
 	//init_printk(); TODO
 	
-	printk("a\n");
-	//timer_sleep(2000);
-	printk("b\n");
-
 	mmu_unmap(info, info->total_size); // we're done with multiboot, free it
 
 	printk("done!\n");
