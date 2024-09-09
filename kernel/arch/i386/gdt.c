@@ -1,3 +1,4 @@
+#include <kernel/arch/i386/platform.h>
 #include <kernel/types.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -87,12 +88,12 @@ static void load_gdt(u64 *gdt, size_t entries)
 void init_segments(void)
 {
 	_gdt[0] = gdt_encode(0, 0, 0);
-	_gdt[1] = gdt_encode(0, 0x000fffff, GDT_CODE(0));
-	_gdt[2] = gdt_encode(0, 0x000fffff, GDT_DATA(0));
-	_gdt[3] = gdt_encode(0, 0x000fffff, GDT_CODE(3));
-	_gdt[4] = gdt_encode(0, 0x000fffff, GDT_DATA(3));
+	_gdt[I386_GDT_KERNEL_CODE_IDX] = gdt_encode(0, 0x000fffff, GDT_CODE(0));
+	_gdt[I386_GDT_KERNEL_DATA_IDX] = gdt_encode(0, 0x000fffff, GDT_DATA(0));
+	_gdt[I386_GDT_USER_CODE_IDX] = gdt_encode(0, 0x000fffff, GDT_CODE(3));
+	_gdt[I386_GDT_USER_DATA_IDX] = gdt_encode(0, 0x000fffff, GDT_DATA(3));
 	// TODO TSS segment
 
 	load_gdt(_gdt, 5);
-	_reload_segments(0x08, 0x10);
+	_reload_segments(I386_KERNEL_CODE_SELECTOR, I386_KERNEL_DATA_SELECTOR);
 }

@@ -25,7 +25,7 @@ struct cpu_state *proc_create(void *start)
 	u32* esp;
 
 	top = push(top, _get_eflags());
-	top = push(top, 0x08); /* cs TODO don't hard code */
+	top = push(top, I386_KERNEL_CODE_SELECTOR); /* cs */
 	top = push(top, (u32)(uintptr_t)start); /* eip */
 	top = push(top, 0); /* err_code */
 	top = push(top, 0); /* vec_num */
