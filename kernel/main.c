@@ -35,17 +35,18 @@ static void init_consoles(void)
 	init_ps2();
 }
 
-
 static void read_acpi(void)
 {
 	const struct mb2_info *info = mb2_get_info();
 
-	struct mb2_acpi_new *acpi = (void*) mb2_find(info, MB2_TAG_TYPE_ACPI_NEW);
+	struct mb2_acpi_new *acpi =
+	    (void *)mb2_find(info, MB2_TAG_TYPE_ACPI_NEW);
 
 	if (!acpi) {
 		printk("could not find ACPI tag\n");
 
-		struct mb2_acpi_old *old = (void*) mb2_find(info, MB2_TAG_TYPE_ACPI_OLD);
+		struct mb2_acpi_old *old =
+		    (void *)mb2_find(info, MB2_TAG_TYPE_ACPI_OLD);
 		if (old) {
 			printk("did find legacy\n");
 
@@ -54,10 +55,8 @@ static void read_acpi(void)
 		return;
 	}
 
-
 	acpi_read(&_acpi_table, acpi->xsdp);
 }
-
 
 void dummy(void)
 {
@@ -88,8 +87,8 @@ void kernel_main(struct mb2_info *info)
 	read_acpi();
 	init_irq_handler(&_acpi_table);
 	init_timer(&_acpi_table);
-	//init_printk(); TODO
-	
+	// init_printk(); TODO
+
 	mmu_unmap(info, info->total_size); // we're done with multiboot, free it
 
 	printk("done!\n");
