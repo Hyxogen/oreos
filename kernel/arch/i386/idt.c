@@ -80,6 +80,6 @@ void init_irq_handler(struct acpi_table *table)
 	if (!madt)
 		panic("no madt\n");
 
-	apic_init(madt);
+	init_apic(madt);
 	enable_irqs();
 }

@@ -29,7 +29,7 @@
 
 #define IOAPIC_REG_VERSION 0x01
 
-void apic_init(struct madt *madt);
+void init_apic(struct madt *madt);
 void lapic_eoi(void);
 
 bool ioapic_set_redir(u8 idx, u64 val);

@@ -41,7 +41,7 @@ u8 ps2_recv(void);
 bool ps2_cansend(void);
 bool ps2_canrecv(void);
 
-void ps2_init(void);
+void init_ps2(void);
 
 enum keycode ps2_getkey_timeout(void);
 

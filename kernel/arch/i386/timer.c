@@ -90,7 +90,7 @@ void timer_eoi(void)
 	lapic_eoi();
 }
 
-void timer_init(struct acpi_table *table)
+void init_timer(struct acpi_table *table)
 {
 	(void)table;
 	/*

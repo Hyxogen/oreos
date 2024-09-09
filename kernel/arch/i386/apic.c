@@ -135,7 +135,7 @@ static u32 lapic_read(void *base_addr, u32 reg)
 	return *lapic_get_reg(base_addr, reg);
 }
 
-static void lapic_init(void *base_addr)
+static void linit_apic(void *base_addr)
 {
 	u32 val = lapic_read(base_addr, LAPIC_SPURRIOUS_IVR);
 
@@ -279,7 +279,7 @@ static bool apic_read(struct apic *dest, struct madt *madt)
 	return true;
 }
 
-void apic_init(struct madt *madt)
+void init_apic(struct madt *madt)
 {
 	//TODO keep track somewhere of these offsets
 	pic_remap(0x20, 0x28);
@@ -289,7 +289,7 @@ void apic_init(struct madt *madt)
 
 	assert(apic_read(&_apic, madt));
 	
-	lapic_init(_apic.lapic_addr);
+	linit_apic(_apic.lapic_addr);
 }
 
 void lapic_eoi(void)

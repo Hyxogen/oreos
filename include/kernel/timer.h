@@ -9,7 +9,7 @@
 void timer_sleep(u32 millis);
 u32 timer_poll(void);
 u32 timer_schedule_irq(u32 millis);
-void timer_init(struct acpi_table *table);
+void init_timer(struct acpi_table *table);
 bool timer_tick(void);
 
 void timer_eoi(void);

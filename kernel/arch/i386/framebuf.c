@@ -8,7 +8,7 @@
 #include <stddef.h>
 #include <kernel/debug.h>
 
-static bool term_initialized;
+static bool init_termialized;
 static struct framebuf fb_main;
 
 static u32 *fb_get_pixel_addr(struct framebuf *fb, u32 x, u32 y)
@@ -32,7 +32,7 @@ static u32 fb_encode_color(const struct framebuf *fb, struct fb_color color)
 
 struct framebuf *fb_get_primary()
 {
-	if (!term_initialized)
+	if (!init_termialized)
 		return NULL;
 	return &fb_main;
 }
@@ -64,7 +64,7 @@ void fb_put(struct framebuf *fb, u32 x, u32 y, struct fb_color color)
 //0xfd00 0000 (phys)
 void init_framebuf(struct mb2_info *mb)
 {
-	if (term_initialized)
+	if (init_termialized)
 		return;
 
 	struct mb2_framebuf_info *f =
@@ -91,6 +91,6 @@ void init_framebuf(struct mb2_info *mb)
 	fb_main.bpp = f->bpp;
 	fb_clear(&fb_main, FB_COLOR_BLACK);
 
-	term_initialized = true;
+	init_termialized = true;
 	return;
 }

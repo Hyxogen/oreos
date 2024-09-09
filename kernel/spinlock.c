@@ -2,7 +2,7 @@
 #include <kernel/spinlock.h>
 #include <kernel/platform.h>
 
-int spinlock_init(struct spinlock *lock)
+int init_spinlock(struct spinlock *lock)
 {
 	atomic_flag_clear(&lock->_locked);
 	return 0;

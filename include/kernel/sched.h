@@ -15,7 +15,7 @@ struct process {
 };
 
 struct cpu_state *proc_create(void *start);
-void sched_init(void);
+void init_sched(void);
 int sched_proc(struct cpu_state *ctx);
 struct cpu_state *do_schedule(struct cpu_state *state);
 void sched_start(void);

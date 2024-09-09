@@ -297,7 +297,7 @@ enum keycode ps2_getkey_timeout(void)
 	return KEYCODE_NONE;
 }
 
-static void ps2_init_controller(void)
+static void init_ps2_controller(void)
 {
 	//TODO check if controller exists once we are using ACPI
 	//TODO also properly test port2
@@ -376,7 +376,7 @@ static void ps2_init_controller(void)
 	}
 }
 
-static void ps2_init_devices(void)
+static void init_ps2_devices(void)
 {
 	if (ps2_send_ack(PS2_DISABLE_SCANNING) < 0) {
 		printk("failed to disable scanning\n");
@@ -407,8 +407,8 @@ static void ps2_init_devices(void)
 		printk("failed to re-enable scanning\n");
 }
 
-void ps2_init(void)
+void init_ps2(void)
 {
-	ps2_init_controller();
-	ps2_init_devices();
+	init_ps2_controller();
+	init_ps2_devices();
 }

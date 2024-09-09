@@ -34,7 +34,7 @@ struct term {
 };
 
 struct term *term_get_primary(void);
-void term_init(struct term *term, struct framebuf *fb);
+void init_term(struct term *term, struct framebuf *fb);
 void term_put(struct term *term, int c);
 void term_write(struct term *term, const char *data, size_t n);
 void term_print(struct term *term, const char *str);

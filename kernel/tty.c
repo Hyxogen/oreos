@@ -17,20 +17,20 @@
 #define TTY_COLOR_CYAN 6
 #define TTY_COLOR_WHITE 7
 
-static bool term_initialized;
+static bool init_termialized;
 static struct term term_main;
 
 struct term *term_get_primary(void)
 {
-	if (!term_initialized) {
-		term_initialized = true;
+	if (!init_termialized) {
+		init_termialized = true;
 
-		term_init(&term_main, fb_get_primary());
+		init_term(&term_main, fb_get_primary());
 	}
 	return &term_main;
 }
 
-void term_init(struct term *term, struct framebuf *fb)
+void init_term(struct term *term, struct framebuf *fb)
 {
 	term->row = 0;
 	term->col = 0;
@@ -53,7 +53,7 @@ void term_init(struct term *term, struct framebuf *fb)
 		term->chars[i] =
 		    (struct term_char){term->fg_color, term->bg_color, ' '};
 
-	spinlock_init(&term->mtx);
+	init_spinlock(&term->mtx);
 }
 
 static struct fb_color term_conv_color(u8 col)

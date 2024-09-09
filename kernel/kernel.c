@@ -19,8 +19,6 @@
 
 #include <kernel/acpi/acpi.h>
 
-void gdt_init(void);
-
 static void print_hexdump(const void *p, size_t n)
 {
 	const unsigned char *s = (const unsigned char *)p;
@@ -117,7 +115,7 @@ void init_consoles(struct mb2_info *info)
 
 	term = term_get_primary();
 	printk_set_sink(term);
-	ps2_init();
+	init_ps2();
 }
 
 void start_shell(void)
@@ -194,7 +192,7 @@ void kernel_main(struct mb2_info *info)
 	init_consoles(info);
 	read_acpi(&table, info);
 	init_irq_handler(&table);
-	timer_init(&table);
+	init_timer(&table);
 	//init_printk(); TODO
 	
 	printk("a\n");
@@ -204,7 +202,7 @@ void kernel_main(struct mb2_info *info)
 	mmu_unmap(info, info->total_size); // we're done with multiboot, free it
 
 	printk("done!\n");
-	sched_init();
+	init_sched();
 
 	struct cpu_state *state = proc_create(start_shell);
 	assert(state);

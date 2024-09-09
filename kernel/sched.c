@@ -83,7 +83,7 @@ struct cpu_state *do_schedule(struct cpu_state *state)
 	return _proc_cur->context;
 }
 
-void sched_init(void) {}
+void init_sched(void) {}
 
 void sched_start(void)
 {
