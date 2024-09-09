@@ -3,6 +3,7 @@
 #include <kernel/ps2.h>
 #include <kernel/printk.h>
 #include <kernel/platform.h>
+#include <kernel/arch/i386/platform.h>
 
 void reset(void)
 {
@@ -17,7 +18,7 @@ void halt(void)
 	__asm__ volatile("hlt");
 }
 
-void dump_stacktrace_from(const void *ebpp)
+static void dump_stacktrace_ebp(const void *ebpp)
 {
 	const u32* ebp = ebpp;
 	unsigned level = 0;
@@ -29,11 +30,16 @@ void dump_stacktrace_from(const void *ebpp)
 	}
 }
 
+void dump_stacktrace_at(const struct cpu_state *state)
+{
+	dump_stacktrace_ebp((void*) (uintptr_t)state->ebp);
+}
+
 void dump_stacktrace(void)
 {
 	u32 *ebp;
 	__asm__ volatile("mov %0,%%ebp" : "=r"(ebp));
-	dump_stacktrace_from(ebp);
+	dump_stacktrace_ebp(ebp);
 }
 
 #define DUMP_REGISTER(reg)                                         \

@@ -14,7 +14,6 @@ struct process {
 	struct process *next;
 };
 
-
 struct cpu_state *proc_create(void *start);
 void sched_init(void);
 int sched_proc(struct cpu_state *ctx);

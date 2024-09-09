@@ -85,6 +85,11 @@ void timer_sleep(u32 millis)
 		__asm__ volatile("hlt");
 }
 
+void timer_eoi(void)
+{
+	lapic_eoi();
+}
+
 void timer_init(struct acpi_table *table)
 {
 	(void)table;

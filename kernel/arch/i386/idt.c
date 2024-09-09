@@ -72,30 +72,14 @@ static void load_idt(void)
 	__asm__ volatile("lidt %0" : : "m"(idtr));
 }
 
-void dump_stacktrace_from(const void *ebp);
-
-void* irq_callback(struct cpu_state *state)
+unsigned irq_get_id(const struct cpu_state *state)
 {
-	switch (state->vec_num) {
-	case 0x48:
-		//printk("timer tick\n");
-		if (timer_tick()) {
-			state = do_schedule(state);
-			assert(state);
-		}
-		lapic_eoi(); //TODO where to place this?
-		break;
-	case 0x20 ... 0x28: /* PIC spurrious IRQ */
-	case 0xff: /* APIC spurrious IRQ */
-		break;
-	default:
-		printk("irq stackstrace:\n");
-		dump_stacktrace_from((void*) state->ebp);
-		printk("cpu state:\n");
-		dump_state(state);
-		panic("unhandled interrupt: 0x%x (%d)\n", state->vec_num, state->vec_num);
-	}
-	return state;
+	return state->vec_num;
+}
+
+bool irq_should_ignore(unsigned irq)
+{
+	return (irq >= 0x20 && irq < 0x30) || irq == 0xff;
 }
 
 void init_irq_handler(struct acpi_table *table)
