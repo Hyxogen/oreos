@@ -2,6 +2,12 @@
 #define __KERNEL_PLATFORM_H
 
 #include <stdbool.h>
+#include <kernel/types.h>
+
+/* DEPRECATED: stack_top will be removed when userspace programs are properly
+ * implemented */
+__attribute__((deprecated))
+extern u8 _stack_top;
 
 struct cpu_state;
 

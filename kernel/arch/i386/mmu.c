@@ -399,8 +399,9 @@ static void mmu_mark_multiboot(const struct mb2_info *info)
 	mmu_alloc_pageframe(MMU_PFN_TO_PADDR(pfn), page_count, MMU_ALLOC_FIXED);
 }
 
-void init_mmu(const struct mb2_info *info)
+void init_mmu(void)
 {
+	const struct mb2_info *info = mb2_get_info();
 	// read available physical memory regions
 	mmu_read_mmap(info);
 	// mark the kernel code in physical memory as unavailable

@@ -38,6 +38,6 @@ void *mmu_map(void *vaddr, uintptr_t paddr, size_t len, int addrspace, u32 flags
 void *mmu_ident_map(uintptr_t paddr, size_t len, int addrspace, u32 flags);
 int mmu_unmap(void *vaddr, size_t len);
 
-void init_mmu(const struct mb2_info *info);
+void init_mmu(void);
 
 #endif

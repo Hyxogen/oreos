@@ -6,4 +6,6 @@
 //TODO common function that will trap the debugger when one of these is called?
 __attribute__((noreturn)) void panic(const char *fmt, ...);
 void oops(const char *fmt, ...);
+
+struct mb2_info *mb2_get_info(void);
 #endif
