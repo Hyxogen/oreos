@@ -28,24 +28,6 @@ struct idtr {
 	u32 base;
 } __attribute__((packed));
 
-static void dump_state(const struct cpu_state *state)
-{
-
-	printk("edi: 0x%08lx ", state->edi);
-	printk("esi: 0x%08lx ", state->esi);
-	printk("ebp: 0x%08lx\n", state->ebp);
-	printk("esp: 0x%08lx ", state->esp);
-	printk("ebx: 0x%08lx ", state->ebx);
-	printk("edx: 0x%08lx\n", state->edx);
-	printk("ecx: 0x%08lx ", state->ecx);
-	printk("eax: 0x%08lx ", state->eax);
-	printk("eip: 0x%08lx\n", state->eip);
-	printk("cs: 0x%04hx\n", state->cs);
-
-	printk("vec_num: 0x%08lx ", state->vec_num);
-	printk("err_code: 0x%08lx\n", state->err_code);
-}
-
 static u64 __idt[256];
 
 static u64 encode_idt(u32 offset, u16 selector, u8 flags)
@@ -79,6 +61,11 @@ unsigned irq_get_id(const struct cpu_state *state)
 
 bool irq_should_ignore(unsigned irq)
 {
+	/*
+	 * [0x20-0x30) PIC spurrious interrupts
+	 *
+	 * 0xff APIC spurrious interrupt
+	 */
 	return (irq >= 0x20 && irq < 0x30) || irq == 0xff;
 }
 

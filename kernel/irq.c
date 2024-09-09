@@ -23,8 +23,8 @@ void* irq_callback(struct cpu_state *state)
 	default:
 		printk("irq stackstrace:\n");
 		dump_stacktrace_at(state);
-		//printk("cpu state:\n");
-		//dump_state(state);
+		printk("cpu state:\n");
+		dump_state(state);
 		panic("unhandled interrupt: 0x%x (%d)\n", irq, irq);
 	}
 	return state;

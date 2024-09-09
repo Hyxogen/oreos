@@ -61,6 +61,24 @@ void dump_registers(void)
 	DUMP_REGISTER("ebp");
 }
 
+void dump_state(const struct cpu_state *state)
+{
+
+	printk("edi: 0x%08lx ", state->edi);
+	printk("esi: 0x%08lx ", state->esi);
+	printk("ebp: 0x%08lx\n", state->ebp);
+	printk("esp: 0x%08lx ", state->esp);
+	printk("ebx: 0x%08lx ", state->ebx);
+	printk("edx: 0x%08lx\n", state->edx);
+	printk("ecx: 0x%08lx ", state->ecx);
+	printk("eax: 0x%08lx ", state->eax);
+	printk("eip: 0x%08lx\n", state->eip);
+	printk("cs: 0x%04hx\n", state->cs);
+
+	printk("vec_num: 0x%08lx ", state->vec_num);
+	printk("err_code: 0x%08lx\n", state->err_code);
+}
+
 void disable_irqs(void)
 {
 	__asm__ volatile("cli");
