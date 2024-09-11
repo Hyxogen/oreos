@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <kernel/kernel.h>
 #include <kernel/sched.h>
 #include <kernel/malloc/malloc.h>
 #include <kernel/libc/assert.h>
@@ -93,5 +94,6 @@ void init_sched(void) {}
 void sched_start(void)
 {
 	__asm__ volatile("int 0xab");
+	panic("sched_start should not return!");
 	//timer_sched_int(0);
 }

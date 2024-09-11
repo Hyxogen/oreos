@@ -23,6 +23,8 @@ bool sched_should_preempt(void);
 void init_sched(void);
 int sched_proc(struct cpu_state *ctx);
 struct cpu_state *sched_schedule(struct cpu_state *state);
+
+__attribute__((noreturn))
 void sched_start(void);
 
 #endif

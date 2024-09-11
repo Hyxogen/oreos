@@ -13,7 +13,6 @@ extern u8 _kernel_pstart;
 extern u8 _kernel_vstart;
 // the VIRTUAL address the kernel code ends
 extern u8 _kernel_vend;
-// TODO rename to something like "high_mem"
 // the start of the VIRTUAL address for kernel stuff
 extern u8 _kernel_addr;
 

@@ -6,9 +6,6 @@
 #include <kernel/debug.h>
 #include <kernel/libc/assert.h>
 
-//TODO remove
-#include <kernel/arch/i386/platform.h>
-
 void* irq_callback(struct cpu_state *state)
 {
 	int irq = irq_get_id(state);
