@@ -52,7 +52,6 @@ $(OBJ_DIR)/%.o: %.asm Makefile $(@D)
 	$(AS) $(ASFLAGS) $< -o $@
 
 $(ISO): $(KERNEL) grub.cfg
-	@echo $(DEPS)
 	mkdir -p $(ISO_DIR)/boot/grub
 	cp grub.cfg $(ISO_DIR)/boot/grub
 	cp $(KERNEL) $(ISO_DIR)/boot
