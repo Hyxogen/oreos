@@ -133,6 +133,11 @@ static void init_tss(void)
 	_tss.esp0 = (u32) (uintptr_t) &_stack_top;
 }
 
+static void load_tss(u16 selector)
+{
+	__asm__ volatile("ltr %0" : : "r"(selector));
+}
+
 void init_segments(void)
 {
 	init_tss();
@@ -146,4 +151,5 @@ void init_segments(void)
 
 	load_gdt(_gdt, 6);
 	_reload_segments(I386_KERNEL_CODE_SELECTOR, I386_KERNEL_DATA_SELECTOR);
+	load_tss(I386_TSS_SELECTOR);
 }

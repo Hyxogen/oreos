@@ -176,7 +176,7 @@ int mmu_unmap(void *vaddr, size_t len)
 	return 0;
 }
 
-static int mmu_alloc_pagetable(struct mmu_pde *pde)
+static int mmu_alloc_pagetable(struct mmu_pde *pde, int addrspace)
 {
 	struct page *page =
 	    mmu_alloc_pageframe((uintptr_t)&_kernel_pstart, 1, 0);
@@ -186,6 +186,7 @@ static int mmu_alloc_pagetable(struct mmu_pde *pde)
 	pde->present = true;
 	pde->rw = true;
 	pde->pfn = mmu_page_to_pfn(page);
+	pde->user = addrspace == MMU_ADDRSPACE_USER;
 
 	mmu_flush_tlb();
 
@@ -206,7 +207,7 @@ static int mmu_map_one(void *vaddr, struct page *page, int addrspace, u32 flags)
 		if (flags & MMU_MAP_NOALLOC)
 			return ENOMEM;
 
-		int rc = mmu_alloc_pagetable(pde);
+		int rc = mmu_alloc_pagetable(pde, addrspace);
 		if (rc)
 			return rc;
 	}

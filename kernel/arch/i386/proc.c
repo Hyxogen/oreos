@@ -22,10 +22,13 @@ struct cpu_state *proc_create(void *start)
 	}
 
 	void* top = &state[1024];
-	u32* esp;
 
-	top = push(top, _get_eflags());
-	top = push(top, I386_KERNEL_CODE_SELECTOR); /* cs */
+	//TODO remove magic value 3 (RPL)
+	top = push(top, I386_USER_DATA_SELECTOR | 3); /* ss */
+	top = push(top, 0); /* esp, TODO set */
+	/* eflags: IOPL 3 (0x3000) IF: (0x0200) legacy: (0x0002) */
+	top = push(top, 0x3202); /* eflags, TODO remove magic value */
+	top = push(top, I386_USER_CODE_SELECTOR | 3); /* cs */
 	top = push(top, (u32)(uintptr_t)start); /* eip */
 	top = push(top, 0); /* err_code */
 	top = push(top, 0); /* vec_num */
@@ -33,12 +36,10 @@ struct cpu_state *proc_create(void *start)
 	top = push(top, 0); /* ecx */
 	top = push(top, 0); /* edx */
 	top = push(top, 0); /* ebx */
-	esp = top = push(top, 0); /* esp */
+	top = push(top, 0); /* old_esp */
 	top = push(top, 0); /* ebp */
 	top = push(top, 0); /* esi */
 	top = push(top, 0); /* edi */
-
-	*esp = (u32) (uintptr_t) top;
 
 	return top;
 }

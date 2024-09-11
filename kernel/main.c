@@ -76,6 +76,8 @@ struct mb2_info *mb2_get_info(void)
 	return _mb2_info;
 }
 
+extern char loop[];
+
 void kernel_main(struct mb2_info *info)
 {
 	mb2_save_info(info);
@@ -94,13 +96,21 @@ void kernel_main(struct mb2_info *info)
 	printk("done!\n");
 	init_sched();
 
-	struct cpu_state *state = proc_create(start_shell);
+	void *temp = mmu_map(NULL, (uintptr_t)loop - 0xC0000000, MMU_PAGESIZE,
+			     MMU_ADDRSPACE_USER, 0);
+	assert(temp != MMU_MAP_FAILED);
+
+	struct cpu_state *state = proc_create(temp);
+	assert(state);
+	assert(!sched_proc(state));
+
+	/*struct cpu_state *state = proc_create(start_shell);
 	assert(state);
 	struct cpu_state *dummystate = proc_create(dummy);
 	assert(dummystate);
-
 	assert(!sched_proc(state));
-	assert(!sched_proc(dummystate));
+	assert(!sched_proc(dummystate));*/
 
 	sched_start();
+	assert(0); // we should not return
 }

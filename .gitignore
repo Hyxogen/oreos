@@ -15,3 +15,4 @@ compile_commands.json
 *.psfu
 /vendor
 /bx_enh_dbg.ini
+/*.sym

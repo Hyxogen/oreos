@@ -69,6 +69,11 @@ bool irq_should_ignore(unsigned irq)
 	return (irq >= 0x20 && irq < 0x30) || irq == 0xff;
 }
 
+bool irq_returning_to_userspace(const struct cpu_state *state)
+{
+	return state->eflags.iopl == IOPL_USER;
+}
+
 void init_irq_handler(struct acpi_table *table)
 {
 	for (unsigned i = 0; i < ARRAY_SIZE(__idt); i++) {

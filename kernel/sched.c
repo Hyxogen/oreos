@@ -87,5 +87,6 @@ void init_sched(void) {}
 
 void sched_start(void)
 {
-	timer_sched_int(0);
+	__asm__ volatile("int 0xab");
+	//timer_sched_int(0);
 }

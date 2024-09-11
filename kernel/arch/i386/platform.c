@@ -77,6 +77,11 @@ void dump_state(const struct cpu_state *state)
 
 	printk("vec_num: 0x%08lx ", state->vec_num);
 	printk("err_code: 0x%08lx\n", state->err_code);
+
+	DUMP_REGISTER("cr0");
+	DUMP_REGISTER("cr2");
+	DUMP_REGISTER("cr3");
+	DUMP_REGISTER("cr4");
 }
 
 void disable_irqs(void)

@@ -60,6 +60,7 @@ $(ISO): $(KERNEL) grub.cfg
 
 $(KERNEL): $(OBJS) Makefile
 	$(LD_CMD) -o $@ $(OBJS) $(LFLAGS)
+	nm $@ | sed -E 's/(.*) .* (.*)/\1 \2/g' > $(NAME).sym
 
 run: $(ISO)
 	qemu-system-i386 $(QEMU_OPTS) -cdrom $(ISO)
