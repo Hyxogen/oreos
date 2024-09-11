@@ -52,7 +52,7 @@ int sched_proc(struct cpu_state *ctx)
 	return 0;
 }
 
-struct cpu_state *do_schedule(struct cpu_state *state)
+struct cpu_state *sched_schedule(struct cpu_state *state)
 {
 	if (_proc_cur) {
 		struct process *prev = _proc_cur;
@@ -81,6 +81,11 @@ struct cpu_state *do_schedule(struct cpu_state *state)
 	timer_sched_int(10);
 	_proc_cur->status = RUNNING;
 	return _proc_cur->context;
+}
+
+bool sched_should_preempt(void)
+{
+	return timer_poll() == 0;
 }
 
 void init_sched(void) {}

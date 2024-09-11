@@ -56,6 +56,7 @@ struct eflags {
 _Static_assert(sizeof(struct eflags) == 4, "basic assumption");
 
 struct cpu_state {
+	u32 ds;
 	u32 edi;
 	u32 esi;
 	u32 ebp;

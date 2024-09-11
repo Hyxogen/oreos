@@ -21,6 +21,7 @@ struct cpu_state *proc_create(void *start)
 		return NULL;
 	}
 
+	//TODO user memory SHOULD ALWAYS BE ZEROED
 	void* top = &state[1024];
 
 	//TODO remove magic value 3 (RPL)
@@ -40,6 +41,7 @@ struct cpu_state *proc_create(void *start)
 	top = push(top, 0); /* ebp */
 	top = push(top, 0); /* esi */
 	top = push(top, 0); /* edi */
+	top = push(top, I386_USER_DATA_SELECTOR | 3); /* ds */
 
 	return top;
 }

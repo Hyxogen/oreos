@@ -1,9 +1,11 @@
 section .text
 ; all interrupts will go through this common functions, which saves the
 ; registers etc.
-__common_interrupt:
+_common_interrupt:
 	; push registers on the stack
 	pusha
+
+	push dword ds
 
 	push esp ; pass stack pointer as argument
 
@@ -11,8 +13,13 @@ __common_interrupt:
 	call irq_callback
 	mov esp, eax
 
-	; pop stack pointer
-	; pop esp
+	; load segments
+	pop eax
+	mov ds, ax
+	mov es, ax
+	mov fs, ax
+	mov gs, ax
+	; don't load ss, iret will do that for us
 
 	; pop registers from the stack
 	popa
@@ -35,7 +42,7 @@ vector_%1_handler:
 	; push vector number onto stack
 	push dword %1
 
-	jmp __common_interrupt
+	jmp _common_interrupt
 %endmacro
 
 %macro DEFINE_ISR_NOCODE 1
