@@ -5,6 +5,7 @@
 #include <kernel/printk.h>
 #include <kernel/debug.h>
 #include <kernel/libc/assert.h>
+#include <kernel/syscall.h>
 
 void* irq_callback(struct cpu_state *state)
 {
@@ -16,6 +17,9 @@ void* irq_callback(struct cpu_state *state)
 	case TIMER_IRQ:
 		timer_tick();
 		timer_eoi(); /* TODO this sends LAPIC EOI, should this be at other places aswell? */
+		break;
+	case SYSCALL_IRQ:
+		do_syscall(state);
 		break;
 	case 0xab: /* TODO stupid temp code, remove */
 		state = sched_schedule(state);

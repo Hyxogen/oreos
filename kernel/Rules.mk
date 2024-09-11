@@ -23,6 +23,9 @@ include		$(dir)/Rules.mk
 dir		:= $(d)/font
 include		$(dir)/Rules.mk
 
+dir		:= $(d)/syscall
+include		$(dir)/Rules.mk
+
 -include $(DEPS_$(d))
 
 d		:= $(dirstack_$(sp))

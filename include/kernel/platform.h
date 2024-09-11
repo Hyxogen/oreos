@@ -9,6 +9,8 @@
 __attribute__((deprecated))
 extern u8 _stack_top;
 
+#define SYSCALL_IRQ 0x80
+
 struct cpu_state;
 
 void disable_irqs(void);
