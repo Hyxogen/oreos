@@ -51,7 +51,7 @@ static void load_idt(void)
 	struct idtr idtr;
 
 	idtr.limit = sizeof(__idt) - 1;
-	idtr.base = (u32) __idt;
+	idtr.base = (u32) (uintptr_t) __idt;
 	__asm__ volatile("lidt %0" : : "m"(idtr));
 }
 
@@ -60,22 +60,37 @@ unsigned irq_get_id(const struct cpu_state *state)
 	return state->vec_num;
 }
 
-bool irq_should_ignore(unsigned irq)
-{
-	/*
-	 * [0x20-0x30) PIC spurrious interrupts
-	 *
-	 * 0xff APIC spurrious interrupt
-	 */
-	return (irq >= 0x20 && irq < 0x30) || irq == 0xff;
-}
-
 bool irq_returning_to_userspace(const struct cpu_state *state)
 {
 	return state->eflags.iopl == IOPL_USER;
 }
 
-void init_irq_handler(struct acpi_table *table)
+static enum irq_result irq_spurrious_handler(u8 irq, struct cpu_state *state, void *dummy)
+{
+	(void) irq;
+	(void) state;
+	(void) dummy;
+	return IRQ_CONTINUE;
+}
+
+bool irq_is_reserved(u8 irqn)
+{
+	return irqn <= 0x1F;
+}
+
+static void register_handlers(void)
+{
+	/*
+	 * [0x20-0x30) PIC spurrious interrupts
+	 *
+	 */
+	for (u8 irq = 0x20; irq < 0x30; irq++) {
+		irq_register_handler(irq, irq_spurrious_handler, NULL);
+	}
+	irq_register_handler(LAPIC_SPURRIOUS_IRQN, irq_spurrious_handler, NULL);
+}
+
+static void init_idt(void)
 {
 	for (unsigned i = 0; i < ARRAY_SIZE(__idt); i++) {
 		unsigned ring = 0;
@@ -85,11 +100,18 @@ void init_irq_handler(struct acpi_table *table)
 		__idt[i] = encode_idt((u32) vector_0_handler + i * 16, I386_KERNEL_CODE_SELECTOR, IDT_INTR_FLAGS(ring));
 	}
 	load_idt();
+}
+
+void init_irq_handler(struct acpi_table *table)
+{
+	init_idt();
 
 	struct madt *madt = (struct madt*) acpi_find(table, ACPI_TAG_APIC);
 	if (!madt)
 		panic("no madt\n");
 
 	init_apic(madt);
+
+	register_handlers();
 	enable_irqs();
 }

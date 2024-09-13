@@ -139,7 +139,7 @@ static void linit_apic(void *base_addr)
 {
 	u32 val = lapic_read(base_addr, LAPIC_SPURRIOUS_IVR);
 
-	val |= 0x0FF; /* set IRQ number */
+	val |= LAPIC_SPURRIOUS_IRQN; /* set IRQ number */
 	val |= 0x100; /* enable */
 	lapic_write(base_addr, LAPIC_SPURRIOUS_IVR, val);
 }

@@ -31,6 +31,8 @@
 
 #define IOAPIC_REDIR(prio, dest, polarity, trigger, destid, vec) (prio | dest | polarity | trigger | destid | vec)
 
+#define LAPIC_SPURRIOUS_IRQN 0xff
+
 void init_apic(struct madt *madt);
 void lapic_eoi(void);
 

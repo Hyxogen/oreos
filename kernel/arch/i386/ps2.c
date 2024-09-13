@@ -40,7 +40,6 @@ i16 ps2_setup_irq(void)
 	i16 irqn = irq_get_free_irq();
 	if (irqn < 0)
 		return -1;
-
 	//TODO don't hardcode ioapic physical id
 	u64 redir =
 	    IOAPIC_REDIR(IOAPIC_PRIO_NORMAL, IOAPIC_DEST_PHYSICAL,

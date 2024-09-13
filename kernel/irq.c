@@ -67,7 +67,7 @@ i16 irq_get_free_irq(void)
 {
 	// TODO don't hardcode 50, just register the first few
 	for (u16 i = 50; i < ARRAY_SIZE(_handlers); i++) {
-		if (irq_should_ignore(i))
+		if (irq_is_reserved(i))
 			continue;
 		if (_handlers[i])
 			continue;
@@ -79,8 +79,6 @@ i16 irq_get_free_irq(void)
 void* irq_callback(struct cpu_state *state)
 {
 	int irq = irq_get_id(state);
-	if (irq_should_ignore(irq))
-		return state;
 
 	switch (irq) {
 	case TIMER_IRQ:
@@ -112,4 +110,3 @@ void* irq_callback(struct cpu_state *state)
 	}
 	return state;
 }
-
