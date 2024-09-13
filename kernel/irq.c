@@ -42,7 +42,7 @@ int irq_register_handler(
 	return 0;
 }
 
-static bool irq_exec_handlers(i8 irq, struct cpu_state *state)
+static bool irq_exec_handlers(u8 irq, struct cpu_state *state)
 {
 	bool handled = false;
 	struct irq_handler *cur = _handlers[irq];
@@ -81,13 +81,6 @@ void* irq_callback(struct cpu_state *state)
 	int irq = irq_get_id(state);
 
 	switch (irq) {
-	case TIMER_IRQ:
-		timer_tick();
-		timer_eoi(); /* TODO this sends LAPIC EOI, should this be at other places aswell? */
-		break;
-	case SYSCALL_IRQ:
-		do_syscall(state);
-		break;
 	case 0xab: /* TODO stupid temp code, remove */
 		state = sched_schedule(state);
 		assert(state);
@@ -109,4 +102,20 @@ void* irq_callback(struct cpu_state *state)
 		}
 	}
 	return state;
+}
+
+static enum irq_result irq_on_syscall(u8 irq, struct cpu_state *state, void *dummy)
+{
+	(void)irq;
+	(void)dummy;
+	do_syscall(state);
+	return IRQ_CONTINUE;
+}
+
+void init_irq_handler(struct acpi_table *table);
+
+void init_interrupts(struct acpi_table *table)
+{
+	init_irq_handler(table);
+	irq_register_handler(SYSCALL_IRQ, irq_on_syscall, NULL);
 }

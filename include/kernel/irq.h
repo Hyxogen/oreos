@@ -3,6 +3,7 @@
 
 #include <kernel/types.h>
 #include <kernel/platform.h>
+#include <kernel/acpi/acpi.h>
 
 enum irq_result {
 	IRQ_CONTINUE,
@@ -21,5 +22,7 @@ bool irq_is_reserved(u8 irqn);
 
 void disable_irqs(void);
 void enable_irqs(void);
+
+void init_interrupts(struct acpi_table *table);
 
 #endif

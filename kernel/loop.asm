@@ -7,7 +7,7 @@ loop:
 	mov edx, 2 ; len
 
 	xchg bx, bx
-	;int 0x80
+	int 0x80
 	jmp loop
 .str:
 	dw "a", 0xa

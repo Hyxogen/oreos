@@ -1,4 +1,5 @@
 #include <stdatomic.h>
+#include <kernel/kernel.h>
 #include <kernel/timer.h>
 #include <kernel/arch/i386/io.h>
 #include <kernel/arch/i386/apic.h>
@@ -6,6 +7,7 @@
 #include <kernel/mmu.h>
 #include <kernel/printk.h>
 #include <kernel/platform.h>
+#include <kernel/irq.h>
 
 #define PIT_CH0_DATA_PORT 0x40
 #define PIT_CH1_DATA_PORT 0x41
@@ -90,6 +92,17 @@ void timer_eoi(void)
 	lapic_eoi();
 }
 
+static enum irq_result timer_on_event(u8 irq, struct cpu_state *state,
+				      void *dummy)
+{
+	(void) irq;
+	(void) state;
+	(void) dummy;
+	timer_tick();
+	timer_eoi();
+	return IRQ_CONTINUE;
+}
+
 void init_timer(struct acpi_table *table)
 {
 	(void)table;
@@ -109,13 +122,23 @@ void init_timer(struct acpi_table *table)
 	assert(lapic);
 
 	madt_dump(madt);
+	
+	i16 irqn = irq_get_free_irq();
+	if (irqn < 0) {
+		panic("irqs exhausted\n");
+	}
+
+	if (irq_register_handler(irqn, timer_on_event, NULL)) {
+		panic("failed to register timer handler\n");
+	}
 
 	u64 v = IOAPIC_PRIO_NORMAL | IOAPIC_DEST_PHYSICAL |
 		IOAPIC_POLARITY_HIGHACTIVE | IOAPIC_TRIGGER_EDGE |
-		IOAPIC_PHYSICAL_ID(lapic->lapic_id) | IOAPIC_VECTOR(0x48);
+		IOAPIC_PHYSICAL_ID(lapic->lapic_id) | IOAPIC_VECTOR(irqn);
 
 	printk("ioapic: 0x%016llx\n", v);
 	ioapic_set_redir(PIT_CH0_IRQ, v);
+
 }
 
 void timer_sched_int(u32 millis)

@@ -13,6 +13,7 @@
 #include <kernel/platform.h>
 #include <kernel/sched.h>
 #include <kernel/libc/assert.h>
+#include <kernel/irq.h>
 
 #include <kernel/acpi/acpi.h>
 
@@ -20,7 +21,6 @@ void init_paging(void);
 void init_segments(void);
 void init_framebuf(struct mb2_info *info);
 void start_shell(void);
-void init_irq_handler(struct acpi_table *table);
 
 static struct mb2_info *_mb2_info = NULL;
 static struct term *term = NULL;
@@ -91,7 +91,7 @@ void kernel_main(struct mb2_info *info)
 	init_mmu();
 	init_printk();
 	read_acpi();
-	init_irq_handler(&_acpi_table);
+	init_interrupts(&_acpi_table);
 	init_consoles();
 
 	init_timer(&_acpi_table);

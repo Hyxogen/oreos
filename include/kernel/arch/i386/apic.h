@@ -25,7 +25,7 @@
 
 #define IOAPIC_REG_REDIR(i) (0x10 + 2 * (i))
 
-#define IOAPIC_VECTOR(i) (i)
+#define IOAPIC_VECTOR(i) ((u8)i)
 
 #define IOAPIC_REG_VERSION 0x01
 
