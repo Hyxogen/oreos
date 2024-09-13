@@ -3,6 +3,7 @@
 #include <kernel/platform.h>
 #include <kernel/printk.h>
 #include <kernel/debug.h>
+#include <kernel/irq.h>
 
 static void redraw_term(void)
 {

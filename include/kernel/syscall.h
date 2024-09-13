@@ -5,6 +5,8 @@
 #include <kernel/platform.h>
 
 int do_syscall(struct cpu_state *state);
+
 i32 write(int fd, const void *buf, size_t nbytes);
+i32 read(int fd, void *buf, size_t nbytes);
 
 #endif

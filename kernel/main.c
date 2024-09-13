@@ -26,12 +26,16 @@ static struct mb2_info *_mb2_info = NULL;
 static struct term *term = NULL;
 static struct acpi_table _acpi_table;
 
-static void init_consoles(void)
+static void init_printk(void)
 {
 	init_framebuf(mb2_get_info());
 
 	term = term_get_primary();
 	printk_set_sink(term);
+}
+
+static void init_consoles(void)
+{
 	init_ps2();
 }
 
@@ -85,11 +89,12 @@ void kernel_main(struct mb2_info *info)
 	init_paging();
 	init_segments();
 	init_mmu();
-	init_consoles();
+	init_printk();
 	read_acpi();
 	init_irq_handler(&_acpi_table);
+	init_consoles();
+
 	init_timer(&_acpi_table);
-	// init_printk(); TODO
 
 	mmu_unmap(info, info->total_size); // we're done with multiboot, free it
 

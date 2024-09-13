@@ -5,6 +5,7 @@
 #include <kernel/arch/i386/platform.h>
 #include <kernel/sched.h>
 #include <kernel/libc/assert.h>
+#include <kernel/irq.h>
 
 #include <kernel/arch/i386/apic.h>
 #include <kernel/timer.h>

@@ -7,6 +7,7 @@
 #include <kernel/printk.h>
 #include <kernel/types.h>
 #include <kernel/libc/string.h>
+#include <kernel/libc/assert.h>
 
 static struct page mmu_pages[MMU_MAX_PAGES];
 
@@ -259,6 +260,12 @@ static inline void *mmu_pagenum_to_entry(size_t pagenum)
 	return mmu_vaddr_to_pte(mmu_pagenum_to_vaddr(pagenum));
 }
 
+static inline struct mmu_pde *mmu_pagenum_to_pde(size_t pagenum)
+{
+	//TODO remove magic mask 0x3ff
+	return mmu_vaddr_to_pde(mmu_pagenum_to_vaddr(pagenum & (~0x3ff)));
+}
+
 /* assumption: address spaces are on a 1024 * 4096 boundary */
 static void *mmu_find_pages(void *hint, size_t count, int addrspace)
 {
@@ -268,6 +275,20 @@ static void *mmu_find_pages(void *hint, size_t count, int addrspace)
 	size_t start = mmu_vaddr_to_pagenum(mmu_addrspace_beg(addrspace));
 	size_t end = mmu_vaddr_to_pagenum(mmu_addrspace_end(addrspace));
 	size_t pagenum = hint ? mmu_vaddr_to_pagenum(hint) : start;
+
+	if (!mmu_pagenum_is_pde(pagenum)) {
+		struct mmu_pde *pde = mmu_pagenum_to_pde(pagenum);
+		if (!pde->present) {
+			void *vaddr = mmu_pagenum_to_vaddr(pagenum);
+			size_t pte_idx = MMU_PTE_IDX(vaddr);
+
+			size_t nleft = MMU_PTE_COUNT - pte_idx;
+
+			best = pagenum;
+			found += nleft;
+			pagenum += nleft;
+		}
+	}
 
 	for (; pagenum <= end; pagenum++) {
 		bool is_pde = mmu_pagenum_is_pde(pagenum);
@@ -291,8 +312,11 @@ static void *mmu_find_pages(void *hint, size_t count, int addrspace)
 		}
 
 		if (found >= count)
-			return mmu_pagenum_to_vaddr(best);
+			break;
 	}
+
+	if (found >= count)
+		return mmu_pagenum_to_vaddr(best);
 
 	if (hint)
 		return mmu_find_pages(mmu_addrspace_beg(addrspace), count,
@@ -309,6 +333,13 @@ void *mmu_map_pages(void *vaddr, struct page *frame, size_t nframes,
 	if (!addrspace) {
 		// invalid addrspace
 		return MMU_INVALID_PAGE;
+	}
+
+	if (vaddr && (flags & MMU_MAP_DOWNWARD)) {
+		//TODO assert no overflow
+		size_t nbytes = nframes * MMU_PAGESIZE;
+		assert((uintptr_t)vaddr >= nbytes);
+		vaddr = (u8*) vaddr - nbytes;
 	}
 
 	if (!(flags & MMU_MAP_FIXED)) {
@@ -348,6 +379,16 @@ void *mmu_map(void *vaddr, uintptr_t paddr, size_t len, int addrspace, u32 flags
 	if (res == MMU_INVALID_PAGE)
 		return res;
 	return (u8*) res + off;
+}
+
+void *mmu_mmap(void *vaddr, size_t len, int addrspace, u32 flags)
+{
+	size_t nframes = ALIGN_UP(len, MMU_PAGESIZE) / MMU_PAGESIZE;
+	//TODO remove 16*1024*1024 as magic value
+	struct page *page = mmu_alloc_pageframe(16 * 1024 * 1024, nframes, 0);
+	if (!page)
+		return MMU_MAP_FAILED;
+	return mmu_map_pages(vaddr, page, nframes, addrspace, flags);
 }
 
 static void mmu_read_mmap(const struct mb2_info *info)

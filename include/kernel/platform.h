@@ -13,18 +13,13 @@ extern u8 _stack_top;
 
 struct cpu_state;
 
-void disable_irqs(void);
-void enable_irqs(void);
-
-unsigned irq_get_id(const struct cpu_state *state);
-bool irq_should_ignore(unsigned irq);
-bool irq_returning_to_userspace(const struct cpu_state *state);
-
 __attribute__((noreturn))
 void idle(void);
 __attribute__((noreturn))
 void reset(void);
 
 void halt(void);
+
+void short_wait(void);
 
 #endif

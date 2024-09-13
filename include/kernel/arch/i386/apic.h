@@ -29,6 +29,8 @@
 
 #define IOAPIC_REG_VERSION 0x01
 
+#define IOAPIC_REDIR(prio, dest, polarity, trigger, destid, vec) (prio | dest | polarity | trigger | destid | vec)
+
 void init_apic(struct madt *madt);
 void lapic_eoi(void);
 

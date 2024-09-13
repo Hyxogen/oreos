@@ -10,6 +10,7 @@
 #define MMU_MAP_RDONLY 0x1
 #define MMU_MAP_NOALLOC 0x2
 #define MMU_MAP_FIXED 0x4
+#define MMU_MAP_DOWNWARD 0x8
 
 #define MMU_ADDRSPACE_KERNEL 0x1
 #define MMU_ADDRSPACE_USER 0x2
@@ -39,5 +40,7 @@ void *mmu_ident_map(uintptr_t paddr, size_t len, int addrspace, u32 flags);
 int mmu_unmap(void *vaddr, size_t len);
 
 void init_mmu(void);
+
+void *mmu_mmap(void *vaddr, size_t len, int addrspace, u32 flags);
 
 #endif

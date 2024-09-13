@@ -14,7 +14,7 @@ static i32 (*_syscall_table[])() = {
 	syscall_stub, /* doesn't exist */
 	syscall_stub, /* _exit */
 	syscall_stub, /* fork */
-	syscall_stub, /* read */
+	read, /* read */
 	write, /* write */
 };
 

@@ -4,6 +4,7 @@
 #include <kernel/printk.h>
 #include <kernel/platform.h>
 #include <kernel/arch/i386/platform.h>
+#include <kernel/arch/i386/io.h>
 
 void reset(void)
 {
@@ -92,4 +93,9 @@ void disable_irqs(void)
 void enable_irqs(void)
 {
 	__asm__ volatile("sti");
+}
+
+void short_wait(void)
+{
+	io_wait();
 }
