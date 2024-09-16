@@ -86,6 +86,7 @@ struct mb2_info *mb2_get_info(void)
 }
 
 extern char loop[];
+extern char loop2[];
 
 void kernel_main(struct mb2_info *info)
 {
@@ -99,10 +100,11 @@ void kernel_main(struct mb2_info *info)
 	read_acpi();
 
 	init_interrupts(&_acpi_table);
-	init_consoles();
 
 	init_timer(&_acpi_table);
 	init_sched();
+
+	init_consoles();
 
 	mb2_free_info();
 
@@ -111,10 +113,16 @@ void kernel_main(struct mb2_info *info)
 	void *temp = mmu_map(NULL, (uintptr_t)loop - 0xC0000000, MMU_PAGESIZE,
 			     MMU_ADDRSPACE_USER, 0);
 	assert(temp != MMU_MAP_FAILED);
+	void *temp2 = mmu_map(NULL, (uintptr_t)loop2 - 0xC0000000, MMU_PAGESIZE,
+			     MMU_ADDRSPACE_USER, 0);
+	assert(temp2 != MMU_MAP_FAILED);
 
-	struct cpu_state *state = proc_create(temp);
-	assert(state);
-	assert(!sched_proc(state));
+	struct process *dummy = proc_create(temp, PROC_FLAG_RING3);
+	assert(dummy);
+	struct process *dummy2 = proc_create(temp2, PROC_FLAG_RING3);
+	assert(dummy2);
+	assert(!sched_proc(dummy));
+	assert(!sched_proc(dummy2));
 
 	sched_start();
 }

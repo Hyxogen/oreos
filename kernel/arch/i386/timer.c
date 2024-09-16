@@ -48,6 +48,7 @@ static void pit_setup(u16 count)
 
 struct timer {
 	atomic_uint_least32_t ticks;
+	u8 irqn;
 	bool _armed;
 };
 
@@ -129,18 +130,24 @@ void init_timer(struct acpi_table *table)
 	if (irqn < 0) {
 		panic("irqs exhausted\n");
 	}
+	__timer.irqn = irqn;
 
-	if (irq_register_handler(irqn, timer_on_event, NULL)) {
+	if (irq_register_handler(__timer.irqn, timer_on_event, NULL)) {
 		panic("failed to register timer handler\n");
 	}
 
 	u64 v = IOAPIC_PRIO_NORMAL | IOAPIC_DEST_PHYSICAL |
 		IOAPIC_POLARITY_HIGHACTIVE | IOAPIC_TRIGGER_EDGE |
-		IOAPIC_PHYSICAL_ID(lapic->lapic_id) | IOAPIC_VECTOR(irqn);
+		IOAPIC_PHYSICAL_ID(lapic->lapic_id) | IOAPIC_VECTOR(__timer.irqn);
 
 	printk("ioapic: 0x%016llx\n", v);
 	ioapic_set_redir(PIT_CH0_IRQ, v);
 
+}
+
+u8 timer_get_irqn(void)
+{
+	return __timer.irqn;
 }
 
 void timer_sched_int(u32 millis)

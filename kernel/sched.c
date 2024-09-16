@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <stdatomic.h>
 #include <kernel/kernel.h>
 #include <kernel/sched.h>
 #include <kernel/malloc/malloc.h>
@@ -8,7 +9,9 @@
 
 static struct process *_proc_list;
 static struct process *_proc_cur;
+static struct process *_idle_proc;
 static int _pid;
+static atomic_bool _disable_preempt = true;
 
 static bool del_proc(int pid)
 {
@@ -31,16 +34,17 @@ static bool del_proc(int pid)
 	return false;
 }
 
-int sched_proc(struct cpu_state *ctx)
+static void sched_idle(void)
 {
-	struct process *proc = kmalloc(sizeof(*proc));
-	if (!proc)
-		return -1;
+	while (1)
+		halt();
+}
 
+int sched_proc(struct process *proc)
+{
 	proc->pid = _pid++;
 	proc->status = READY;
 	proc->next = NULL;
-	proc->context = ctx;
 
 	if (!_proc_list) {
 		_proc_list = proc;
@@ -54,7 +58,7 @@ int sched_proc(struct cpu_state *ctx)
 	return 0;
 }
 
-struct cpu_state *sched_schedule(struct cpu_state *state)
+struct process *sched_schedule(struct cpu_state *state)
 {
 	if (_proc_cur) {
 		struct process *prev = _proc_cur;
@@ -68,7 +72,7 @@ struct cpu_state *sched_schedule(struct cpu_state *state)
 		if (!_proc_cur)
 			_proc_cur = _proc_list;
 
-		/* TODO schedule idle process */
+		// TODO schedule idle process?
 		assert(_proc_cur && "nothing to schedule");
 
 		if (_proc_cur->status == DEAD) {
@@ -82,20 +86,52 @@ struct cpu_state *sched_schedule(struct cpu_state *state)
 	}
 	timer_sched_int(10);
 	_proc_cur->status = RUNNING;
-	return _proc_cur->context;
+	return _proc_cur;
 }
 
-bool sched_should_preempt(void)
+__attribute__((noreturn))
+static void sched_preempt(struct cpu_state *state)
 {
-	return timer_poll() == 0;
+	struct process *next_proc = sched_schedule(state);
+	assert(next_proc);
+	proc_prepare_switch(next_proc);
+
+	//TODO what if an interrupt happends before IRET?
+	sched_enable_preemption();
+	return_from_irq(next_proc->context);
 }
 
-void init_sched(void) {}
+static enum irq_result sched_on_tick(u8 irqn, struct cpu_state *state, void *dummy)
+{
+	(void)irqn;
+	(void)dummy;
+	if (!atomic_load(&_disable_preempt) && timer_poll() == 0) {
+		sched_preempt(state);
+		//should preempt
+	}
+	return IRQ_CONTINUE;
+}
+
+void init_sched(void)
+{
+	irq_register_handler(timer_get_irqn(), sched_on_tick, NULL);
+
+	_idle_proc = NULL;
+	_idle_proc= proc_create(sched_idle, PROC_FLAG_RING0);
+	assert(_idle_proc);
+}
 
 void sched_start(void)
 {
-	//__asm__ volatile("int 0xab");
-	struct cpu_state *state = sched_schedule(NULL);
-	assert(state);
-	return_from_irq(state);
+	sched_preempt(NULL);
+}
+
+void sched_enable_preemption(void)
+{
+	atomic_store(&_disable_preempt, false);
+}
+
+void sched_disable_preemption(void)
+{
+	atomic_store(&_disable_preempt, true);
 }

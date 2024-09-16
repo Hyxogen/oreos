@@ -75,7 +75,6 @@ i16 irq_get_free_irq(void)
 	return -1;
 }
 
-__attribute__ ((noreturn))
 void* irq_callback(struct cpu_state *state)
 {
 	int irq = irq_get_id(state);
@@ -88,12 +87,6 @@ void* irq_callback(struct cpu_state *state)
 		panic("unhandled interrupt: 0x%x (%d)\n", irq, irq);
 	}
 
-	if (irq_returning_to_userspace(state)) {
-		if (sched_should_preempt()) {
-			state = sched_schedule(state);
-			assert(state);
-		}
-	}
 	return_from_irq(state);
 }
 

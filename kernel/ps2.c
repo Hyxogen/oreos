@@ -21,13 +21,15 @@ static enum irq_result ps2_on_event(u8 irq, struct cpu_state *state, void *dummy
 	(void) dummy;
 	(void) state;
 	//kernel cannot be preemted, thus safe
-	disable_irqs();
+	//TODO instead of masking all interrupts, making a custom mask to
+	//disable only this interrupt?
+
+	// this interrupts handler should not be called again until ps2_eoi()
 	_ps2_buf[_ps2_write] = ps2_recv();
 
 	_ps2_write = (_ps2_write + 1) % PS2_BUFSIZE;
 	if (_ps2_write == _ps2_read)
 		_ps2_read += 1;
-	enable_irqs();
 	ps2_eoi();
 	return IRQ_CONTINUE;
 }

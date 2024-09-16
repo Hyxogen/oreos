@@ -15,5 +15,6 @@ bool timer_tick(void);
 void timer_eoi(void);
 
 void timer_sched_int(u32 millis);
+u8 timer_get_irqn(void);
 
 #endif

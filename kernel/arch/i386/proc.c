@@ -1,9 +1,12 @@
+#include <kernel/kernel.h>
 #include <kernel/printk.h>
 #include <kernel/sched.h>
 #include <kernel/malloc/malloc.h>
 #include <kernel/arch/i386/platform.h>
 #include <kernel/arch/i386/mmu.h>
 #include <kernel/libc/string.h>
+#include <kernel/errno.h>
+#include <kernel/irq.h>
 
 #include <kernel/debug.h>
 
@@ -16,32 +19,70 @@ static void *push(void *stackp, u32 v)
 	return stack;
 }
 
-struct cpu_state *proc_create(void *start)
+static void proc_get_selectors(int ring, u16 *code_sel, u16 *data_sel)
 {
-	//TODO this is not actually a stack, 
-	u8* state = kmalloc(0x1000);
-	if (!state) {
-		printk("failed to alloc process state\n");
-		return NULL;
+	if (ring == 0) {
+		*code_sel = I386_KERNEL_CODE_SELECTOR | 0;
+		*data_sel = I386_KERNEL_DATA_SELECTOR | 0;
+	} else if (ring == 3) {
+		*code_sel = I386_USER_CODE_SELECTOR | 3;
+		*data_sel = I386_USER_DATA_SELECTOR | 3;
+	} else {
+		panic("invalid ring");
 	}
-	size_t stacksize = 1 * MMU_PAGESIZE;
-	BOCHS_BREAK;
-	void *stack = mmu_mmap(&_kernel_addr, stacksize, MMU_ADDRSPACE_USER, MMU_MAP_DOWNWARD);
-	if (stack == MMU_MAP_FAILED) {
-		printk("failed to alloc process stack\n");
-		return NULL;
-	}
-	memset(stack, 0, stacksize); 
+}
 
-	//TODO user memory SHOULD ALWAYS BE ZEROED
-	void* top = &state[1024];
-
-	//TODO remove magic value 3 (RPL)
-	top = push(top, I386_USER_DATA_SELECTOR | 3); /* ss */
-	top = push(top, (uintptr_t)stack + stacksize); /* esp, TODO set */
+static u32 proc_get_eflags(int ring)
+{
 	/* eflags: IOPL 3 (0x3000) IF: (0x0200) legacy: (0x0002) */
-	top = push(top, 0x3202); /* eflags, TODO remove magic value */
-	top = push(top, I386_USER_CODE_SELECTOR | 3); /* cs */
+	//TODO remove magic values
+	if (ring == 0)
+		return 0x0202;
+	else if (ring == 3)
+		return 0x3202;
+	panic("proc_get_eflags: invalid ring");
+}
+
+struct process *proc_create(void *start, u32 flags)
+{
+	struct process *proc = kmalloc(sizeof(*proc));
+	if (!proc)
+		return proc;
+	proc->kernel_stack = NULL;
+	proc->context = NULL;
+
+	int ring;
+
+	if (flags & PROC_FLAG_RING0) {
+		ring = 0;
+	} else if (flags & PROC_FLAG_RING3) {
+		ring = 3;
+	} else {
+		printk("ring not specified\n");
+		goto err;
+	}
+
+	u16 code_sel, data_sel;
+	proc_get_selectors(ring, &code_sel, &data_sel);
+	u32 eflags = proc_get_eflags(ring);
+
+
+	//TODO don't hardcode kernel stack size
+	proc->kernel_stack = mmu_mmap(NULL, 0x4000, MMU_ADDRSPACE_KERNEL, 0);
+	if (proc->kernel_stack == MMU_MAP_FAILED)
+		goto err;
+
+	proc->kernel_stack = (u8*)proc->kernel_stack + 0x4000;
+	void *top = proc->kernel_stack;
+
+	u32 esp = 0;
+	if (ring == 0)
+		esp = (uintptr_t) proc->kernel_stack;
+
+	top = push(top, data_sel); /* ss */
+	top = push(top, esp); /* esp */
+	top = push(top, eflags); /* eflags */
+	top = push(top, code_sel); /* cs */
 	top = push(top, (uintptr_t)start); /* eip */
 	top = push(top, 0); /* err_code */
 	top = push(top, 0); /* vec_num */
@@ -53,7 +94,26 @@ struct cpu_state *proc_create(void *start)
 	top = push(top, 0); /* ebp */
 	top = push(top, 0); /* esi */
 	top = push(top, 0); /* edi */
-	top = push(top, I386_USER_DATA_SELECTOR | 3); /* ds */
+	top = push(top, data_sel); /* ds */
 
-	return top;
+	proc->context = top;
+
+	proc->pid = -1;
+	proc->status = DEAD;
+	proc->next = NULL;
+
+	return proc;
+err:
+	if (proc->kernel_stack)
+		mmu_unmap(proc->kernel_stack, 0x4000);
+	kfree(proc->context);
+	kfree(proc);
+	return NULL;
+}
+
+void proc_prepare_switch(struct process *proc)
+{
+	disable_irqs();
+	_tss.esp0 = (uintptr_t) proc->kernel_stack;
+	enable_irqs();
 }
