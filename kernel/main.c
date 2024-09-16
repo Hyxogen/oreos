@@ -75,6 +75,11 @@ static void mb2_save_info(struct mb2_info *info)
 	_mb2_info = info;
 }
 
+static void mb2_free_info(void)
+{
+	mmu_unmap(_mb2_info, _mb2_info->total_size); // we're done with multiboot, free it
+}
+
 struct mb2_info *mb2_get_info(void)
 {
 	return _mb2_info;
@@ -90,16 +95,18 @@ void kernel_main(struct mb2_info *info)
 	init_segments();
 	init_mmu();
 	init_printk();
+
 	read_acpi();
+
 	init_interrupts(&_acpi_table);
 	init_consoles();
 
 	init_timer(&_acpi_table);
+	init_sched();
 
-	mmu_unmap(info, info->total_size); // we're done with multiboot, free it
+	mb2_free_info();
 
 	printk("done!\n");
-	init_sched();
 
 	void *temp = mmu_map(NULL, (uintptr_t)loop - 0xC0000000, MMU_PAGESIZE,
 			     MMU_ADDRSPACE_USER, 0);
@@ -109,13 +116,5 @@ void kernel_main(struct mb2_info *info)
 	assert(state);
 	assert(!sched_proc(state));
 
-	/*struct cpu_state *state = proc_create(start_shell);
-	assert(state);
-	struct cpu_state *dummystate = proc_create(dummy);
-	assert(dummystate);
-	assert(!sched_proc(state));
-	assert(!sched_proc(dummystate));*/
-
 	sched_start();
-	assert(0); // we should not return
 }
