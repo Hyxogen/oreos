@@ -1,17 +1,10 @@
 section .text
-; all interrupts will go through this common functions, which saves the
-; registers etc.
-_common_interrupt:
-	; push registers on the stack
-	pusha
 
-	push dword ds
-
-	push esp ; pass stack pointer as argument
-
-	extern irq_callback
-	call irq_callback
-	mov esp, eax
+global return_from_irq
+; void return_from_irq(struct cpu_state *state);
+return_from_irq:
+	; state to return to
+	mov esp, [esp + 4]
 
 	; load segments
 	pop eax
@@ -26,6 +19,20 @@ _common_interrupt:
 	; free vector number and error code, see DEFINE_ISR macro
 	add esp, 8
 	iret
+
+; all interrupts will go through this common functions, which saves the
+; registers etc.
+_common_interrupt:
+	; push registers on the stack
+	pusha
+
+	push dword ds
+
+	push esp ; pass stack pointer as argument
+
+	extern irq_callback
+	call irq_callback
+	int 0x03 ; should not return
 
 
 ; arguments:

@@ -75,18 +75,12 @@ i16 irq_get_free_irq(void)
 	return -1;
 }
 
+__attribute__ ((noreturn))
 void* irq_callback(struct cpu_state *state)
 {
 	int irq = irq_get_id(state);
 
-	switch (irq) {
-	case 0xab: /* TODO stupid temp code, remove */
-		state = sched_schedule(state);
-		assert(state);
-		return state;
-	default:
-		if (irq_exec_handlers(irq, state))
-			break;
+	if (!irq_exec_handlers(irq, state)) {
 		printk("irq stackstrace:\n");
 		dump_stacktrace_at(state);
 		printk("cpu state:\n");
@@ -100,7 +94,7 @@ void* irq_callback(struct cpu_state *state)
 			assert(state);
 		}
 	}
-	return state;
+	return_from_irq(state);
 }
 
 static enum irq_result irq_on_syscall(u8 irq, struct cpu_state *state, void *dummy)

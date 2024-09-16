@@ -4,6 +4,7 @@
 #include <kernel/malloc/malloc.h>
 #include <kernel/libc/assert.h>
 #include <kernel/timer.h>
+#include <kernel/irq.h>
 
 static struct process *_proc_list;
 static struct process *_proc_cur;
@@ -93,7 +94,8 @@ void init_sched(void) {}
 
 void sched_start(void)
 {
-	__asm__ volatile("int 0xab");
-	panic("sched_start should not return!");
-	//timer_sched_int(0);
+	//__asm__ volatile("int 0xab");
+	struct cpu_state *state = sched_schedule(NULL);
+	assert(state);
+	return_from_irq(state);
 }

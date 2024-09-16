@@ -24,5 +24,4 @@ void disable_irqs(void);
 void enable_irqs(void);
 
 void init_interrupts(struct acpi_table *table);
-
 #endif

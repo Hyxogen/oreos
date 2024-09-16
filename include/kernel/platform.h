@@ -22,4 +22,7 @@ void halt(void);
 
 void short_wait(void);
 
+__attribute__ ((noreturn))
+void return_from_irq(struct cpu_state *state);
+
 #endif

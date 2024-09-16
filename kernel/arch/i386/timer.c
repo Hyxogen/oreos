@@ -36,6 +36,8 @@
 
 #define PIT_CH0_IRQ 0x0
 
+#define TIMER_IRQN 0x48
+
 static void pit_setup(u16 count)
 {
 	outb(PIT_MODECMD_REG, PIT_CMD_CH0 | PIT_ACCESS_LOHIBYTE |
@@ -144,10 +146,5 @@ void init_timer(struct acpi_table *table)
 void timer_sched_int(u32 millis)
 {
 	__timer._armed = true;
-	if (!millis) {
-		__asm__ volatile("int 0x48");
-	} else {
-		//TODO shoudl we disable IRQs?
-		timer_set(millis);
-	}
+	timer_set(millis);
 }
