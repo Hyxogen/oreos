@@ -33,7 +33,6 @@ struct process *sched_schedule(struct cpu_state *state);
 __attribute__((noreturn))
 void sched_start(void);
 
-void sched_enable_preemption(void);
-void sched_disable_preemption(void);
+bool sched_set_preemption(bool enable);
 
 #endif

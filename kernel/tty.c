@@ -6,6 +6,7 @@
 #include <kernel/libc/stdlib.h>
 #include <kernel/libc/string.h>
 #include <kernel/platform.h>
+#include <kernel/sched.h>
 #include <stdbool.h>
 
 #define TTY_COLOR_BLACK 0
@@ -211,7 +212,7 @@ void term_put(struct term *term, int ch)
 	if (!ch)
 		return;
 
-	spinlock_lock(&term->mtx);
+	bool stored = sched_set_preemption(false);
 
 	if (term->_escape >= 0) {
 		term_put_escaped(term, ch);
@@ -233,7 +234,7 @@ void term_put(struct term *term, int ch)
 		}
 	}
 	term_clearat(term, term->row, term->col, term->fg_color);
-	spinlock_unlock(&term->mtx);
+	sched_set_preemption(stored);
 }
 
 void term_write(struct term *term, const char *data, size_t n)

@@ -6,12 +6,18 @@
 #include <kernel/libc/assert.h>
 #include <kernel/timer.h>
 #include <kernel/irq.h>
+#include <kernel/debug.h>
 
 static struct process *_proc_list;
 static struct process *_proc_cur;
 static struct process *_idle_proc;
 static int _pid;
-static atomic_bool _disable_preempt = true;
+static atomic_bool _enable_preempt = false;
+
+bool sched_set_preemption(bool enabled)
+{
+	return atomic_exchange(&_enable_preempt, enabled);
+}
 
 static bool del_proc(int pid)
 {
@@ -42,10 +48,12 @@ static void sched_idle(void)
 
 int sched_proc(struct process *proc)
 {
+	//TODO MAKE PID INCREMENT ATOMIC
 	proc->pid = _pid++;
 	proc->status = READY;
 	proc->next = NULL;
 
+	bool prev = sched_set_preemption(false);
 	if (!_proc_list) {
 		_proc_list = proc;
 	} else {
@@ -55,6 +63,7 @@ int sched_proc(struct process *proc)
 			last = last->next;
 		last->next = proc;
 	}
+	sched_set_preemption(prev);
 	return 0;
 }
 
@@ -97,7 +106,7 @@ static void sched_preempt(struct cpu_state *state)
 	proc_prepare_switch(next_proc);
 
 	//TODO what if an interrupt happends before IRET?
-	sched_enable_preemption();
+	sched_set_preemption(true);
 	return_from_irq(next_proc->context);
 }
 
@@ -105,7 +114,7 @@ static enum irq_result sched_on_tick(u8 irqn, struct cpu_state *state, void *dum
 {
 	(void)irqn;
 	(void)dummy;
-	if (!atomic_load(&_disable_preempt) && timer_poll() == 0) {
+	if (atomic_load(&_enable_preempt) && timer_poll() == 0) {
 		sched_preempt(state);
 		//should preempt
 	}
@@ -117,21 +126,11 @@ void init_sched(void)
 	irq_register_handler(timer_get_irqn(), sched_on_tick, NULL);
 
 	_idle_proc = NULL;
-	_idle_proc= proc_create(sched_idle, PROC_FLAG_RING0);
+	_idle_proc = proc_create(sched_idle, PROC_FLAG_RING0);
 	assert(_idle_proc);
 }
 
 void sched_start(void)
 {
 	sched_preempt(NULL);
-}
-
-void sched_enable_preemption(void)
-{
-	atomic_store(&_disable_preempt, false);
-}
-
-void sched_disable_preemption(void)
-{
-	atomic_store(&_disable_preempt, true);
 }
