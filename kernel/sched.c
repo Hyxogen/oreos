@@ -19,8 +19,10 @@ bool sched_set_preemption(bool enabled)
 	return atomic_exchange(&_enable_preempt, enabled);
 }
 
-static bool del_proc(int pid)
+static void del_proc(int pid)
 {
+	bool stored = sched_set_preemption(false);
+
 	struct process *cur = _proc_list;
 	struct process *prev = NULL;
 	while (cur) {
@@ -31,13 +33,14 @@ static bool del_proc(int pid)
 				prev->next = cur->next;
 
 			kfree(cur);
-			return true;
+			break;
 		}
 
 		prev = cur;
 		cur = cur->next;
 	}
-	return false;
+
+	sched_set_preemption(stored);
 }
 
 static void sched_idle(void)
@@ -81,7 +84,7 @@ struct process *sched_schedule(struct cpu_state *state)
 		if (!_proc_cur)
 			_proc_cur = _proc_list;
 
-		// TODO schedule idle process?
+		// TODO schedule idle process
 		assert(_proc_cur && "nothing to schedule");
 
 		if (_proc_cur->status == DEAD) {
