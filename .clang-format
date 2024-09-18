@@ -19,3 +19,5 @@ AllowShortCaseLabelsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
 AlwaysBreakAfterDefinitionReturnType: None
 AlwaysBreakAfterReturnType: None
+IndentPPDirectives: AfterHash
+PPIndentWidth: 1

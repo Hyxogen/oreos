@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <kernel/serial.h>
+#include <kernel/endian.h>
 
 #include <kernel/libc/string.h>
 
@@ -102,7 +103,8 @@ static int ser_set_baud(int port, int baud)
 		return -1;
 
 	/* set baud rate divisor */
-	/* TODO don't assume little endian */
+	div = le_u16(div);
+
 	ser_write(port, SERIAL_REG_BAUDDIV_LO, div & 0xff);
 	ser_write(port, SERIAL_REG_BAUDDIV_HI, (div >> 8) & 0xff);
 
@@ -129,11 +131,13 @@ static int init_serial_port(int port, int baud)
 
 static int init_early_serial_port(int port, int baud)
 {
+	int uart = ser_detect_uart(port);
+	if (uart == SERIAL_UART_NONE)
+		return -1; /* no uart present */
+
 	if (ser_set_baud(port, baud))
 		return -1;
 	ser_write(port, SERIAL_REG_MCR, 0);
-
-	int uart = ser_detect_uart(port);
 
 	char str[2] = { '0' + uart, '\0' };
 	ser_writestr(port, "uart: ");
