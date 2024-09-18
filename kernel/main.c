@@ -107,6 +107,8 @@ void kernel_main(struct mb2_info *info)
 	init_timer(&_acpi_table);
 	init_sched();
 
+	init_serial();
+
 	init_consoles();
 
 	mb2_free_info();

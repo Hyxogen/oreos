@@ -8,6 +8,8 @@
 #include <kernel/kernel.h>
 #include <kernel/libc/assert.h>
 
+#define SERIAL_BAUD_RATE 38400
+
 // from https://www.sci.muni.cz/docs/pc/serport.txt
 static int ser_detect_uart(int port)
 {
@@ -91,14 +93,14 @@ void ser_writestr(int com, const char *str)
 	}
 }
 
-static int ser_set_baud(int port, int baud)
+static int ser_set_baud(int port, u32 baud)
 {
 	u8 saved_lcr = ser_read(port, SERIAL_REG_LCR);
 
 	/* enable dlab to set buad rate divisor */
 	ser_write(port, SERIAL_REG_LCR, SERIAL_LCR_DLAB_BIT);
 
-	int div = SERIAL_CLOCK_SPEED / baud;
+	u32 div = SERIAL_CLOCK_SPEED / baud;
 	if (!div || div > (u8) -1)
 		return -1;
 
@@ -112,7 +114,7 @@ static int ser_set_baud(int port, int baud)
 	return 0;
 }
 
-static int init_serial_port(int port, int baud)
+static int init_serial_port(int port, u32 baud)
 {
 	/* disable interrups */
 	ser_write(port, SERIAL_REG_IRQ_ENABLE, 0);
@@ -129,7 +131,7 @@ static int init_serial_port(int port, int baud)
 	return 0;
 }
 
-static int init_early_serial_port(int port, int baud)
+static int init_early_serial_port(int port, u32 baud)
 {
 	int uart = ser_detect_uart(port);
 	if (uart == SERIAL_UART_NONE)
@@ -149,12 +151,25 @@ static int init_early_serial_port(int port, int baud)
 
 void init_early_serial(void)
 {
-	assert(!init_early_serial_port(SERIAL_COM1, 38400));
+	assert(!init_early_serial_port(SERIAL_COM1, SERIAL_BAUD_RATE));
 }
 
 void init_serial(void)
 {
-	//TODO
-	panic("TODO\n");
-	assert(!init_serial_port(1, 38400));
+	/* TODO actually handle the interrupts for reading
+	 *
+	 * At the time of writing this, I don't need to read from serial, so I
+	 * didn't implement it, but it is probably a good idea to have at some
+	 * point.
+	 *
+	 * When enabling interrupts, is it actually interesting to wait for the
+	 * serial port to become ready to receive before sending? It (probably)
+	 * has a FIFO buffer already, so I would only really be duplicating
+	 * that.
+	 *
+	 * On the other hand, I guess that IO operations are slow, and doing
+	 * them all at ones might have a benifit?
+	 *
+	 */
+	assert(!init_serial_port(SERIAL_COM1, SERIAL_BAUD_RATE));
 }
