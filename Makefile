@@ -15,7 +15,7 @@ CFLAGS		:= \
 		   -masm=intel -g3 -Iinclude -MMD -Iinclude \
 		   -Ilib/include -fno-omit-frame-pointer
 
-QEMU_OPTS	:= -m 1G
+QEMU_OPTS	:= -m 1G -serial stdio
 
 AS		:= nasm
 ASFLAGS		:= -felf32 -g

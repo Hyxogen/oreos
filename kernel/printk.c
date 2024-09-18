@@ -5,10 +5,10 @@
 #include <kernel/tty.h>
 #include <kernel/libc/ctype.h>
 #include <kernel/libc/string.h>
+#include <kernel/serial.h>
 #else
 #include <ctype.h>
 #include <stdio.h>
-#include <string.h>
 #endif
 
 static struct term *printk_out;
@@ -366,7 +366,8 @@ write_error:
 static int write_to_term(int ch, void *ignored)
 {
 	(void)ignored;
-	term_put(printk_out, ch);
+	ser_putc(SERIAL_COM1, ch);
+	//term_put(printk_out, ch);
 	return 1;
 }
 #else

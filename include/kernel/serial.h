@@ -1,0 +1,70 @@
+#ifndef __KERNEL_SERIAL_H
+#define __KERNEL_SERIAL_H
+
+#include <kernel/types.h>
+
+#define SERIAL_REG_IRQ_ENABLE 0x01
+#define SERIAL_REG_LCR 0x03
+#define SERIAL_REG_BAUDDIV_LO 0x00
+#define SERIAL_REG_BAUDDIV_HI 0x01
+#define SERIAL_REG_FCR 0x02
+#define SERIAL_REG_IIR 0x02
+#define SERIAL_REG_MCR 0x04
+#define SERIAL_REG_LSR 0x05
+#define SERIAL_REG_MSR 0x06
+#define SERIAL_REG_SCRATCH 0x07
+#define SERIAL_REG_WRITE 0x00
+
+#define SERIAL_LCR_DLAB_BIT 0x80
+#define SERIAL_LCR_CHARLEN_5 0x00
+#define SERIAL_LCR_CHARLEN_6 0x01
+#define SERIAL_LCR_CHARLEN_7 0x02
+#define SERIAL_LCR_CHARLEN_8 0x03
+#define SERIAL_LCR_STOPBIT_BIT 0x04
+
+#define SERIAL_FCR_ENABLE_BIT 0x01
+#define SERIAL_FCR_CLEAR_RX_BIT 0x02
+#define SERIAL_FCR_CLEAR_TX_BIT 0x04
+
+#define SERIAL_FCR_IRQLEVEL_1BYTE 0x00
+#define SERIAL_FCR_IRQLEVEL_4BYTE 0x40
+#define SERIAL_FCR_IRQLEVEL_8BYTE 0x80
+#define SERIAL_FCR_IRQLEVEL_14BYTE 0xC0
+
+#define SERIAL_MCR_DTR 0x01
+#define SERIAL_MCR_RTS 0x02
+#define SERIAL_MCR_OUT1 0x03
+#define SERIAL_MCR_OUT2 0x04
+#define SERIAL_MCR_LOOPBACK_BIT 0x10
+
+#define SERIAL_LSR_TEMT 0x20
+
+#define SERIAL_MSR_CTS 0x10
+#define SERIAL_MSR_DSR 0x20
+#define SERIAL_MSR_RI 0x40
+#define SERIAL_MSR_DCD 0x80
+
+#define SERIAL_IIR_FIFO_MASK 0xC0
+#define SERIAL_IIR_FIFO_NONE 0x00
+#define SERIAL_IIR_FIFO_UNUSABLE 0x40
+#define SERIAL_IIR_FIFO_ENABLED 0x80
+
+#define SERIAL_CLOCK_SPEED 115200
+
+#define SERIAL_UART_NONE 0
+#define SERIAL_UART_8250 1
+#define SERIAL_UART_16450_OR_8250_SCRATCH 2
+#define SERIAL_UART_16450 3
+#define SERIAL_UART_16450A 4
+
+#define SERIAL_COM1 0x01
+
+void ser_write(int com, int reg, u8 val);
+u8 ser_read(int com, int reg);
+
+void ser_putc(int com, u8 byte);
+
+void init_early_serial(void);
+void init_serial(void);
+
+#endif

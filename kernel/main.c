@@ -14,6 +14,7 @@
 #include <kernel/sched.h>
 #include <kernel/libc/assert.h>
 #include <kernel/irq.h>
+#include <kernel/serial.h>
 
 #include <kernel/acpi/acpi.h>
 
@@ -91,6 +92,8 @@ extern char loop2[];
 void kernel_main(struct mb2_info *info)
 {
 	mb2_save_info(info);
+
+	init_early_serial();
 
 	init_paging();
 	init_segments();
