@@ -1,4 +1,5 @@
 #include <stddef.h>
+#include <kernel/kernel.h>
 #include <kernel/printk.h>
 #include <kernel/libc/ctype.h>
 
@@ -44,3 +45,7 @@ void print_hexdump(const void *p, size_t n)
 	printk("\n");
 }
 
+void unreachable(void)
+{
+	panic("should be unreachable");
+}

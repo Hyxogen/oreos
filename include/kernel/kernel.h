@@ -7,5 +7,7 @@
 __attribute__((noreturn)) void panic(const char *fmt, ...);
 void oops(const char *fmt, ...);
 
+__attribute__ ((noreturn)) void unreachable(void);
+
 struct mb2_info *mb2_get_info(void);
 #endif

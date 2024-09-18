@@ -2,10 +2,10 @@
 #include <stddef.h>
 #include <kernel/serial.h>
 
+#include <kernel/libc/string.h>
+
 #include <kernel/kernel.h>
 #include <kernel/libc/assert.h>
-
-int width, height;
 
 // from https://www.sci.muni.cz/docs/pc/serport.txt
 static int ser_detect_uart(int port)
@@ -16,7 +16,7 @@ static int ser_detect_uart(int port)
 	ser_write(port, SERIAL_REG_MCR, SERIAL_MCR_LOOPBACK_BIT);
 
 	/* when LOOP bit set, the upper 4 bits of the MSR will mirror the status
-	 * lines of the MCR */
+	 * lines of the MCR, we check if this happens */
 	u8 x = ser_read(port, SERIAL_REG_MSR);
 	if (x & 0xf0)
 		return SERIAL_UART_NONE;
@@ -28,7 +28,7 @@ static int ser_detect_uart(int port)
 
 	ser_write(port, SERIAL_REG_MCR, old);
 
-	/* check for scratch register */
+	/* check for working scratch register */
 	old = ser_read(port, SERIAL_REG_SCRATCH);
 
 	u8 magic = 0x55;
@@ -43,7 +43,7 @@ static int ser_detect_uart(int port)
 
 	ser_write(port, SERIAL_REG_SCRATCH, old);
 
-	/* check for fifo */
+	/* check for working fifo */
 	ser_write(port, SERIAL_REG_FCR, SERIAL_FCR_ENABLE_BIT);
 
 	x = ser_read(port, SERIAL_REG_IIR);
@@ -51,15 +51,16 @@ static int ser_detect_uart(int port)
 	/* apparently some old fashioned software relies on this */
 	ser_write(port, SERIAL_REG_FCR, 0);
 
-	/*
-	 * 0 0 -> 2
-	 * 0 1 -> 2
-	 * 1 0 -> 3
-	 * 1 1 -> 4
-	 *
-	 */
-	//TODO
-	return -1;
+	switch (x & SERIAL_IIR_FIFO_MASK) {
+	case SERIAL_IIR_FIFO_UNUSABLE | SERIAL_IIR_FIFO_ENABLED:
+		return SERIAL_UART_16450A;
+	case SERIAL_IIR_FIFO_NONE:
+	case SERIAL_IIR_FIFO_UNUSABLE:
+		return SERIAL_UART_16450_OR_8250_SCRATCH;
+	case SERIAL_IIR_FIFO_ENABLED:
+		return SERIAL_UART_16450;
+	}
+	unreachable();
 }
 
 static bool ser_can_transmit(int port)
@@ -82,9 +83,17 @@ void ser_putc(int com, u8 byte)
 		ser_polled_putc(com, '\r');
 }
 
+void ser_writestr(int com, const char *str)
+{
+	while (*str) {
+		ser_putc(com, *str++);
+	}
+}
+
 static int ser_set_baud(int port, int baud)
 {
-	u8 old_lcr = ser_read(port, SERIAL_REG_LCR);
+	u8 saved_lcr = ser_read(port, SERIAL_REG_LCR);
+
 	/* enable dlab to set buad rate divisor */
 	ser_write(port, SERIAL_REG_LCR, SERIAL_LCR_DLAB_BIT);
 
@@ -97,7 +106,7 @@ static int ser_set_baud(int port, int baud)
 	ser_write(port, SERIAL_REG_BAUDDIV_LO, div & 0xff);
 	ser_write(port, SERIAL_REG_BAUDDIV_HI, (div >> 8) & 0xff);
 
-	ser_write(port, SERIAL_REG_LCR, old_lcr);
+	ser_write(port, SERIAL_REG_LCR, saved_lcr);
 	return 0;
 }
 
@@ -123,6 +132,13 @@ static int init_early_serial_port(int port, int baud)
 	if (ser_set_baud(port, baud))
 		return -1;
 	ser_write(port, SERIAL_REG_MCR, 0);
+
+	int uart = ser_detect_uart(port);
+
+	char str[2] = { '0' + uart, '\0' };
+	ser_writestr(port, "uart: ");
+	ser_writestr(port, str);
+	ser_putc(port, '\n');
 
 	return 0;
 }
