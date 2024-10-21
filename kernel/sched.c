@@ -14,7 +14,7 @@
 static struct process *_proc_list;
 static struct process *_proc_cur;
 static struct process *_idle_proc;
-static int _pid;
+static atomic_int _pid = 0;
 static atomic_bool _enable_preempt = false;
 
 struct process *sched_cur(void)
@@ -58,8 +58,7 @@ static void sched_idle(void)
 
 int sched_proc(struct process *proc)
 {
-	//TODO MAKE PID INCREMENT ATOMIC
-	proc->pid = _pid++;
+	proc->pid = atomic_fetch_add_explicit(&_pid, 1, memory_order_relaxed);
 	proc->status = READY;
 	proc->next = NULL;
 
