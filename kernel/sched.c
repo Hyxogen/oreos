@@ -8,11 +8,19 @@
 #include <kernel/irq.h>
 #include <kernel/debug.h>
 
+//TODO remove
+#include <kernel/printk.h>
+
 static struct process *_proc_list;
 static struct process *_proc_cur;
 static struct process *_idle_proc;
 static int _pid;
 static atomic_bool _enable_preempt = false;
+
+struct process *sched_cur(void)
+{
+	return _proc_cur;
+}
 
 bool sched_set_preemption(bool enabled)
 {
@@ -31,8 +39,7 @@ static void del_proc(int pid)
 				_proc_list = cur->next;
 			else
 				prev->next = cur->next;
-
-			kfree(cur);
+			proc_free(cur);
 			break;
 		}
 
@@ -74,7 +81,8 @@ struct process *sched_schedule(struct cpu_state *state)
 {
 	if (_proc_cur) {
 		struct process *prev = _proc_cur;
-		prev->status = READY;
+		if (prev->status != DEAD)
+			prev->status = READY;
 		prev->context = state;
 
 		_proc_cur = prev->next;
@@ -88,6 +96,7 @@ struct process *sched_schedule(struct cpu_state *state)
 		assert(_proc_cur && "nothing to schedule");
 
 		if (_proc_cur->status == DEAD) {
+			printk("%i exited with: %i\n", _proc_cur->pid, _proc_cur->exit_code);
 			struct process *next = _proc_cur->next;
 			del_proc(_proc_cur->pid);
 			_proc_cur = next;
@@ -101,8 +110,7 @@ struct process *sched_schedule(struct cpu_state *state)
 	return _proc_cur;
 }
 
-__attribute__((noreturn))
-static void sched_preempt(struct cpu_state *state)
+void sched_preempt(struct cpu_state *state)
 {
 	struct process *next_proc = sched_schedule(state);
 	assert(next_proc);

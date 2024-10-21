@@ -19,7 +19,11 @@ loop2:
 	mov ecx, .str2 ; buf
 	mov edx, 2 ; len
 
+	int 0x80
+
 	xchg bx, bx
+	mov eax, 0x01
+	mov ebx, 0x00
 	int 0x80
 	jmp loop2
 .str2:

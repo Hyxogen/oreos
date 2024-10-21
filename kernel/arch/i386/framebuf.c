@@ -89,7 +89,7 @@ void init_framebuf(struct mb2_info *mb)
 	fb_main.width = f->width;
 	fb_main.height = f->height;
 	fb_main.bpp = f->bpp;
-	fb_clear(&fb_main, FB_COLOR_BLACK);
+	/*fb_clear(&fb_main, FB_COLOR_BLACK); TODO put back*/
 
 	init_termialized = true;
 	return;

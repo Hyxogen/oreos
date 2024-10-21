@@ -64,6 +64,13 @@ void dump_registers(void)
 
 void dump_state(const struct cpu_state *state)
 {
+	DUMP_REGISTER("cr0");
+	DUMP_REGISTER("cr2");
+	DUMP_REGISTER("cr3");
+	DUMP_REGISTER("cr4");
+
+	printk("vec_num: 0x%08lx ", state->vec_num);
+	printk("err_code: 0x%08lx\n", state->err_code);
 
 	printk("edi: 0x%08lx ", state->edi);
 	printk("esi: 0x%08lx ", state->esi);
@@ -76,13 +83,6 @@ void dump_state(const struct cpu_state *state)
 	printk("eip: 0x%08lx\n", state->eip);
 	printk("cs: 0x%04hx\n", state->cs);
 
-	printk("vec_num: 0x%08lx ", state->vec_num);
-	printk("err_code: 0x%08lx\n", state->err_code);
-
-	DUMP_REGISTER("cr0");
-	DUMP_REGISTER("cr2");
-	DUMP_REGISTER("cr3");
-	DUMP_REGISTER("cr4");
 }
 
 void disable_irqs(void)

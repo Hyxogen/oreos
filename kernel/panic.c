@@ -24,6 +24,7 @@ void oops(const char *fmt, ...)
 
 	vprintk(fmt, args);
 	va_end(args);
+	printk("\n");
 }
 
 void panic(const char *fmt, ...)

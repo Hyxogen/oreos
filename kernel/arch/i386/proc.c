@@ -10,6 +10,8 @@
 
 #include <kernel/debug.h>
 
+#define KERNEL_STACK_SIZE 0x4000
+
 u32 _get_eflags(void);
 
 static void *push(void *stackp, u32 v)
@@ -66,18 +68,15 @@ struct process *proc_create(void *start, u32 flags)
 	proc_get_selectors(ring, &code_sel, &data_sel);
 	u32 eflags = proc_get_eflags(ring);
 
-
-	//TODO don't hardcode kernel stack size
-	proc->kernel_stack = mmu_mmap(NULL, 0x4000, MMU_ADDRSPACE_KERNEL, 0);
+	proc->kernel_stack = mmu_mmap(NULL, KERNEL_STACK_SIZE, MMU_ADDRSPACE_KERNEL, 0);
 	if (proc->kernel_stack == MMU_MAP_FAILED)
 		goto err;
 
-	proc->kernel_stack = (u8*)proc->kernel_stack + 0x4000;
-	void *top = proc->kernel_stack;
+	void *top = (u8*) proc->kernel_stack + KERNEL_STACK_SIZE;
 
 	u32 esp = 0;
 	if (ring == 0)
-		esp = (uintptr_t) proc->kernel_stack;
+		esp = (uintptr_t) top;
 
 	top = push(top, data_sel); /* ss */
 	top = push(top, esp); /* esp */
@@ -105,15 +104,21 @@ struct process *proc_create(void *start, u32 flags)
 	return proc;
 err:
 	if (proc->kernel_stack)
-		mmu_unmap(proc->kernel_stack, 0x4000);
+		mmu_unmap(proc->kernel_stack, KERNEL_STACK_SIZE);
 	kfree(proc->context);
 	kfree(proc);
 	return NULL;
 }
 
+void proc_free(struct process *proc)
+{
+	mmu_unmap(proc->kernel_stack, KERNEL_STACK_SIZE);
+	kfree(proc);
+}
+
 void proc_prepare_switch(struct process *proc)
 {
 	disable_irqs();
-	_tss.esp0 = (uintptr_t) proc->kernel_stack;
+	_tss.esp0 = (uintptr_t) proc->kernel_stack + KERNEL_STACK_SIZE;
 	enable_irqs();
 }
