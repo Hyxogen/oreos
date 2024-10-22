@@ -124,9 +124,9 @@ static enum irq_result sched_on_tick(u8 irqn, struct cpu_state *state, void *dum
 {
 	(void)irqn;
 	(void)dummy;
-	//TODO atomci exchange om ervoor te zorgen dat ie niet meer erin word
-	//gepreempt?
-	if (atomic_load(&_enable_preempt) && timer_poll() == 0) {
+	bool expected = true;
+	if (timer_poll() == 0 && atomic_compare_exchange_strong(
+				     &_enable_preempt, &expected, false)) {
 		sched_preempt(state);
 		//should preempt
 	}
