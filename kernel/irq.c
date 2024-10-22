@@ -48,11 +48,13 @@ static bool irq_exec_handlers(u8 irq, struct cpu_state *state)
 	struct irq_handler *cur = _handlers[irq];
 
 	while (cur) {
-		handled = true;
 		enum irq_result res = cur->handler(irq, state, cur->ctx);
 
 		switch (res) {
 		case IRQ_CONTINUE:
+			handled = true;
+			/* fallthrough */
+		case IRQ_IGNORE:
 			break;
 		case IRQ_PANIC:
 			panic("irq handlers signalled panic\n");

@@ -14,8 +14,8 @@ static i32 (*_syscall_table[])() = {
 	syscall_stub, /* doesn't exist */
 	syscall_exit, /* _exit */
 	syscall_stub, /* fork */
-	read, /* read */
-	write, /* write */
+	syscall_read, /* read */
+	syscall_write, /* write */
 };
 
 int do_syscall(struct cpu_state *state)

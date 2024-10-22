@@ -149,12 +149,13 @@ void mmu_free_pageframe(struct page *page, size_t nframes)
 }
 
 /* requires tlb flush */
-static void mmu_unmap_one(void *vaddr)
+static void mmu_unmap_one(void *vaddr, bool oops_on_unmapped)
 {
 	struct mmu_pte *pte = mmu_vaddr_to_pte(vaddr);
 
 	if (!pte->present) {
-		oops("WARNING: attempt to unmap memory that wasn't mapped");
+		if (oops_on_unmapped)
+			oops("WARNING: attempt to unmap memory that wasn't mapped");
 		return;
 	}
 
@@ -163,14 +164,14 @@ static void mmu_unmap_one(void *vaddr)
 	mmu_free_pageframe(mmu_pfn_to_page(pte->pfn), 1);
 }
 
-int mmu_unmap(void *vaddr, size_t len)
+int mmu_unmap(void *vaddr, size_t len, u32 flags)
 {
 	u8 *vaddr_c = vaddr;
 	u8 *vaddr_c_end = PTR_ALIGN_UP(vaddr_c + len, MMU_PAGESIZE);
 	vaddr_c = PTR_ALIGN_DOWN(vaddr_c, MMU_PAGESIZE);
 
 	for (; vaddr_c != vaddr_c_end; vaddr_c += MMU_PAGESIZE) {
-		mmu_unmap_one(vaddr_c);
+		mmu_unmap_one(vaddr_c, !(flags & MMU_UNMAP_IGNORE_UNMAPPED));
 	}
 
 	mmu_flush_tlb();
@@ -242,12 +243,13 @@ static inline bool mmu_pagenum_is_pde(size_t pagenum)
 static inline void *mmu_addrspace_beg(int addrspace)
 {
 	if (addrspace == MMU_ADDRSPACE_KERNEL)
-		return (void *)0xc0000000;
-	return (void *)0x00400000;
+		return (void *)MMU_KERNEL_START;
+	return (void *)MMU_USER_START;
 }
 
 static inline void *mmu_addrspace_end(int addrspace)
 {
+	//TODO remove magic values
 	if (addrspace == MMU_ADDRSPACE_KERNEL)
 		return (void *)0xffffffff;
 	return (void *)0xbfffffff;
@@ -355,7 +357,7 @@ void *mmu_map_pages(void *vaddr, struct page *frame, size_t nframes,
 		int rc = mmu_map_one(vaddr_c, frame + i, addrspace, flags);
 
 		if (rc) {
-			mmu_unmap(vaddr, i);
+			mmu_unmap(vaddr, i, 0);
 			return MMU_INVALID_PAGE; /* probably oom, check rc */
 		}
 	}
@@ -389,6 +391,27 @@ void *mmu_mmap(void *vaddr, size_t len, int addrspace, u32 flags)
 	if (!page)
 		return MMU_MAP_FAILED;
 	return mmu_map_pages(vaddr, page, nframes, addrspace, flags);
+}
+
+static void mmu_invalidate_pde(struct mmu_pde *pde)
+{
+	if (!pde->present)
+		return;
+
+	struct mmu_pte *pte = mmu_get_pagetable(pde);
+	for (size_t i = 0; i < 1024; i++) {
+		pte[i].present = false;
+	}
+	pde->present = false;
+}
+
+void mmu_invalidate_user(void)
+{
+	for (size_t pfn = 0; pfn < MMU_PADDR_TO_PFN(MMU_KERNEL_START); pfn += 1024) {
+		struct mmu_pde *pde = mmu_pagenum_to_pde(pfn);
+		mmu_invalidate_pde(pde);
+	}
+	mmu_flush_tlb();
 }
 
 static void mmu_read_mmap(const struct mb2_info *info)

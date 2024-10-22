@@ -4,7 +4,7 @@
 #include <kernel/tty.h>
 
 //TODO SANITIZE INPUT!!
-i32 read(int fd, void *buf, size_t nbytes)
+i32 syscall_read(int fd, void *buf, size_t nbytes)
 {
 	//TODO make sure that the process owns the buffer
 	return -ENOTSUP;

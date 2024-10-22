@@ -55,7 +55,7 @@ static struct sdt_hdr *copy_sdt_entry(uintptr_t ptr)
 		printk("rsdt entry too large\n");
 	}
 
-	mmu_unmap(hdr, MMU_PAGESIZE);
+	mmu_unmap(hdr, MMU_PAGESIZE, 0);
 
 	return res;
 }
@@ -109,7 +109,7 @@ bool read_rsdp(struct acpi_table *table, struct rsdp *root)
 			acpi_free(table);
 	}
 
-	mmu_unmap(rsdt, MMU_PAGESIZE);
+	mmu_unmap(rsdt, MMU_PAGESIZE, 0);
 	return success;
 }
 

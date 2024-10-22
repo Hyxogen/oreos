@@ -183,7 +183,7 @@ static bool apic_read_ioapics(struct apic *dest, const struct madt *madt)
 	return true;
 err:
 	for (u8 i = 0; i < dest->nioapic; i++) {
-		mmu_unmap(dest->ioapics[i].addr, MMU_PAGESIZE);
+		mmu_unmap(dest->ioapics[i].addr, MMU_PAGESIZE, 0);
 	}
 	kfree(dest->ioapics);
 	dest->nioapic = 0;

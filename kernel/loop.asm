@@ -1,5 +1,6 @@
 ; TODO remove
 global loop:function (loop.end - loop)
+align 0x1000
 loop:
 	mov eax, 0x04 ; write syscall
 	mov ebx, 0x00 ; fd 0
@@ -13,6 +14,7 @@ loop:
 .end:
 
 global loop2:function (loop2.end - loop2)
+align 0x1000
 loop2:
 	mov eax, 0x04 ; write syscall
 	mov ebx, 0x00 ; fd 0
@@ -29,3 +31,5 @@ loop2:
 .str2:
 	dw "b", 0xa
 .end:
+
+resb 0x1000 ; buffer

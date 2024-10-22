@@ -6,6 +6,10 @@
 #include <kernel/acpi/acpi.h>
 
 enum irq_result {
+	/* TODO give IRQ_IGNORE a better name, it's supposed to indicate that
+	 * the IRQ was not handled and it should continue to execute other
+	 * handlers */
+	IRQ_IGNORE,
 	IRQ_CONTINUE,
 	IRQ_PANIC,
 };

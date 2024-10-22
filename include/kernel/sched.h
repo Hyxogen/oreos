@@ -2,7 +2,9 @@
 #define __KERNEL_SCHED_H
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <kernel/types.h>
+#include <kernel/mmu.h>
 
 #define PROC_FLAG_RING0 0x01
 #define PROC_FLAG_RING3 0x02
@@ -17,13 +19,20 @@ enum proc_status {
 
 struct process {
 	int pid;
+
 	int exit_code;
-	void* kernel_stack;
 	enum proc_status status;
+
+	void* kernel_stack;
+
 	struct cpu_state *context;
 	struct process *next;
+
+	struct mm mm;
 };
+
 //TODO remove out of scheduler
+
 struct process *proc_create(void *start, u32 flags);
 void proc_free(struct process *proc);
 void proc_prepare_switch(struct process *proc);

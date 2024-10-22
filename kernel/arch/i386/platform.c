@@ -99,3 +99,8 @@ void short_wait(void)
 {
 	io_wait();
 }
+
+bool is_userspace(const struct cpu_state *state)
+{
+	return state->eflags.iopl == 3;
+}

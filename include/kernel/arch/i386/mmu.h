@@ -48,7 +48,7 @@ struct mmu_pde {
 	u32 pfn : 20;
 };
 
-_Static_assert(sizeof(struct mmu_pte) == sizeof(u32), "basic assumption");
+_Static_assert(sizeof(struct mmu_pte) == sizeof(u32), "sanity check");
 
 void mmu_flush_tlb(void);
 

@@ -52,6 +52,7 @@ struct process *proc_create(void *start, u32 flags)
 		return proc;
 	proc->kernel_stack = NULL;
 	proc->context = NULL;
+	proc->mm.root = NULL;
 
 	int ring;
 
@@ -104,7 +105,7 @@ struct process *proc_create(void *start, u32 flags)
 	return proc;
 err:
 	if (proc->kernel_stack)
-		mmu_unmap(proc->kernel_stack, KERNEL_STACK_SIZE);
+		mmu_unmap(proc->kernel_stack, KERNEL_STACK_SIZE, 0);
 	kfree(proc->context);
 	kfree(proc);
 	return NULL;
@@ -112,7 +113,7 @@ err:
 
 void proc_free(struct process *proc)
 {
-	mmu_unmap(proc->kernel_stack, KERNEL_STACK_SIZE);
+	mmu_unmap(proc->kernel_stack, KERNEL_STACK_SIZE, 0);
 	kfree(proc);
 }
 
@@ -120,5 +121,6 @@ void proc_prepare_switch(struct process *proc)
 {
 	disable_irqs();
 	_tss.esp0 = (uintptr_t) proc->kernel_stack + KERNEL_STACK_SIZE;
+	mmu_invalidate_user(); /* do irqs have to be disabled? */
 	enable_irqs();
 }

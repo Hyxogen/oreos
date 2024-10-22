@@ -23,4 +23,4 @@ void *ma_sysalloc(size_t size)
 	return p;
 }
 
-bool ma_sysfree(void *p, size_t size) { return mmu_unmap(p, size) == 0; }
+bool ma_sysfree(void *p, size_t size) { return mmu_unmap(p, size, 0) == 0; }

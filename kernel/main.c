@@ -18,6 +18,8 @@
 
 #include <kernel/acpi/acpi.h>
 
+/* TODO REMOVE */
+#include <kernel/libc/string.h>
 void init_paging(void);
 void init_segments(void);
 void init_framebuf(struct mb2_info *info);
@@ -78,7 +80,7 @@ static void mb2_save_info(struct mb2_info *info)
 
 static void mb2_free_info(void)
 {
-	mmu_unmap(_mb2_info, _mb2_info->total_size); // we're done with multiboot, free it
+	mmu_unmap(_mb2_info, _mb2_info->total_size, 0); // we're done with multiboot, free it
 }
 
 struct mb2_info *mb2_get_info(void)
@@ -113,21 +115,31 @@ void kernel_main(struct mb2_info *info)
 
 	mb2_free_info();
 
+	init_mm();
+
 	printk("done!\n");
 
-	void *temp = mmu_map(NULL, (uintptr_t)loop - 0xC0000000, MMU_PAGESIZE,
-			     MMU_ADDRSPACE_USER, 0);
-	assert(temp != MMU_MAP_FAILED);
-	void *temp2 = mmu_map(NULL, (uintptr_t)loop2 - 0xC0000000, MMU_PAGESIZE,
-			     MMU_ADDRSPACE_USER, 0);
-	assert(temp2 != MMU_MAP_FAILED);
+	struct mm dummy1_mm, dummy2_mm;
+	dummy1_mm.root = dummy2_mm.root = NULL;
+	uintptr_t dummy1_start = 0, dummy2_start = 0;
+	assert(!mm_map(&dummy1_mm, &dummy1_start, MMU_PAGESIZE, (uintptr_t)loop));
+	assert(!mm_map(&dummy2_mm, &dummy2_start, MMU_PAGESIZE, (uintptr_t)loop2));
+	assert(!mm_map_now(dummy1_mm.root));
+	memcpy((void*)dummy1_start, loop, MMU_PAGESIZE);
+	assert(!mm_map_now(dummy2_mm.root));
+	memcpy((void*)dummy2_start, loop2, MMU_PAGESIZE);
 
-	struct process *dummy = proc_create(temp, PROC_FLAG_RING3);
+	struct process *dummy = proc_create((void*)dummy1_start, PROC_FLAG_RING3);
+
 	assert(dummy);
-	struct process *dummy2 = proc_create(temp2, PROC_FLAG_RING3);
+	struct process *dummy2 = proc_create((void*)dummy2_start, PROC_FLAG_RING3);
 	assert(dummy2);
 	assert(!sched_proc(dummy));
 	assert(!sched_proc(dummy2));
 
+	dummy->mm.root = dummy1_mm.root;
+	dummy2->mm.root = dummy2_mm.root;
+
+	BOCHS_BREAK;
 	sched_start();
 }

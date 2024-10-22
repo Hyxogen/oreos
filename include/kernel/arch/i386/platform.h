@@ -23,6 +23,10 @@
 
 #define IOPL_USER 3
 
+enum irq {
+	IRQ_PAGEFAULT = 0x0e
+};
+
 struct gdtr {
 	u16 limit;
 	u32 base;
@@ -120,5 +124,7 @@ struct cpu_state {
 extern struct tss _tss;
 
 void _reload_segments(u16 code, u16 data);
+
+bool is_userspace(const struct cpu_state *state);
 
 #endif
