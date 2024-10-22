@@ -42,6 +42,8 @@ int sched_proc(struct process *proc);
 struct process *sched_schedule(struct cpu_state *state);
 struct process *sched_cur(void);
 
+void sched_kill(struct process *proc, int exit_code);
+
 __attribute__((noreturn))
 void sched_start(void); /* TODO remove, should use sched_preempt */
 __attribute__((noreturn))

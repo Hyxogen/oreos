@@ -120,6 +120,14 @@ void sched_preempt(struct cpu_state *state)
 	return_from_irq(next_proc->context);
 }
 
+void sched_kill(struct process *proc, int exit_code)
+{
+	bool saved = sched_set_preemption(false);
+	proc->exit_code = exit_code;
+	proc->status = DEAD;
+	sched_set_preemption(saved);
+}
+
 static enum irq_result sched_on_tick(u8 irqn, struct cpu_state *state, void *dummy)
 {
 	(void)irqn;

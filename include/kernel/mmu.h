@@ -31,6 +31,9 @@
 
 #define MMU_UNMAP_IGNORE_UNMAPPED 0x1
 
+#define VMA_MAP_PROT_READ 0x01
+#define VMA_MAP_PROT_WRITE 0x02
+
 struct page {
 	u8 flags;
 };

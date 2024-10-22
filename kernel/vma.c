@@ -217,7 +217,8 @@ int vma_map_now(struct vma_area *area)
 	return res;
 }
 
-static enum irq_result pagefault_handler(struct cpu_state *state, const struct pagefault *fault)
+static enum irq_result pagefault_handler(struct cpu_state *state,
+					 const struct pagefault *fault)
 {
 	if (!is_from_userspace(state))
 		return IRQ_PANIC;
@@ -227,22 +228,23 @@ static enum irq_result pagefault_handler(struct cpu_state *state, const struct p
 	assert(proc);
 
 	struct vma_area *area = vma_find_mapping(proc->mm.root, fault->addr, MMU_PAGESIZE);
-	if (!area || fault->is_write) {
-		/* TODO detect COW */
-		proc->status = DEAD;
-		proc->status = -1; /* TODO set proper status */
-		sched_preempt(state);
+	if (!area || (fault->is_write && !(area->flags & VMA_MAP_PROT_WRITE)) ||
+	    (!fault->is_write && !(area->flags & VMA_MAP_PROT_READ))) {
+		goto kill_proc;
+		sched_kill(proc, -1);
 	}
+	/* TODO COW */
 
 	/* TODO set proper read/write access */
 	if (vma_map_now(area)) {
 		/* TODO we are out of mem, do something smart */
-		proc->status = DEAD;
-		proc->status = -1; /* TODO set proper status */
-		sched_preempt(state);
+		goto kill_proc;
 	}
 	sched_set_preemption(saved);
 	return IRQ_CONTINUE;
+kill_proc:
+	sched_kill(proc, -1);
+	sched_preempt(state);
 }
 
 void init_vma(void)

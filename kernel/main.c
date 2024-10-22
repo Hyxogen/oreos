@@ -122,8 +122,8 @@ void kernel_main(struct mb2_info *info)
 	struct mm dummy1_mm, dummy2_mm;
 	dummy1_mm.root = dummy2_mm.root = NULL;
 	uintptr_t dummy1_start = 0, dummy2_start = 0;
-	assert(!vma_map(&dummy1_mm, &dummy1_start, MMU_PAGESIZE, (uintptr_t)loop));
-	assert(!vma_map(&dummy2_mm, &dummy2_start, MMU_PAGESIZE, (uintptr_t)loop2));
+	assert(!vma_map(&dummy1_mm, &dummy1_start, MMU_PAGESIZE, VMA_MAP_PROT_READ));
+	assert(!vma_map(&dummy2_mm, &dummy2_start, MMU_PAGESIZE, VMA_MAP_PROT_READ));
 	assert(!vma_map_now(dummy1_mm.root));
 	memcpy((void*)dummy1_start, loop, MMU_PAGESIZE);
 	assert(!vma_map_now(dummy2_mm.root));
