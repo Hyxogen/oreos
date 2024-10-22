@@ -32,6 +32,7 @@ mb2_hdr_end:
 
 section .bss
 align 16
+; TODO unmap this temporary stack once we've allocated our own kernel stacks
 _stack_bot:
 	resb 0x4000 ; allocate 16 KiB for stack
 global _stack_top

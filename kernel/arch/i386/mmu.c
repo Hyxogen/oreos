@@ -8,6 +8,7 @@
 #include <kernel/types.h>
 #include <kernel/libc/string.h>
 #include <kernel/libc/assert.h>
+#include <kernel/arch/i386/platform.h>
 
 static struct page mmu_pages[MMU_MAX_PAGES];
 
@@ -412,6 +413,25 @@ void mmu_invalidate_user(void)
 		mmu_invalidate_pde(pde);
 	}
 	mmu_flush_tlb();
+}
+
+static enum irq_result mmu_on_pagefault(u8 irq, struct cpu_state *state, void *ctx)
+{
+	(void) irq;
+	struct pagefault fault = {
+		.is_write = state->err_code & 0x02,
+		.addr = 0,
+	};
+
+	__asm__ volatile ("mov %0, cr2" : "=r"(fault.addr));
+	enum irq_result (*handler)(struct cpu_state*, const struct pagefault*) = ctx;
+	return handler(state, &fault);
+}
+
+int mmu_register_pagefault_handler(enum irq_result (*handler)(
+    struct cpu_state *state, const struct pagefault *info))
+{
+	return irq_register_handler(IRQ_PAGEFAULT, mmu_on_pagefault, handler);
 }
 
 static void mmu_read_mmap(const struct mb2_info *info)

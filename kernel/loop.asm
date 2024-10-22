@@ -23,6 +23,7 @@ loop2:
 
 	int 0x80
 
+	jmp loop2
 	xchg bx, bx
 	mov eax, 0x01
 	mov ebx, 0x00

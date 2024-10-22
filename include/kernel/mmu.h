@@ -4,6 +4,9 @@
 #include <boot/multiboot2.h>
 #include <kernel/types.h>
 #include <stddef.h>
+#include <stdbool.h>
+#include <kernel/platform.h>
+#include <kernel/irq.h>
 
 #define MMU_PAGESIZE 0x1000
 
@@ -32,20 +35,25 @@ struct page {
 	u8 flags;
 };
 
-struct mm_area {
+struct vma_area {
 	struct page *page;
 	uintptr_t start;
 	uintptr_t end;
 	u32 flags;
 
 	/* XXX probably a good idea to use some kind of self balancing tree */
-	struct mm_area *parent;
-	struct mm_area *left;
-	struct mm_area *right;
+	struct vma_area *parent;
+	struct vma_area *left;
+	struct vma_area *right;
 };
 
 struct mm {
-	struct mm_area *root;
+	struct vma_area *root;
+};
+
+struct pagefault {
+	uintptr_t addr;
+	bool is_write;
 };
 
 struct page *mmu_alloc_pageframe(uintptr_t hint, size_t nframes, u32 flags);
@@ -64,13 +72,15 @@ void init_mmu(void);
 void *mmu_mmap(void *vaddr, size_t len, int addrspace, u32 flags);
 void mmu_invalidate_user(void);
 
-/* TODO this is a really bad name, probably best to merge with with the mmu */
-void init_mm(void);
+int mmu_register_pagefault_handler(enum irq_result (*handler)(
+    struct cpu_state *state, const struct pagefault *info));
 
-struct mm_area *mm_find_mapping(const struct mm_area *area, uintptr_t start,
+void init_vma(void);
+
+struct vma_area *vma_find_mapping(const struct vma_area *area, uintptr_t start,
 				uintptr_t end);
-int mm_map(struct mm *mm, uintptr_t *addr, size_t len, u32 flags);
-int mm_unmap(struct mm *mm, uintptr_t addr, size_t len);
-int mm_map_now(struct mm_area *area);
+int vma_map(struct mm *mm, uintptr_t *addr, size_t len, u32 flags);
+int vma_unmap(struct mm *mm, uintptr_t addr, size_t len);
+int vma_map_now(struct vma_area *area);
 
 #endif

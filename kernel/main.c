@@ -115,18 +115,18 @@ void kernel_main(struct mb2_info *info)
 
 	mb2_free_info();
 
-	init_mm();
+	init_vma();
 
 	printk("done!\n");
 
 	struct mm dummy1_mm, dummy2_mm;
 	dummy1_mm.root = dummy2_mm.root = NULL;
 	uintptr_t dummy1_start = 0, dummy2_start = 0;
-	assert(!mm_map(&dummy1_mm, &dummy1_start, MMU_PAGESIZE, (uintptr_t)loop));
-	assert(!mm_map(&dummy2_mm, &dummy2_start, MMU_PAGESIZE, (uintptr_t)loop2));
-	assert(!mm_map_now(dummy1_mm.root));
+	assert(!vma_map(&dummy1_mm, &dummy1_start, MMU_PAGESIZE, (uintptr_t)loop));
+	assert(!vma_map(&dummy2_mm, &dummy2_start, MMU_PAGESIZE, (uintptr_t)loop2));
+	assert(!vma_map_now(dummy1_mm.root));
 	memcpy((void*)dummy1_start, loop, MMU_PAGESIZE);
-	assert(!mm_map_now(dummy2_mm.root));
+	assert(!vma_map_now(dummy2_mm.root));
 	memcpy((void*)dummy2_start, loop2, MMU_PAGESIZE);
 
 	struct process *dummy = proc_create((void*)dummy1_start, PROC_FLAG_RING3);

@@ -25,6 +25,6 @@ void short_wait(void);
 __attribute__ ((noreturn))
 void return_from_irq(struct cpu_state *state);
 
-u8 pagefault_irq(void);
+bool is_from_userspace(const struct cpu_state *state);
 
 #endif
