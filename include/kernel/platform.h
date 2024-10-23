@@ -27,4 +27,6 @@ void return_from_irq(struct cpu_state *state);
 
 bool is_from_userspace(const struct cpu_state *state);
 
+void *put_user1(void *dest, u8 val);
+
 #endif

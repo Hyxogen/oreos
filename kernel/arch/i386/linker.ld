@@ -29,6 +29,13 @@ SECTIONS
 		*(.text)
 	}
 
+	_user_text_start = .;
+	.user.text ALIGN(4K) : AT(ADDR(.user.text) - _kernel_addr)
+	{
+		*(.user.text)
+	}
+	_user_text_end = .;
+
 	.rodata ALIGN(4K) : AT (ADDR(.rodata) - _kernel_addr) 
 	{
 		*(.rodata)

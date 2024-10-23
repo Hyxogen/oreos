@@ -100,7 +100,11 @@ void short_wait(void)
 	io_wait();
 }
 
+extern char _user_text_start[];
+extern char _user_text_end[];
 bool is_from_userspace(const struct cpu_state *state)
 {
-	return state->eflags.iopl == 3;
+	return state->eflags.iopl == 3 ||
+	       ((char *)state->eip >= _user_text_start &&
+		(char *)state->eip < _user_text_end);
 }

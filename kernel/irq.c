@@ -42,6 +42,17 @@ int irq_register_handler(
 	return 0;
 }
 
+__attribute__((noreturn))
+static void irq_panic(u8 irq, struct cpu_state *state, const char *msg)
+{
+	printk("irq: %u\n", irq);
+	printk("irq stackstrace:\n");
+	dump_stacktrace_at(state);
+	printk("cpu state:\n");
+	dump_state(state);
+	panic("%s", msg);
+}
+
 static bool irq_exec_handlers(u8 irq, struct cpu_state *state)
 {
 	bool handled = false;
@@ -57,7 +68,7 @@ static bool irq_exec_handlers(u8 irq, struct cpu_state *state)
 		case IRQ_IGNORE:
 			break;
 		case IRQ_PANIC:
-			panic("irq handlers signalled panic\n");
+			irq_panic(irq, state, "irq handler signalled panic\n");
 		}
 
 		cur = cur->_next;
@@ -82,11 +93,7 @@ void* irq_callback(struct cpu_state *state)
 	int irq = irq_get_id(state);
 
 	if (!irq_exec_handlers(irq, state)) {
-		printk("irq stackstrace:\n");
-		dump_stacktrace_at(state);
-		printk("cpu state:\n");
-		dump_state(state);
-		panic("unhandled interrupt: 0x%x (%d)\n", irq, irq);
+		irq_panic(irq, state, "unhandled irq");
 	}
 
 	return_from_irq(state);

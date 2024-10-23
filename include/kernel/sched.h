@@ -11,6 +11,8 @@
 
 #define PROC_FLAG_RING_MASK 0x03
 
+#define SIGSEGV 11
+
 enum proc_status {
 	READY,
 	RUNNING,

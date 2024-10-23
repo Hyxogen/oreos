@@ -220,6 +220,9 @@ int vma_map_now(struct vma_area *area)
 static enum irq_result pagefault_handler(struct cpu_state *state,
 					 const struct pagefault *fault)
 {
+	if (!is_from_userspace(state))
+		return IRQ_PANIC;
+
 	bool saved = sched_set_preemption(false);
 	struct process *proc = sched_cur();
 	if (!proc)
