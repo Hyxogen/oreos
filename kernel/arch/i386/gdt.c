@@ -93,6 +93,8 @@ static void init_tss(void)
 {
 	memset(&_tss, 0, sizeof(_tss));
 
+	extern u8 _stack_top; /* TODO unmap this temporary stack once we've mapped the kernel stacks */
+
 	_tss.ss0 = I386_KERNEL_DATA_SELECTOR;
 	_tss.esp0 = (u32) (uintptr_t) &_stack_top;
 }

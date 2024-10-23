@@ -7,7 +7,6 @@
 /* DEPRECATED: stack_top will be removed when userspace programs are properly
  * implemented */
 __attribute__((deprecated))
-extern u8 _stack_top;
 
 #define SYSCALL_IRQ 0x80
 

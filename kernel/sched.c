@@ -109,17 +109,6 @@ struct process *sched_schedule(struct cpu_state *state)
 	return _proc_cur;
 }
 
-static void sched_resume(struct process *proc)
-{
-	if (proc->pending_signals) {
-		u32 i = __builtin_ctzll(proc->pending_signals);
-
-		if (proc->sighandlers[i]) {
-
-		}
-	}
-}
-
 void sched_preempt(struct cpu_state *state)
 {
 	struct process *next_proc = sched_schedule(state);

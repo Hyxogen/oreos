@@ -6,6 +6,7 @@
 //TODO SANITIZE INPUT!!
 i32 syscall_write(int fd, const void *buf, size_t nbytes)
 {
+	(void)fd;
 	//TODO make sure that the process owns the buffer
 	term_write(term_get_primary(), buf, nbytes);
 	return -ENOTSUP;
