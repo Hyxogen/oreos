@@ -26,7 +26,7 @@ _common_interrupt:
 	; push registers on the stack
 	pusha
 
-	push dword ds
+	push ds
 
 	push esp ; pass stack pointer as argument
 
