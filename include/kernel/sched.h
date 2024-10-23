@@ -31,6 +31,9 @@ struct process {
 	struct process *next;
 
 	struct mm mm;
+
+	u32 pending_signals;
+	void (*sighandlers[32])(int);
 };
 
 //TODO remove out of scheduler
