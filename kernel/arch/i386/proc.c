@@ -115,6 +115,7 @@ void proc_free(struct process *proc)
 {
 	mmu_unmap(proc->kernel_stack, KERNEL_STACK_SIZE, 0);
 	kfree(proc);
+	/* TODO UNMAP VMA!! */
 }
 
 void proc_prepare_switch(struct process *proc)

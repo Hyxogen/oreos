@@ -16,5 +16,6 @@ i32 syscall_exit(int error_code);
 i32 syscall_fork(void);
 i32 syscall_write(int fd, const void *buf, size_t nbytes);
 i32 syscall_read(int fd, void *buf, size_t nbytes);
+i32 syscall_mmap(uintptr_t addr, size_t len, int prot, int flags, int fd, i32 off);
 
 #endif

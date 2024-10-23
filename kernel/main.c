@@ -135,7 +135,7 @@ void kernel_main(struct mb2_info *info)
 	struct process *dummy2 = proc_create((void*)dummy2_start, PROC_FLAG_RING3);
 	assert(dummy2);
 	assert(!sched_proc(dummy));
-	assert(!sched_proc(dummy2));
+	//assert(!sched_proc(dummy2));
 
 	dummy->mm.root = dummy1_mm.root;
 	dummy2->mm.root = dummy2_mm.root;

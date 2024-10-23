@@ -152,7 +152,7 @@ struct vma_area *vma_find_mapping(const struct vma_area *area, uintptr_t start,
 		return NULL;
 	if (is_subspace(area->start, area->end, start, end))
 		return (struct vma_area*) area;
-	if (area->start < start)
+	if (start < area->start)
 		return vma_find_mapping(area->left, start, end);
 	return vma_find_mapping(area->right, start, end);
 }
@@ -220,16 +220,19 @@ int vma_map_now(struct vma_area *area)
 static enum irq_result pagefault_handler(struct cpu_state *state,
 					 const struct pagefault *fault)
 {
-	if (!is_from_userspace(state))
-		return IRQ_PANIC;
-
 	bool saved = sched_set_preemption(false);
 	struct process *proc = sched_cur();
-	assert(proc);
+	if (!proc)
+		return IRQ_PANIC;
 
-	struct vma_area *area = vma_find_mapping(proc->mm.root, fault->addr, MMU_PAGESIZE);
+	uintptr_t aligned = ALIGN_DOWN(fault->addr, MMU_PAGESIZE);
+
+	struct vma_area *area =
+	    vma_find_mapping(proc->mm.root, aligned, aligned + MMU_PAGESIZE);
+	assert(area);
 	if (!area || (fault->is_write && !(area->flags & VMA_MAP_PROT_WRITE)) ||
 	    (!fault->is_write && !(area->flags & VMA_MAP_PROT_READ))) {
+		assert(0);
 		goto kill_proc;
 		sched_kill(proc, -1);
 	}

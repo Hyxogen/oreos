@@ -132,6 +132,7 @@ bool ps2_canrecv(void);
 i16 ps2_setup_irq(void);
 void ps2_eoi(void);
 
+size_t ps2_read(void *dest, size_t n);
 
 void init_ps2(void);
 __attribute__((deprecated("will soon use new interrupt based driver")))

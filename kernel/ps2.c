@@ -15,107 +15,9 @@ static u8 ps2_dev_type1, ps2_dev_type2;
 static u8 _ps2_buf[PS2_BUFSIZE];
 static u8 _ps2_write = 0, _ps2_read = 0;
 
-static enum irq_result ps2_on_event(u8 irq, struct cpu_state *state, void *dummy)
+static enum keycode ps2_tokeycode(u8 b)
 {
-	(void) irq;
-	(void) dummy;
-	(void) state;
-	//kernel cannot be preemted, thus safe
-	//TODO instead of masking all interrupts, making a custom mask to
-	//disable only this interrupt?
-
-	// this interrupts handler should not be called again until ps2_eoi()
-	_ps2_buf[_ps2_write] = ps2_recv();
-
-	_ps2_write = (_ps2_write + 1) % PS2_BUFSIZE;
-	if (_ps2_write == _ps2_read)
-		_ps2_read += 1;
-	ps2_eoi();
-	return IRQ_CONTINUE;
-}
-
-static void ps2_clear(void)
-{
-	disable_irqs();
-	_ps2_read = _ps2_write = 0;
-	enable_irqs();
-}
-
-static int ps2_get(void)
-{
-	int res = -1;
-
-	disable_irqs();
-
-	if (_ps2_write != _ps2_read) {
-		res = _ps2_buf[_ps2_read];
-
-		_ps2_read = (_ps2_read + 1) % PS2_BUFSIZE;
-	}
-
-	enable_irqs();
-	return res;
-}
-
-static int ps2_recv_timeout(void)
-{
-	for (int i = 0; i < PS2_TIMEOUT_TRIES; ++i) {
-		if (ps2_canrecv())
-			return ps2_recv();
-		short_wait();
-	}
-	return -1;
-}
-
-static int ps2_send_timeout(u8 b)
-{
-	for (int i = 0; i < PS2_TIMEOUT_TRIES; ++i) {
-		if (ps2_cansend()) {
-			ps2_send(b);
-			return 0;
-		}
-		short_wait();
-	}
-	return -1;
-}
-
-static int ps2_send_cmd_timeout(u8 b)
-{
-	for (int i = 0; i < PS2_TIMEOUT_TRIES; ++i) {
-		if (ps2_cansend()) {
-			ps2_send_cmd(b);
-			return 0;
-		}
-		short_wait();
-	}
-	return -1;
-}
-
-/* can only be used after init_ps2_controller */
-static int ps2_send_ack(u8 b)
-{
-	for (int i = 0; i < 3; ++i) {
-		if (ps2_send_timeout(b) < 0)
-			return -1;
-
-		for (int i = 0; i < 16; i++)
-			short_wait();
-
-		int res = ps2_get();
-		if (res < 0)
-			break;
-		if (res == PS2_RESEND)
-			continue;
-		if (res == PS2_ACK)
-			return res;
-		return -(int)res;
-	}
-	return -1;
-}
-
-static enum keycode ps2_getkey(void)
-{
-	switch (ps2_recv()) {
+	switch (b) {
 	case PS2_SCANCODE_A_PRESSED:
 		return KEYCODE_A;
 	case PS2_SCANCODE_B_PRESSED:
@@ -256,6 +158,134 @@ static enum keycode ps2_getkey(void)
 	default:
 		return KEYCODE_UNKNOWN;
 	}
+}
+
+
+static enum irq_result ps2_on_event(u8 irq, struct cpu_state *state, void *dummy)
+{
+	(void) irq;
+	(void) dummy;
+	(void) state;
+	//TODO Possible race when trying to read buffer during this interrrupt
+	//TODO instead of masking all interrupts, making a custom mask to
+	//disable only this interrupt?
+
+	// this interrupts handler should not be called again until ps2_eoi()
+	_ps2_buf[_ps2_write] = ps2_recv();
+
+	_ps2_write = (_ps2_write + 1) % PS2_BUFSIZE;
+	if (_ps2_write == _ps2_read)
+		_ps2_read += 1;
+	ps2_eoi();
+	return IRQ_CONTINUE;
+}
+
+static void ps2_clear(void)
+{
+	disable_irqs();
+	_ps2_read = _ps2_write = 0;
+	enable_irqs();
+}
+
+static int _ps2_get(void)
+{
+	int res = -1;
+	if (_ps2_write != _ps2_read) {
+		res = _ps2_buf[_ps2_read];
+
+		_ps2_read = (_ps2_read + 1) % PS2_BUFSIZE;
+	}
+	return res;
+}
+
+static int ps2_get(void)
+{
+	disable_irqs();
+	int res = _ps2_get();
+	enable_irqs();
+	return res;
+}
+
+size_t ps2_read(void *dest, size_t n)
+{
+	char *c = dest;
+
+	size_t nread = 0;
+	while (nread < n) {
+		int ch = ps2_get();
+
+		if (ch == -1)
+			break;
+		enum keycode kc = ps2_tokeycode((u8)ch);
+
+		int val = kc_toascii(kc);
+		if (val == 0)
+			continue;
+
+		c[nread++] = (char) val;
+	}
+	return nread;
+}
+
+static int ps2_recv_timeout(void)
+{
+	for (int i = 0; i < PS2_TIMEOUT_TRIES; ++i) {
+		if (ps2_canrecv())
+			return ps2_recv();
+		short_wait();
+	}
+	return -1;
+}
+
+static int ps2_send_timeout(u8 b)
+{
+	for (int i = 0; i < PS2_TIMEOUT_TRIES; ++i) {
+		if (ps2_cansend()) {
+			ps2_send(b);
+			return 0;
+		}
+		short_wait();
+	}
+	return -1;
+}
+
+static int ps2_send_cmd_timeout(u8 b)
+{
+	for (int i = 0; i < PS2_TIMEOUT_TRIES; ++i) {
+		if (ps2_cansend()) {
+			ps2_send_cmd(b);
+			return 0;
+		}
+		short_wait();
+	}
+	return -1;
+}
+
+/* can only be used after init_ps2_controller */
+static int ps2_send_ack(u8 b)
+{
+	for (int i = 0; i < 3; ++i) {
+		if (ps2_send_timeout(b) < 0)
+			return -1;
+
+		for (int i = 0; i < 16; i++)
+			short_wait();
+
+		int res = ps2_get();
+		if (res < 0)
+			break;
+		if (res == PS2_RESEND)
+			continue;
+		if (res == PS2_ACK)
+			return res;
+		return -(int)res;
+	}
+	return -1;
+}
+
+static enum keycode ps2_getkey(void)
+{
+	return ps2_tokeycode(ps2_recv());
 }
 
 enum keycode ps2_getkey_timeout(void)
