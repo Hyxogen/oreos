@@ -164,14 +164,10 @@ struct vma_area *vma_find_mapping(const struct vma_area *area, uintptr_t start,
 	return vma_find_mapping(area->right, start, end);
 }
 
-//         [20-30)
-// [10-20)         [
-int vma_unmap(struct mm *mm, uintptr_t addr, size_t len)
+static int vma_unmap_from_area(struct mm *mm, struct vma_area *area, uintptr_t start,
+			  uintptr_t end)
 {
-	uintptr_t start = ALIGN_DOWN(addr, MMU_PAGESIZE);
-	uintptr_t end = ALIGN_UP(addr + len, MMU_PAGESIZE);
-
-	struct vma_area *area = vma_find_mapping(mm->root, start, end);
+	assert(is_subspace(area->start, area->end, start, end));
 
 	if (!area)
 		return -ENOENT;
@@ -201,6 +197,17 @@ int vma_unmap(struct mm *mm, uintptr_t addr, size_t len)
 	}
 	mmu_unmap((void*) start, end - start, MMU_UNMAP_IGNORE_UNMAPPED);
 	return 0;
+}
+
+//         [20-30)
+// [10-20)         [
+int vma_unmap(struct mm *mm, uintptr_t addr, size_t len)
+{
+	uintptr_t start = ALIGN_DOWN(addr, MMU_PAGESIZE);
+	uintptr_t end = ALIGN_UP(addr + len, MMU_PAGESIZE);
+
+	struct vma_area *area = vma_find_mapping(mm->root, start, end);
+	return vma_unmap_from_area(mm, area, start, end);
 }
 
 int vma_map_now(struct vma_area *area)
@@ -266,6 +273,21 @@ kill_proc:
 	sched_kill(proc, -1);
 	proc_release(proc);
 	sched_yield(state);
+}
+
+static void vma_unmap_all(struct mm *mm, struct vma_area *area)
+{
+	if (!area)
+		return;
+	vma_unmap_all(mm, area->left);
+	vma_unmap_all(mm, area->right);
+	assert(!vma_unmap_from_area(mm, area, area->start, area->end));
+}
+
+int vma_destroy(struct mm *mm)
+{
+	vma_unmap_all(mm, mm->root);
+	return 0;
 }
 
 void init_vma(void)

@@ -120,7 +120,8 @@ void proc_free(struct process *proc)
 {
 	mmu_unmap(proc->kernel_stack, KERNEL_STACK_SIZE, 0);
 	kfree(proc);
-	/* TODO UNMAP VMA!! */
+	if (!vma_destroy(&proc->mm))
+		printk("failed to properly destroy vma of pid %u\n", proc->pid);
 }
 
 void proc_prepare_switch(struct process *proc)

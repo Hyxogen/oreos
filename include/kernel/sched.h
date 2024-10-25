@@ -41,6 +41,7 @@ struct process {
 
 //TODO remove out of scheduler
 struct process *proc_create(void *start, u32 flags);
+struct process *proc_copy(const struct process *proc);
 void proc_free(struct process *proc);
 void proc_prepare_switch(struct process *proc);
 
