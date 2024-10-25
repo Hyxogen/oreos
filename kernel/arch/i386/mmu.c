@@ -394,7 +394,7 @@ void *mmu_mmap(void *vaddr, size_t len, int addrspace, u32 flags)
 	return mmu_map_pages(vaddr, page, nframes, addrspace, flags);
 }
 
-static void mmu_invalidate_pde(struct mmu_pde *pde)
+static void mmu_invalidate_pages(struct mmu_pde *pde)
 {
 	if (!pde->present)
 		return;
@@ -403,14 +403,13 @@ static void mmu_invalidate_pde(struct mmu_pde *pde)
 	for (size_t i = 0; i < 1024; i++) {
 		pte[i].present = false;
 	}
-	pde->present = false;
 }
 
 void mmu_invalidate_user(void)
 {
 	for (size_t pfn = 0; pfn < MMU_PADDR_TO_PFN(MMU_KERNEL_START); pfn += 1024) {
 		struct mmu_pde *pde = mmu_pagenum_to_pde(pfn);
-		mmu_invalidate_pde(pde);
+		mmu_invalidate_pages(pde);
 	}
 	mmu_flush_tlb();
 }
