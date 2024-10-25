@@ -1,6 +1,7 @@
 #ifndef __KERNEL_MMU_H
 #define __KERNEL_MMU_H
 
+#include <stdatomic.h>
 #include <boot/multiboot2.h>
 #include <kernel/types.h>
 #include <stddef.h>
@@ -36,7 +37,7 @@
 #define VMA_MAP_FIXED_NOREPLACE 0x04
 
 struct page {
-	u8 flags;
+	atomic_uint_least8_t refcount;
 };
 
 struct vma_area {
@@ -58,6 +59,7 @@ struct mm {
 struct pagefault {
 	uintptr_t addr;
 	bool is_write;
+	bool is_present;
 };
 
 struct page *mmu_alloc_pageframe(uintptr_t hint, size_t nframes, u32 flags);
@@ -85,6 +87,7 @@ struct vma_area *vma_find_mapping(const struct vma_area *area, uintptr_t start,
 				uintptr_t end);
 int vma_map(struct mm *mm, uintptr_t *addr, size_t len, u32 flags);
 int vma_unmap(struct mm *mm, uintptr_t addr, size_t len);
+int vma_destroy(struct mm *mm);
 int vma_map_now(struct vma_area *area);
 
 #endif

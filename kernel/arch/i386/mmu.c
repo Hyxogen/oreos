@@ -65,7 +65,7 @@ static struct mmu_pte *mmu_get_pagetable(const struct mmu_pde *pde)
 static void mmu_get_pageframe(struct page *page, size_t nframes)
 {
 	while (nframes--) {
-		page++->flags &= ~__MMU_FREE_BIT;
+		atomic_fetch_add_explicit(&page++->refcount, 1, memory_order_relaxed);
 	}
 }
 
@@ -74,13 +74,13 @@ static void mmu_get_pageframe(struct page *page, size_t nframes)
 static void mmu_release_pageframe(struct page *page, size_t nframes)
 {
 	while (nframes--) {
-		page++->flags |= __MMU_FREE_BIT;
+		atomic_fetch_sub_explicit(&page++->refcount, 1, memory_order_relaxed);
 	}
 }
 
 static bool mmu_page_used(const struct page *page)
 {
-	return !(page->flags & __MMU_FREE_BIT);
+	return atomic_load_explicit(&page->refcount, memory_order_relaxed) > 0;
 }
 
 static struct page *mmu_pfn_to_page(size_t pfn)
@@ -419,6 +419,7 @@ static enum irq_result mmu_on_pagefault(u8 irq, struct cpu_state *state, void *c
 	(void) irq;
 	struct pagefault fault = {
 		.is_write = state->err_code & 0x02,
+		.is_present = state->err_code & 0x01,
 		.addr = 0,
 	};
 
