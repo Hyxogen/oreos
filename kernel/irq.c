@@ -90,6 +90,7 @@ i16 irq_get_free_irq(void)
 
 void* irq_callback(struct cpu_state *state)
 {
+	sched_save(state);
 	int irq = irq_get_id(state);
 
 	if (!irq_exec_handlers(irq, state)) {

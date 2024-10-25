@@ -76,14 +76,12 @@ int sched_proc(struct process *proc)
 	return 0;
 }
 
-struct process *sched_schedule(struct cpu_state *state)
+static struct process *sched_schedule(void)
 {
 	if (_proc_cur) {
 		struct process *prev = _proc_cur;
 		if (prev->status != DEAD)
 			prev->status = READY;
-		prev->context = state;
-
 		_proc_cur = prev->next;
 	}
 
@@ -109,9 +107,17 @@ struct process *sched_schedule(struct cpu_state *state)
 	return _proc_cur;
 }
 
-void sched_preempt(struct cpu_state *state)
+void sched_save(struct cpu_state *state)
 {
-	struct process *next_proc = sched_schedule(state);
+	bool saved = sched_set_preemption(false);
+	if (_proc_cur)
+		_proc_cur->context = state;
+	sched_set_preemption(saved);
+}
+
+__attribute__ ((noreturn)) void sched_yield(void)
+{
+	struct process *next_proc = sched_schedule();
 	assert(next_proc);
 	proc_prepare_switch(next_proc);
 
@@ -132,10 +138,11 @@ static enum irq_result sched_on_tick(u8 irqn, struct cpu_state *state, void *dum
 {
 	(void)irqn;
 	(void)dummy;
+	(void)state;
 	bool expected = true;
 	if (timer_poll() == 0 && atomic_compare_exchange_strong(
 				     &_enable_preempt, &expected, false)) {
-		sched_preempt(state);
+		sched_yield();
 		//should preempt
 	}
 	return IRQ_CONTINUE;
@@ -152,5 +159,5 @@ void init_sched(void)
 
 void sched_start(void)
 {
-	sched_preempt(NULL);
+	sched_yield();
 }

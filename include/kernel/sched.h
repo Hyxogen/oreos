@@ -44,15 +44,15 @@ void proc_prepare_switch(struct process *proc);
 
 void init_sched(void);
 int sched_proc(struct process *proc);
-struct process *sched_schedule(struct cpu_state *state);
 struct process *sched_cur(void);
+
+void sched_save(struct cpu_state *state);
+__attribute__ ((noreturn)) void sched_yield(void);
 
 void sched_kill(struct process *proc, int exit_code);
 
 __attribute__((noreturn))
 void sched_start(void); /* TODO remove, should use sched_preempt */
-__attribute__((noreturn))
-void sched_preempt(struct cpu_state *state);
 
 bool sched_set_preemption(bool enable);
 

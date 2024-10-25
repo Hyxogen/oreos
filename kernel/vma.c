@@ -250,7 +250,7 @@ static enum irq_result pagefault_handler(struct cpu_state *state,
 	return IRQ_CONTINUE;
 kill_proc:
 	sched_kill(proc, -1);
-	sched_preempt(state);
+	sched_yield();
 }
 
 void init_vma(void)

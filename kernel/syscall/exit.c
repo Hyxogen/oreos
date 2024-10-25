@@ -12,5 +12,5 @@ i32 syscall_exit(int exit_code)
 
 	cur->exit_code = exit_code;
 	cur->status = DEAD;
-	sched_preempt(cur->context);
+	sched_yield();
 }
