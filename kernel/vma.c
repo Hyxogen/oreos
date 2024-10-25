@@ -10,6 +10,8 @@
 #include <kernel/printk.h>
 #include <kernel/kernel.h>
 
+/* TODO REMOVE */
+#include <kernel/debug.h>
 /* checks if [a_beg, a_end) overlaps with [b_beg, b_end) */
 static bool overlaps(uintptr_t a_beg, uintptr_t a_end, uintptr_t b_beg,
 		     uintptr_t b_end)
@@ -223,21 +225,29 @@ static enum irq_result pagefault_handler(struct cpu_state *state,
 	if (!is_from_userspace(state) && !is_from_uaccess(state))
 		return IRQ_PANIC;
 
-	bool saved = sched_set_preemption(false);
-	struct process *proc = sched_cur();
+	struct process *proc = sched_get_current_proc();
 	if (!proc)
 		return IRQ_PANIC;
 
 	uintptr_t aligned = ALIGN_DOWN(fault->addr, MMU_PAGESIZE);
 
+	if (fault->addr != 0x40004d)
+		printk("fault at: %p\n", (void*)fault->addr);
 	struct vma_area *area =
 	    vma_find_mapping(proc->mm.root, aligned, aligned + MMU_PAGESIZE);
-	assert(area);
+
+	if (!area) {
+		printk("irq stackstrace:\n");
+		dump_stacktrace_at(state);
+		printk("cpu state:\n");
+		dump_state(state);
+		panic("page fault");
+	}
+
 	if (!area || (fault->is_write && !(area->flags & VMA_MAP_PROT_WRITE)) ||
 	    (!fault->is_write && !(area->flags & VMA_MAP_PROT_READ))) {
 		assert(0);
 		goto kill_proc;
-		sched_kill(proc, -1);
 	}
 	/* TODO COW */
 
@@ -246,11 +256,13 @@ static enum irq_result pagefault_handler(struct cpu_state *state,
 		/* TODO we are out of mem, do something smart */
 		goto kill_proc;
 	}
-	sched_set_preemption(saved);
+
+	proc_release(proc);
 	return IRQ_CONTINUE;
 kill_proc:
 	sched_kill(proc, -1);
-	sched_yield();
+	proc_release(proc);
+	sched_yield(state);
 }
 
 void init_vma(void)

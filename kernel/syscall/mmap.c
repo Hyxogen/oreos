@@ -23,7 +23,7 @@ i32 syscall_mmap(uintptr_t addr, size_t len, int prot, int flags, int fd, i32 of
 	if (!(flags & MAP_PRIVATE) || !(flags & MAP_ANONYMOUS))
 		return -ENOTSUP;
 
-	struct process *proc = sched_cur();
+	struct process *proc = sched_get_current_proc();
 
 	u32 vma_flags = 0;
 	if (prot & MAP_PROT_READ)
@@ -32,6 +32,8 @@ i32 syscall_mmap(uintptr_t addr, size_t len, int prot, int flags, int fd, i32 of
 		vma_flags |= VMA_MAP_PROT_WRITE;
 
 	i32 res = vma_map(&proc->mm, &addr, len, vma_flags);
+
+	proc_release(proc); /* what should happen if the process gets killed just before returning? */
 	if (res)
 		return res;
 	return (i32) addr;

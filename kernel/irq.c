@@ -90,7 +90,6 @@ i16 irq_get_free_irq(void)
 
 void* irq_callback(struct cpu_state *state)
 {
-	sched_save(state);
 	int irq = irq_get_id(state);
 
 	if (!irq_exec_handlers(irq, state)) {
@@ -114,4 +113,5 @@ void init_interrupts(struct acpi_table *table)
 {
 	init_irq_handler(table);
 	irq_register_handler(SYSCALL_IRQ, irq_on_syscall, NULL);
+	__enable_irqs();
 }

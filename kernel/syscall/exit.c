@@ -4,13 +4,9 @@
 
 i32 syscall_exit(int exit_code)
 {
-	/* we're gonna access the sched stuff, make sure we don't cause races */
-	sched_set_preemption(false);
-
-	struct process *cur = sched_cur();
+	struct process *cur = sched_get_current_proc();
 	assert(cur);
 
-	cur->exit_code = exit_code;
-	cur->status = DEAD;
-	sched_yield();
+	sched_kill(cur, exit_code);
+	sched_yield(NULL);
 }

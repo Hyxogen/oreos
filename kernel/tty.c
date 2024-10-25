@@ -212,7 +212,7 @@ void term_put(struct term *term, int ch)
 	if (!ch)
 		return;
 
-	bool stored = sched_set_preemption(false);
+	spinlock_lock(&term->mtx);
 
 	if (term->_escape >= 0) {
 		term_put_escaped(term, ch);
@@ -234,7 +234,8 @@ void term_put(struct term *term, int ch)
 		}
 	}
 	term_clearat(term, term->row, term->col, term->fg_color);
-	sched_set_preemption(stored);
+
+	spinlock_unlock(&term->mtx);
 }
 
 void term_write(struct term *term, const char *data, size_t n)

@@ -1,36 +1,43 @@
-#include <stdbool.h>
-#include <stdatomic.h>
-#include <kernel/kernel.h>
+#include <kernel/errno.h>
 #include <kernel/sched.h>
-#include <kernel/malloc/malloc.h>
 #include <kernel/libc/assert.h>
-#include <kernel/timer.h>
-#include <kernel/irq.h>
-#include <kernel/debug.h>
-
-//TODO remove
 #include <kernel/printk.h>
+#include <kernel/timer.h>
 
 static struct process *_proc_list;
-static struct process *_proc_cur;
-static struct process *_idle_proc;
-static atomic_int _pid = 0;
-static atomic_bool _enable_preempt = false;
+static struct process * _Atomic _proc_cur;
+static atomic_int _pid;
+static atomic_bool _preemption_enabled = false;
 
-struct process *sched_cur(void)
+struct process *_sched_cur(void)
 {
-	return _proc_cur;
+	return atomic_load(&_proc_cur);
 }
 
-bool sched_set_preemption(bool enabled)
+static void sched_set_cur(struct process *proc)
 {
-	return atomic_exchange(&_enable_preempt, enabled);
+	atomic_store(&_proc_cur, proc);
 }
 
-static void del_proc(int pid)
+static bool sched_set_preemption(bool enabled)
 {
-	bool stored = sched_set_preemption(false);
+	return atomic_exchange(&_preemption_enabled, enabled);
+}
 
+void proc_release(struct process *proc)
+{
+	if (atomic_fetch_sub(&proc->refcount, 1) == 0) {
+		proc_free(proc);
+	}
+}
+
+void proc_get(struct process *proc)
+{
+	atomic_fetch_add(&proc->refcount, 1);
+}
+
+static void _sched_del_proc(int pid)
+{
 	struct process *cur = _proc_list;
 	struct process *prev = NULL;
 	while (cur) {
@@ -39,30 +46,121 @@ static void del_proc(int pid)
 				_proc_list = cur->next;
 			else
 				prev->next = cur->next;
-			proc_free(cur);
+			proc_release(cur);
 			break;
 		}
 
 		prev = cur;
 		cur = cur->next;
 	}
-
-	sched_set_preemption(stored);
 }
 
-static void sched_idle(void)
+static struct process *_sched_next(struct cpu_state *state)
 {
-	while (1)
-		halt();
+	struct process *prev = _sched_cur();
+	struct process *cur = NULL;
+	if (prev) {
+		prev->context = state;
+		if (prev->status == RUNNING)
+			prev->status = READY;
+
+		cur = prev->next;
+	}
+
+	while (1) {
+		if (!cur)
+			cur = _proc_list;
+
+		// TODO schedule idle process
+		assert(cur && "nothing to schedule");
+
+		if (cur->status == DEAD) {
+			printk("%i exited with: %i\n", cur->pid, cur->exit_code);
+			struct process *next = cur->next;
+			_sched_del_proc(cur->pid);
+			cur = next;
+		} else {
+			break;
+		}
+	}
+	timer_sched_int(10);
+	cur->status = RUNNING;
+
+	sched_set_cur(cur);
+	return cur;
 }
 
-int sched_proc(struct process *proc)
+__attribute__((noreturn))
+static void _sched_yield(struct cpu_state *state)
 {
-	proc->pid = atomic_fetch_add_explicit(&_pid, 1, memory_order_relaxed);
+	struct process *next = _sched_next(state);
+	assert(next);
+
+	proc_prepare_switch(next);
+
+	sched_set_preemption(true);
+	return_from_irq(next->context);
+}
+
+void sched_yield(struct cpu_state *state)
+{
+	assert(sched_set_preemption(false));
+	assert(state || _sched_cur()->status == DEAD);
+	_sched_yield(state);
+}
+
+static enum irq_result sched_on_tick(u8 irqn, struct cpu_state *state, void *dummy)
+{
+	(void)irqn;
+	(void)dummy;
+	(void)state;
+	if (timer_poll() == 0) {
+		if (sched_set_preemption(false))
+			_sched_yield(state);
+	}
+	return IRQ_CONTINUE;
+}
+
+void init_sched(void)
+{
+	irq_register_handler(timer_get_irqn(), sched_on_tick, NULL);
+}
+
+int sched_kill(struct process *proc, int exit_code)
+{
+	/* TODO this will probably have to use atomics once we want SMP,
+	 * otherwise races could exits for accessing the status and/or exit_code
+	 */
+	int res = -ESRCH;
+	bool saved = sched_set_preemption(false);
+
+	if (proc->status != DEAD) {
+		proc->exit_code = exit_code;
+		proc->status = DEAD;
+		res = 0;
+	}
+
+	sched_set_preemption(saved);
+	return res;
+}
+
+struct process *sched_get_current_proc(void)
+{
+	bool saved = sched_set_preemption(false);
+	struct process *cur = _sched_cur();
+	proc_get(cur);
+	sched_set_preemption(saved);
+	return cur;
+}
+
+int sched_schedule(struct process *proc)
+{
+	proc->pid = atomic_fetch_add(&_pid, 1);
 	proc->status = READY;
 	proc->next = NULL;
 
-	bool prev = sched_set_preemption(false);
+	bool saved = sched_set_preemption(false);
+
 	if (!_proc_list) {
 		_proc_list = proc;
 	} else {
@@ -72,96 +170,12 @@ int sched_proc(struct process *proc)
 			last = last->next;
 		last->next = proc;
 	}
-	sched_set_preemption(prev);
+
+	sched_set_preemption(saved);
 	return 0;
-}
-
-static struct process *sched_schedule(void)
-{
-	if (_proc_cur) {
-		struct process *prev = _proc_cur;
-		if (prev->status != DEAD)
-			prev->status = READY;
-		_proc_cur = prev->next;
-	}
-
-	while (1) {
-		if (!_proc_cur)
-			_proc_cur = _proc_list;
-
-		// TODO schedule idle process
-		assert(_proc_cur && "nothing to schedule");
-
-		if (_proc_cur->status == DEAD) {
-			printk("%i exited with: %i\n", _proc_cur->pid, _proc_cur->exit_code);
-			struct process *next = _proc_cur->next;
-			del_proc(_proc_cur->pid);
-			_proc_cur = next;
-		} else {
-			break;
-		}
-
-	}
-	timer_sched_int(10);
-	_proc_cur->status = RUNNING;
-	return _proc_cur;
-}
-
-void sched_save(struct cpu_state *state)
-{
-	bool saved = sched_set_preemption(false);
-	/* we should not save the state if preemption is disabled, interrupts
-	 * should just return to where they were coming from */
-	if (saved && _proc_cur)
-		_proc_cur->context = state;
-	sched_set_preemption(saved);
-}
-
-__attribute__ ((noreturn)) void sched_yield(void)
-{
-	struct process *next_proc = sched_schedule();
-	assert(next_proc);
-	proc_prepare_switch(next_proc);
-
-	//TODO what if an interrupt happends before IRET?
-	sched_set_preemption(true);
-	return_from_irq(next_proc->context);
-}
-
-void sched_kill(struct process *proc, int exit_code)
-{
-	assert(proc);
-	bool saved = sched_set_preemption(false);
-	proc->exit_code = exit_code;
-	proc->status = DEAD;
-	sched_set_preemption(saved);
-}
-
-static enum irq_result sched_on_tick(u8 irqn, struct cpu_state *state, void *dummy)
-{
-	(void)irqn;
-	(void)dummy;
-	(void)state;
-	bool expected = true;
-	if (timer_poll() == 0 && atomic_compare_exchange_strong(
-				     &_enable_preempt, &expected, false)) {
-		sched_yield();
-		//should preempt
-	}
-	return IRQ_CONTINUE;
-}
-
-void init_sched(void)
-{
-	irq_register_handler(timer_get_irqn(), sched_on_tick, NULL);
-
-	/*_idle_proc = NULL;
-	_idle_proc = proc_create(sched_idle, PROC_FLAG_RING0);
-	assert(_idle_proc);*/
 }
 
 void sched_start(void)
 {
-	sched_set_preemption(false);
-	sched_yield();
+	_sched_yield(NULL);
 }

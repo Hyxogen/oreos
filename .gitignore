@@ -16,3 +16,4 @@ compile_commands.json
 /vendor
 /bx_enh_dbg.ini
 /*.sym
+/*.sh

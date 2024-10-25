@@ -26,6 +26,7 @@ bool irq_is_reserved(u8 irqn);
 
 void disable_irqs(void);
 void enable_irqs(void);
+void __enable_irqs(void);
 
 void init_interrupts(struct acpi_table *table);
 #endif

@@ -1,3 +1,4 @@
+#include <stdatomic.h>
 #include <kernel/kernel.h>
 #include <kernel/tty.h> //TTY will always be available
 #include <kernel/ps2.h>
@@ -85,6 +86,8 @@ void dump_state(const struct cpu_state *state)
 
 }
 
+static atomic_bool _irqs_enabled = false;
+
 void disable_irqs(void)
 {
 	__asm__ volatile("cli");
@@ -92,7 +95,14 @@ void disable_irqs(void)
 
 void enable_irqs(void)
 {
-	__asm__ volatile("sti");
+	if (atomic_load(&_irqs_enabled)) {
+		__asm__ volatile("sti");
+	}
+}
+
+void __enable_irqs(void)
+{
+	atomic_store(&_irqs_enabled, true);
 }
 
 void short_wait(void)

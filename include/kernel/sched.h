@@ -1,6 +1,7 @@
 #ifndef __KERNEL_SCHED_H
 #define __KERNEL_SCHED_H
 
+#include <stdatomic.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <kernel/types.h>
@@ -34,26 +35,25 @@ struct process {
 
 	u32 pending_signals;
 	void (*sighandlers[32])(int);
+
+	atomic_uint refcount;
 };
 
 //TODO remove out of scheduler
-
 struct process *proc_create(void *start, u32 flags);
 void proc_free(struct process *proc);
 void proc_prepare_switch(struct process *proc);
 
 void init_sched(void);
-int sched_proc(struct process *proc);
-struct process *sched_cur(void);
+__attribute__((noreturn)) void sched_start(void);
 
-void sched_save(struct cpu_state *state);
-__attribute__ ((noreturn)) void sched_yield(void);
+__attribute__((noreturn)) void sched_yield(struct cpu_state *state);
 
-void sched_kill(struct process *proc, int exit_code);
+int sched_kill(struct process *proc, int exit_code);
+int sched_schedule(struct process *proc);
 
-__attribute__((noreturn))
-void sched_start(void); /* TODO remove, should use sched_preempt */
-
-bool sched_set_preemption(bool enable);
+struct process *sched_get_current_proc(void);
+void proc_release(struct process *proc);
+void proc_get(struct process *proc);
 
 #endif
