@@ -48,7 +48,14 @@ static struct vma_area *vma_create_area(uintptr_t start, uintptr_t end, u32 flag
 	if (!node)
 		return node;
 
-	node->page = NULL;
+	size_t npages = (end - start) / MMU_PAGESIZE;
+
+	node->pages = kcalloc(sizeof(*node->pages), npages);
+	if (!node->pages) {
+		kfree(node);
+		return NULL;
+	}
+
 	node->parent = NULL;
 	node->left = NULL;
 	node->right = NULL;
@@ -210,26 +217,66 @@ int vma_unmap(struct mm *mm, uintptr_t addr, size_t len)
 	return vma_unmap_from_area(mm, area, start, end);
 }
 
-int vma_map_now(struct vma_area *area)
+static size_t vma_get_page_idx(const struct vma_area *area, uintptr_t addr)
 {
-	size_t nframes = (area->end - area->start) / MMU_PAGESIZE;
-	if (area->page) {
-		void *res = mmu_map_pages((void *)area->start, area->page, nframes,
-			      MMU_ADDRSPACE_USER, MMU_MAP_FIXED);
+	assert(IS_ALIGNED(addr, MMU_PAGESIZE));
+	return (addr - area->start) / MMU_PAGESIZE;
+}
+
+int vma_map_now_one(struct vma_area *area, uintptr_t addr)
+{
+	size_t idx = vma_get_page_idx(area, addr);
+
+	if (area->pages[idx]) {
+		/* TODO set permissions correctly */
+		void *res = mmu_map_pages((void*)addr, area->pages[idx],
+					  1, MMU_ADDRSPACE_USER, MMU_MAP_FIXED);
 		if (res == MMU_MAP_FAILED)
 			return -ENOMEM;
 		return 0;
 	}
 
-	area->page = mmu_alloc_pageframe(16 * 1024 * 1024, nframes, 0);
-	if (!area->page)
+	area->pages[idx] = mmu_alloc_pageframe(MMU_PAGEFRAME_HINT, 1, 0);
+	if (!area->pages[idx])
 		return -ENOMEM;
+	int res = vma_map_now_one(area, addr);
 
-	int res = vma_map_now(area);
 	if (!res)
-		memset((void*) area->start, 0, area->end - area->start);
+		memset((void*) addr, 0, MMU_PAGESIZE);
 	return res;
 }
+
+/*
+static int do_cow(struct vma_area *area)
+{
+	uintptr_t start = area->start;
+	uintptr_t end = area->end;
+
+	assert(IS_ALIGNED(start, MMU_PAGESIZE));
+	assert(IS_ALIGNED(end, MMU_PAGESIZE));
+
+	size_t nframes = end - start;
+
+
+	struct page* copied = mmu_alloc_pageframe(MMU_PAGEFRAME_HINT, 1, 0);
+	if (!copied)
+		return -ENOMEM;
+
+	void *vaddr = mmu_map_pages(NULL, copied, 1, MMU_ADDRSPACE_KERNEL, 0);
+	if (vaddr == MMU_MAP_FAILED)
+		return -ENOMEM;
+
+	size_t offset = (addr - area->start) / MMU_PAGESIZE;
+	struct page *src = &area->page[offset];
+
+	memcpy(vaddr, (void*)addr, MMU_PAGESIZE);
+	mmu_free_pageframe(src, 1);
+
+	int res = mmu_unmap(vaddr, MMU_PAGESIZE, MMU_UNMAP_NO_DECR_REF);
+	assert(!res);
+	return 0;
+}
+*/
 
 static enum irq_result pagefault_handler(struct cpu_state *state,
 					 const struct pagefault *fault)
@@ -259,10 +306,15 @@ static enum irq_result pagefault_handler(struct cpu_state *state,
 		assert(0);
 		goto kill_proc;
 	}
+
+	/*if (fault->is_present && fault->is_write) {
+		if (!do_cow_page(area, aligned))
+			goto kill_proc;
+	}*/
 	/* TODO COW */
 
 	/* TODO set proper read/write access */
-	if (vma_map_now(area)) {
+	if (vma_map_now_one(area, aligned)) {
 		/* TODO we are out of mem, do something smart */
 		goto kill_proc;
 	}
@@ -270,6 +322,7 @@ static enum irq_result pagefault_handler(struct cpu_state *state,
 	proc_release(proc);
 	return IRQ_CONTINUE;
 kill_proc:
+	assert(0);
 	sched_kill(proc, -1);
 	proc_release(proc);
 	sched_yield(state);

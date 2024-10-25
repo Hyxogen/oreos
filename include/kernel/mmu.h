@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <kernel/platform.h>
 #include <kernel/irq.h>
+#include <kernel/spinlock.h>
 
 #define MMU_PAGESIZE 0x1000
 
@@ -31,17 +32,21 @@
 #define MMU_USER_START 0x00400000
 
 #define MMU_UNMAP_IGNORE_UNMAPPED 0x1
+#define MMU_UNMAP_NO_DECR_REF 0x02
 
 #define VMA_MAP_PROT_READ 0x01
 #define VMA_MAP_PROT_WRITE 0x02
 #define VMA_MAP_FIXED_NOREPLACE 0x04
+
+/* just a generally good pageframe hint */
+#define MMU_PAGEFRAME_HINT (16 * 1024 * 1024)
 
 struct page {
 	atomic_uint_least8_t refcount;
 };
 
 struct vma_area {
-	struct page *page;
+	struct page **pages;
 	uintptr_t start;
 	uintptr_t end;
 	u32 flags;
@@ -88,6 +93,7 @@ struct vma_area *vma_find_mapping(const struct vma_area *area, uintptr_t start,
 int vma_map(struct mm *mm, uintptr_t *addr, size_t len, u32 flags);
 int vma_unmap(struct mm *mm, uintptr_t addr, size_t len);
 int vma_destroy(struct mm *mm);
-int vma_map_now(struct vma_area *area);
+/* TODO remove from public interface */
+int vma_map_now_one(struct vma_area *area, uintptr_t addr);
 
 #endif

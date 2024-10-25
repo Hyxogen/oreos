@@ -129,7 +129,7 @@ void kernel_main(struct mb2_info *info)
 
 
 	assert(dummy->mm.root->left);
-	assert(!vma_map_now(dummy->mm.root->left));
+	assert(!vma_map_now_one(dummy->mm.root->left, dummy1_start));
 	memcpy((void*)dummy1_start, loop, MMU_PAGESIZE);
 
 	BOCHS_BREAK;

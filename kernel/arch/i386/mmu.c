@@ -150,19 +150,20 @@ void mmu_free_pageframe(struct page *page, size_t nframes)
 }
 
 /* requires tlb flush */
-static void mmu_unmap_one(void *vaddr, bool oops_on_unmapped)
+static void mmu_unmap_one(void *vaddr, u32 flags)
 {
 	struct mmu_pte *pte = mmu_vaddr_to_pte(vaddr);
 
 	if (!pte->present) {
-		if (oops_on_unmapped)
+		if (!(flags & MMU_UNMAP_IGNORE_UNMAPPED))
 			oops("WARNING: attempt to unmap memory that wasn't mapped");
 		return;
 	}
 
 	// TODO: zero the pte?
 	pte->present = false;
-	mmu_free_pageframe(mmu_pfn_to_page(pte->pfn), 1);
+	if (!(flags & MMU_UNMAP_NO_DECR_REF))
+		mmu_free_pageframe(mmu_pfn_to_page(pte->pfn), 1);
 }
 
 int mmu_unmap(void *vaddr, size_t len, u32 flags)
@@ -172,7 +173,7 @@ int mmu_unmap(void *vaddr, size_t len, u32 flags)
 	vaddr_c = PTR_ALIGN_DOWN(vaddr_c, MMU_PAGESIZE);
 
 	for (; vaddr_c != vaddr_c_end; vaddr_c += MMU_PAGESIZE) {
-		mmu_unmap_one(vaddr_c, !(flags & MMU_UNMAP_IGNORE_UNMAPPED));
+		mmu_unmap_one(vaddr_c, flags);
 	}
 
 	mmu_flush_tlb();
@@ -214,7 +215,6 @@ static int mmu_map_one(void *vaddr, struct page *page, int addrspace, u32 flags)
 		if (rc)
 			return rc;
 	}
-
 	struct mmu_pte *pte = mmu_vaddr_to_pte(vaddr);
 
 	memset(pte, 0, sizeof(*pte));
