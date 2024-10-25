@@ -113,5 +113,4 @@ void init_interrupts(struct acpi_table *table)
 {
 	init_irq_handler(table);
 	irq_register_handler(SYSCALL_IRQ, irq_on_syscall, NULL);
-	__enable_irqs();
 }

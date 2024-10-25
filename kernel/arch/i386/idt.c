@@ -113,5 +113,5 @@ void init_irq_handler(struct acpi_table *table)
 	init_apic(madt);
 
 	register_handlers();
-	enable_irqs();
+	__enable_irqs();
 }

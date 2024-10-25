@@ -103,6 +103,7 @@ void enable_irqs(void)
 void __enable_irqs(void)
 {
 	atomic_store(&_irqs_enabled, true);
+	enable_irqs();
 }
 
 void short_wait(void)
