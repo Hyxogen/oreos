@@ -1,3 +1,4 @@
+#include <stdatomic.h>
 #include <kernel/ps2.h>
 #include <kernel/kernel.h>
 #include <kernel/printk.h>
@@ -12,6 +13,7 @@ static u8 ps2_dev_type1, ps2_dev_type2;
 
 #define PS2_BUFSIZE 128
 
+static atomic_bool _ps2_has_data = false;
 static u8 _ps2_buf[PS2_BUFSIZE];
 static u8 _ps2_write = 0, _ps2_read = 0;
 
@@ -176,6 +178,8 @@ static enum irq_result ps2_on_event(u8 irq, struct cpu_state *state, void *dummy
 	_ps2_write = (_ps2_write + 1) % PS2_BUFSIZE;
 	if (_ps2_write == _ps2_read)
 		_ps2_read += 1;
+
+	atomic_store(&_ps2_has_data, true);
 	ps2_eoi();
 	return IRQ_CONTINUE;
 }
@@ -195,14 +199,28 @@ static int _ps2_get(void)
 
 		_ps2_read = (_ps2_read + 1) % PS2_BUFSIZE;
 	}
+	atomic_store(&_ps2_has_data, _ps2_write != _ps2_read);
 	return res;
 }
 
 static int ps2_get(void)
 {
-	disable_irqs();
-	int res = _ps2_get();
-	enable_irqs();
+	int res = -1;
+
+	if (atomic_load(&_ps2_has_data)) {
+		disable_irqs();
+		res = _ps2_get();
+		enable_irqs();
+	}
+	return res;
+}
+
+static u8 ps2_get_wait(void)
+{
+	int res;
+
+	while ((res = ps2_get()) < 0)
+		short_wait();
 	return res;
 }
 
@@ -415,11 +433,8 @@ static void init_ps2_controller(void)
 
 	// we are now using interrupts, thus the read_timeout functions should
 	// not be used anymore
-	for (int i = 0; i < 10000; i++)
-		short_wait();
-
-	int b1 = ps2_get();
-	int b2 = ps2_get();
+	int b1 = ps2_get_wait();
+	int b2 = ps2_get_wait();
 
 	if ((b1 == PS2_ACK && b2 == PS2_PASSED_SELFTEST) || (b2 == PS2_ACK && b1 == PS2_PASSED_SELFTEST)) {
 		printk("setup ps2 controller\n");
