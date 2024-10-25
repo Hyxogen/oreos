@@ -119,28 +119,18 @@ void kernel_main(struct mb2_info *info)
 
 	printk("done!\n");
 
-	struct mm dummy1_mm, dummy2_mm;
-	dummy1_mm.root = dummy2_mm.root = NULL;
-	uintptr_t dummy1_start = 0, dummy2_start = 0;
-	assert(!vma_map(&dummy1_mm, &dummy1_start, MMU_PAGESIZE, VMA_MAP_PROT_READ));
-	assert(!vma_map(&dummy2_mm, &dummy2_start, MMU_PAGESIZE, VMA_MAP_PROT_READ));
-
-	assert(!vma_map_now(dummy1_mm.root));
-	memcpy((void*)dummy1_start, loop, MMU_PAGESIZE);
-
-	assert(!vma_map_now(dummy2_mm.root));
-	memcpy((void*)dummy2_start, loop2, MMU_PAGESIZE);
-
+	uintptr_t dummy1_start = 0x400000;
 	struct process *dummy = proc_create((void*)dummy1_start, PROC_FLAG_RING3);
 
 	assert(dummy);
-	struct process *dummy2 = proc_create((void*)dummy2_start, PROC_FLAG_RING3);
-	assert(dummy2);
 	assert(!sched_schedule(dummy));
-	//assert(!sched_proc(dummy2));
 
-	dummy->mm.root = dummy1_mm.root;
-	dummy2->mm.root = dummy2_mm.root;
+	assert(!vma_map(&dummy->mm, &dummy1_start, MMU_PAGESIZE, VMA_MAP_PROT_READ | VMA_MAP_FIXED_NOREPLACE));
+
+
+	assert(dummy->mm.root->left);
+	assert(!vma_map_now(dummy->mm.root->left));
+	memcpy((void*)dummy1_start, loop, MMU_PAGESIZE);
 
 	BOCHS_BREAK;
 	sched_start();

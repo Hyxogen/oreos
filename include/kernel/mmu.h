@@ -33,6 +33,7 @@
 
 #define VMA_MAP_PROT_READ 0x01
 #define VMA_MAP_PROT_WRITE 0x02
+#define VMA_MAP_FIXED_NOREPLACE 0x04
 
 struct page {
 	u8 flags;

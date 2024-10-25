@@ -126,11 +126,16 @@ static uintptr_t vma_find_free(const struct vma_area *area, uintptr_t start, siz
 
 int vma_map(struct mm *mm, uintptr_t *addr, size_t len, u32 flags)
 {
-	if (addr && *addr) {
+	if (flags & VMA_MAP_FIXED_NOREPLACE || (addr && *addr)) {
+		assert(addr);
+
 		uintptr_t start = ALIGN_DOWN(*addr, MMU_PAGESIZE);
 		uintptr_t end = ALIGN_UP(*addr + len, MMU_PAGESIZE);
 
 		if (vma_is_mapped(mm->root, start, end)) {
+			if (flags & VMA_MAP_FIXED_NOREPLACE)
+				return -EEXIST;
+
 			*addr = 0;
 			return vma_map(mm, addr, len, flags);
 		}
@@ -231,13 +236,11 @@ static enum irq_result pagefault_handler(struct cpu_state *state,
 
 	uintptr_t aligned = ALIGN_DOWN(fault->addr, MMU_PAGESIZE);
 
-	if (fault->addr != 0x40004d)
-		printk("fault at: %p\n", (void*)fault->addr);
 	struct vma_area *area =
 	    vma_find_mapping(proc->mm.root, aligned, aligned + MMU_PAGESIZE);
 
 	if (!area) {
-		printk("irq stackstrace:\n");
+		printk("TMP: irq stackstrace:\n");
 		dump_stacktrace_at(state);
 		printk("cpu state:\n");
 		dump_state(state);

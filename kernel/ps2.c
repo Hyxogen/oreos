@@ -415,7 +415,7 @@ static void init_ps2_controller(void)
 
 	// we are now using interrupts, thus the read_timeout functions should
 	// not be used anymore
-	for (int i = 0; i < 100; i++)
+	for (int i = 0; i < 10000; i++)
 		short_wait();
 
 	int b1 = ps2_get();

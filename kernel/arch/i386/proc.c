@@ -75,9 +75,14 @@ struct process *proc_create(void *start, u32 flags)
 
 	void *top = (u8*) proc->kernel_stack + KERNEL_STACK_SIZE;
 
-	u32 esp = 0;
-	if (ring == 0)
-		esp = (uintptr_t) top;
+	u32 esp = (uintptr_t) top;
+	if (ring == 3) {
+		uintptr_t user_stack = MMU_KERNEL_START - KERNEL_STACK_SIZE;
+		if (vma_map(&proc->mm, &user_stack, KERNEL_STACK_SIZE,
+			    VMA_MAP_PROT_READ | VMA_MAP_PROT_WRITE))
+			goto err;
+		esp = user_stack + KERNEL_STACK_SIZE;
+	}
 
 	top = push(top, data_sel); /* ss */
 	top = push(top, esp); /* esp */

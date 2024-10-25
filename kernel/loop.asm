@@ -2,23 +2,23 @@
 global loop:function (loop.end - loop)
 align 0x1000
 loop:
-	mov eax, 0x5a ; mmap syscall
-	mov ebx, 0x0 ; NULL
-	mov ecx, 0x1000 ; 1KB
-	mov edx, 0x3 ; PROT_READ | PROT_WRITE
-	mov esi, 0x3 ; MAP_PRIVATE | MAP_ANONYMOUS
-	mov edi, 0x0 ; fd = 0
-	mov ebp, 0x0 ; off = 0
-
-	int 0x80
-
-	test eax, -1
-	jne .start
-	xchg bx, bx
-
-.start:
-	mov esp, eax
-	add esp, 0x1000 ; move esp to stack top
+;	mov eax, 0x5a ; mmap syscall
+;	mov ebx, 0x0 ; NULL
+;	mov ecx, 0x1000 ; 1KB
+;	mov edx, 0x3 ; PROT_READ | PROT_WRITE
+;	mov esi, 0x3 ; MAP_PRIVATE | MAP_ANONYMOUS
+;	mov edi, 0x0 ; fd = 0
+;	mov ebp, 0x0 ; off = 0
+;
+;	int 0x80
+;
+;	test eax, -1
+;	jne .start
+;	xchg bx, bx
+;
+;.start:
+;	mov esp, eax
+;	add esp, 0x1000 ; move esp to stack top
 
 	sub esp, 0x1 ; allocate 1 byte on the stack
 .loop:

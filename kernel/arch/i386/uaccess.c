@@ -12,7 +12,7 @@ static bool check_user_buf(const void *user_ptr, size_t len)
 
 	if (ptr + len < ptr)
 		return false;
-	return ptr < MMU_KERNEL_START && ptr + len < MMU_KERNEL_START;
+	return ptr < MMU_KERNEL_START && ptr + len <= MMU_KERNEL_START;
 }
 
 __attribute__((noinline, section(".user.text")))
