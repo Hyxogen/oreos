@@ -162,8 +162,7 @@ static void mmu_unmap_one(void *vaddr, u32 flags)
 
 	// TODO: zero the pte?
 	pte->present = false;
-	if (!(flags & MMU_UNMAP_NO_DECR_REF))
-		mmu_free_pageframe(mmu_pfn_to_page(pte->pfn), 1);
+	mmu_free_pageframe(mmu_pfn_to_page(pte->pfn), 1);
 }
 
 int mmu_unmap(void *vaddr, size_t len, u32 flags)
@@ -215,6 +214,10 @@ static int mmu_map_one(void *vaddr, struct page *page, int addrspace, u32 flags)
 		if (rc)
 			return rc;
 	}
+
+	if (!(flags & MMU_MAP_NO_INCR_REF))
+		mmu_get_pageframe(page, 1);
+
 	struct mmu_pte *pte = mmu_vaddr_to_pte(vaddr);
 
 	memset(pte, 0, sizeof(*pte));

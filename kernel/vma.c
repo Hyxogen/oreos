@@ -230,7 +230,7 @@ int vma_map_now_one(struct vma_area *area, uintptr_t addr)
 	if (area->pages[idx]) {
 		/* TODO set permissions correctly */
 		void *res = mmu_map_pages((void*)addr, area->pages[idx],
-					  1, MMU_ADDRSPACE_USER, MMU_MAP_FIXED);
+					  1, MMU_ADDRSPACE_USER, MMU_MAP_FIXED | MMU_MAP_NO_INCR_REF);
 		if (res == MMU_MAP_FAILED)
 			return -ENOMEM;
 		return 0;

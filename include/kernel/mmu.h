@@ -16,6 +16,8 @@
 #define MMU_MAP_NOALLOC 0x2
 #define MMU_MAP_FIXED 0x4
 #define MMU_MAP_DOWNWARD 0x8
+/* TODO I don't like this flag, do something better */
+#define MMU_MAP_NO_INCR_REF 0x10
 
 #define MMU_ADDRSPACE_KERNEL 0x1
 #define MMU_ADDRSPACE_USER 0x2
@@ -32,7 +34,6 @@
 #define MMU_USER_START 0x00400000
 
 #define MMU_UNMAP_IGNORE_UNMAPPED 0x1
-#define MMU_UNMAP_NO_DECR_REF 0x02
 
 #define VMA_MAP_PROT_READ 0x01
 #define VMA_MAP_PROT_WRITE 0x02
