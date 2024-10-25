@@ -4,10 +4,6 @@
 #include <stdbool.h>
 #include <kernel/types.h>
 
-/* DEPRECATED: stack_top will be removed when userspace programs are properly
- * implemented */
-__attribute__((deprecated))
-
 #define SYSCALL_IRQ 0x80
 
 struct cpu_state;
