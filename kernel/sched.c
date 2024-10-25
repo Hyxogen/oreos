@@ -110,7 +110,9 @@ static struct process *sched_schedule(void)
 void sched_save(struct cpu_state *state)
 {
 	bool saved = sched_set_preemption(false);
-	if (_proc_cur)
+	/* we should not save the state if preemption is disabled, interrupts
+	 * should just return to where they were coming from */
+	if (saved && _proc_cur)
 		_proc_cur->context = state;
 	sched_set_preemption(saved);
 }
@@ -128,6 +130,7 @@ __attribute__ ((noreturn)) void sched_yield(void)
 
 void sched_kill(struct process *proc, int exit_code)
 {
+	assert(proc);
 	bool saved = sched_set_preemption(false);
 	proc->exit_code = exit_code;
 	proc->status = DEAD;
@@ -152,12 +155,13 @@ void init_sched(void)
 {
 	irq_register_handler(timer_get_irqn(), sched_on_tick, NULL);
 
-	_idle_proc = NULL;
+	/*_idle_proc = NULL;
 	_idle_proc = proc_create(sched_idle, PROC_FLAG_RING0);
-	assert(_idle_proc);
+	assert(_idle_proc);*/
 }
 
 void sched_start(void)
 {
+	sched_set_preemption(false);
 	sched_yield();
 }
