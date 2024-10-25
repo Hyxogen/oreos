@@ -53,6 +53,7 @@ struct process *proc_create(void *start, u32 flags)
 	proc->kernel_stack = NULL;
 	proc->context = NULL;
 	proc->mm.root = NULL;
+	atomic_init(&proc->refcount, 1);
 
 	int ring;
 
