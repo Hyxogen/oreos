@@ -487,9 +487,18 @@ static void mmu_mark_multiboot(const struct mb2_info *info)
 	mmu_alloc_pageframe(MMU_PFN_TO_PADDR(pfn), page_count, MMU_ALLOC_FIXED);
 }
 
+static void mmu_init_pages(void)
+{
+	/* mark all pages as used */
+	/* TODO perpaps use atomic_init? */
+	mmu_alloc_pageframe(0, ARRAY_SIZE(mmu_pages), MMU_ALLOC_FIXED);
+}
+
 void init_mmu(void)
 {
 	const struct mb2_info *info = mb2_get_info();
+	mmu_init_pages();
+
 	// read available physical memory regions
 	mmu_read_mmap(info);
 	// mark the kernel code in physical memory as unavailable
