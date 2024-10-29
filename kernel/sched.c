@@ -6,6 +6,7 @@
 
 static struct process *_proc_list;
 static struct process * _Atomic _proc_cur;
+static struct process *_idle_proc;
 static atomic_int _pid;
 static atomic_bool _preemption_enabled = false;
 
@@ -71,8 +72,10 @@ static struct process *_sched_next(struct cpu_state *state)
 		if (!cur)
 			cur = _proc_list;
 
-		// TODO schedule idle process
-		assert(cur && "nothing to schedule");
+		if (!cur) {
+			cur = _idle_proc;
+			break;
+		}
 
 		if (cur->status == DEAD) {
 			printk("%i exited with: %i\n", cur->pid, cur->exit_code);
@@ -133,9 +136,22 @@ static enum irq_result sched_on_tick(u8 irqn, struct cpu_state *state, void *dum
 	return IRQ_CONTINUE;
 }
 
+__attribute__((noreturn))
+static void sched_idle(void)
+{
+	while (1)
+		halt();
+}
+
 void init_sched(void)
 {
 	irq_register_handler(timer_get_irqn(), sched_on_tick, NULL);
+
+	atomic_init(&_pid, 1);
+
+	_idle_proc = proc_create(sched_idle, PROC_FLAG_RING0);
+	assert(_idle_proc);
+	_idle_proc->pid = 0;
 }
 
 int sched_kill(struct process *proc, int exit_code)
