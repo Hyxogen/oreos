@@ -7,6 +7,7 @@
 #include <kernel/libc/string.h>
 #include <kernel/errno.h>
 #include <kernel/irq.h>
+#include <kernel/libc/assert.h>
 
 #include <kernel/debug.h>
 
@@ -19,6 +20,18 @@ static void *push(void *stackp, u32 v)
 	u32* stack = stackp;
 	*--stack = v;
 	return stack;
+}
+
+static void proc_init(struct process *proc)
+{
+	proc->pid = -1;
+	proc->exit_code = 0;
+	proc->status = -1;
+	proc->kernel_stack = NULL;
+	proc->context = NULL;
+	proc->next = NULL;
+	proc->mm.root = NULL;
+	atomic_init(&proc->refcount, 1);
 }
 
 static void proc_get_selectors(int ring, u16 *code_sel, u16 *data_sel)
@@ -50,10 +63,7 @@ struct process *proc_create(void *start, u32 flags)
 	struct process *proc = kmalloc(sizeof(*proc));
 	if (!proc)
 		return proc;
-	proc->kernel_stack = NULL;
-	proc->context = NULL;
-	proc->mm.root = NULL;
-	atomic_init(&proc->refcount, 1);
+	proc_init(proc);
 
 	int ring;
 
@@ -123,6 +133,40 @@ void proc_free(struct process *proc)
 	kfree(proc);
 	if (!vma_destroy(&proc->mm))
 		printk("failed to properly destroy vma of pid %u\n", proc->pid);
+}
+
+struct process *proc_clone(const struct process *proc)
+{
+	assert(0);
+
+	struct process *cloned = kmalloc(sizeof(*proc));
+	if (!cloned)
+		return NULL;
+
+	proc_init(cloned);
+
+	cloned->kernel_stack = mmu_mmap(NULL, KERNEL_STACK_SIZE, MMU_ADDRSPACE_KERNEL, 0);
+	if (cloned->kernel_stack == MMU_MAP_FAILED)
+		goto err;
+
+	/* TODO we can't just copy the kernel stack, that's stupid, only clone
+	 * context */
+	memcpy(cloned->kernel_stack, proc->kernel_stack, KERNEL_STACK_SIZE);
+
+	assert((void*) proc->context <= proc->kernel_stack);
+	size_t off = proc->kernel_stack - (void*) proc->context;
+
+	cloned->context = (void*) ((u8*)cloned->kernel_stack - off);
+
+	if (vma_clone(&cloned->mm, &proc->mm))
+		goto err;
+
+	return cloned;
+err:
+	kfree(cloned);
+	if (cloned->kernel_stack != MMU_MAP_FAILED)
+		mmu_unmap(cloned->kernel_stack, KERNEL_STACK_SIZE, 0);
+	return NULL;
 }
 
 void proc_prepare_switch(struct process *proc)

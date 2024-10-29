@@ -5,7 +5,6 @@
 #include <kernel/sched.h>
 #include <kernel/platform.h>
 
-__attribute__((section(".user.text")))
 static bool check_user_buf(const void *user_ptr, size_t len)
 {
 	uintptr_t ptr = (uintptr_t)user_ptr;
@@ -15,13 +14,20 @@ static bool check_user_buf(const void *user_ptr, size_t len)
 	return ptr < MMU_KERNEL_START && ptr + len <= MMU_KERNEL_START;
 }
 
-__attribute__((noinline, section(".user.text")))
-void* put_user1(void *dest, u8 val)
+int __put_user1(void *dest, u8 val);
+int __get_user1(void *dest, const void *src);
+
+int put_user1(void *dest, u8 val)
 {
 	if (!check_user_buf(dest, 1)) {
-		/* TODO properly send signal */
-		*(volatile int *)0 = 0;
+		return -1;
 	}
-	*(u8*)dest = val;
-	return (u8*) dest +1;
+	return __put_user1(dest, val);
+}
+
+int get_user1(u8 *dest, const void *src)
+{
+	if (!check_user_buf(src, 1))
+		return -1;
+	return __get_user1(dest, src);
 }

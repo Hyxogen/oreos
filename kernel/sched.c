@@ -102,6 +102,18 @@ static void _sched_yield(struct cpu_state *state)
 	return_from_irq(next->context);
 }
 
+void sched_resume(struct cpu_state *state)
+{
+	bool saved = sched_set_preemption(false);
+
+	struct process *proc = _sched_cur();
+	if (is_from_userspace(state) && proc->status != RUNNING)
+		_sched_yield(state);
+
+	sched_set_preemption(saved);
+	return_from_irq(state);
+}
+
 void sched_yield(struct cpu_state *state)
 {
 	assert(sched_set_preemption(false));
@@ -155,6 +167,8 @@ struct process *sched_get_current_proc(void)
 
 int sched_schedule(struct process *proc)
 {
+	proc_get(proc);
+
 	proc->pid = atomic_fetch_add(&_pid, 1);
 	proc->status = READY;
 	proc->next = NULL;
@@ -173,6 +187,17 @@ int sched_schedule(struct process *proc)
 
 	sched_set_preemption(saved);
 	return 0;
+}
+
+void sched_signal(struct process *proc, int signum)
+{
+	(void) signum;
+	bool saved = sched_set_preemption(false);
+
+	proc->status = DEAD;
+	proc->exit_code = -1;
+
+	sched_set_preemption(saved);
 }
 
 void sched_start(void)

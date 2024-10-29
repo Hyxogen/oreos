@@ -223,14 +223,16 @@ static size_t vma_get_page_idx(const struct vma_area *area, uintptr_t addr)
 	return (addr - area->start) / MMU_PAGESIZE;
 }
 
-int vma_map_now_one(struct vma_area *area, uintptr_t addr)
+int vma_map_now_one(struct vma_area *area, uintptr_t addr, bool readonly)
 {
 	size_t idx = vma_get_page_idx(area, addr);
 
 	if (area->pages[idx]) {
 		/* TODO set permissions correctly */
-		void *res = mmu_map_pages((void*)addr, area->pages[idx],
-					  1, MMU_ADDRSPACE_USER, MMU_MAP_FIXED | MMU_MAP_NO_INCR_REF);
+		void *res = mmu_map_pages((void *)addr, area->pages[idx], 1,
+					  MMU_ADDRSPACE_USER,
+					  MMU_MAP_FIXED | MMU_MAP_NO_INCR_REF |
+					      (MMU_MAP_RDONLY * readonly));
 		if (res == MMU_MAP_FAILED)
 			return -ENOMEM;
 		return 0;
@@ -239,93 +241,11 @@ int vma_map_now_one(struct vma_area *area, uintptr_t addr)
 	area->pages[idx] = mmu_alloc_pageframe(MMU_PAGEFRAME_HINT, 1, 0);
 	if (!area->pages[idx])
 		return -ENOMEM;
-	int res = vma_map_now_one(area, addr);
+	int res = vma_map_now_one(area, addr, readonly);
 
 	if (!res)
 		memset((void*) addr, 0, MMU_PAGESIZE);
 	return res;
-}
-
-/*
-static int do_cow(struct vma_area *area)
-{
-	uintptr_t start = area->start;
-	uintptr_t end = area->end;
-
-	assert(IS_ALIGNED(start, MMU_PAGESIZE));
-	assert(IS_ALIGNED(end, MMU_PAGESIZE));
-
-	size_t nframes = end - start;
-
-
-	struct page* copied = mmu_alloc_pageframe(MMU_PAGEFRAME_HINT, 1, 0);
-	if (!copied)
-		return -ENOMEM;
-
-	void *vaddr = mmu_map_pages(NULL, copied, 1, MMU_ADDRSPACE_KERNEL, 0);
-	if (vaddr == MMU_MAP_FAILED)
-		return -ENOMEM;
-
-	size_t offset = (addr - area->start) / MMU_PAGESIZE;
-	struct page *src = &area->page[offset];
-
-	memcpy(vaddr, (void*)addr, MMU_PAGESIZE);
-	mmu_free_pageframe(src, 1);
-
-	int res = mmu_unmap(vaddr, MMU_PAGESIZE, MMU_UNMAP_NO_DECR_REF);
-	assert(!res);
-	return 0;
-}
-*/
-
-static enum irq_result pagefault_handler(struct cpu_state *state,
-					 const struct pagefault *fault)
-{
-	if (!is_from_userspace(state) && !is_from_uaccess(state))
-		return IRQ_PANIC;
-
-	struct process *proc = sched_get_current_proc();
-	if (!proc)
-		return IRQ_PANIC;
-
-	uintptr_t aligned = ALIGN_DOWN(fault->addr, MMU_PAGESIZE);
-
-	struct vma_area *area =
-	    vma_find_mapping(proc->mm.root, aligned, aligned + MMU_PAGESIZE);
-
-	if (!area) {
-		printk("TMP: irq stackstrace:\n");
-		dump_stacktrace_at(state);
-		printk("cpu state:\n");
-		dump_state(state);
-		panic("page fault");
-	}
-
-	if (!area || (fault->is_write && !(area->flags & VMA_MAP_PROT_WRITE)) ||
-	    (!fault->is_write && !(area->flags & VMA_MAP_PROT_READ))) {
-		assert(0);
-		goto kill_proc;
-	}
-
-	/*if (fault->is_present && fault->is_write) {
-		if (!do_cow_page(area, aligned))
-			goto kill_proc;
-	}*/
-	/* TODO COW */
-
-	/* TODO set proper read/write access */
-	if (vma_map_now_one(area, aligned)) {
-		/* TODO we are out of mem, do something smart */
-		goto kill_proc;
-	}
-
-	proc_release(proc);
-	return IRQ_CONTINUE;
-kill_proc:
-	assert(0);
-	sched_kill(proc, -1);
-	proc_release(proc);
-	sched_yield(state);
 }
 
 static void vma_unmap_all(struct mm *mm, struct vma_area *area)
@@ -343,7 +263,41 @@ int vma_destroy(struct mm *mm)
 	return 0;
 }
 
-void init_vma(void)
+static int vma_clone_one(struct mm *dest, const struct vma_area *area)
 {
-	mmu_register_pagefault_handler(pagefault_handler);
+	if (!area)
+		return 0;
+
+	int res = vma_clone_one(dest, area->left);
+	if (res)
+		return res;
+	res = vma_clone_one(dest, area->left);
+	if (res)
+		return res;
+
+	size_t nframes = (area->end - area->start) / MMU_PAGESIZE;
+	struct vma_area *node = vma_create_area(area->start, area->end, area->flags);
+	if (!node)
+		return -ENOMEM;
+	node->pages = kmalloc(nframes * sizeof(*node->pages));
+	if (!node->pages) {
+		/* TODO make vma_destroy_area function */
+		kfree(node);
+		return -ENOMEM;
+	}
+
+	for (size_t i = 0; i < nframes; i++) {
+		node->pages[i] = area->pages[i];
+		if (node->pages[i])
+			mmu_page_acquire(node->pages[i]);
+	}
+
+	vma_insert(&dest->root, node);
+	return 0;
+}
+
+int vma_clone(struct mm *dest, const struct mm *src)
+{
+	dest->root = NULL;
+	return vma_clone_one(dest, src->root);
 }

@@ -115,8 +115,6 @@ void kernel_main(struct mb2_info *info)
 
 	mb2_free_info();
 
-	init_vma();
-
 	printk("done!\n");
 
 	uintptr_t dummy1_start = 0x400000;
@@ -129,9 +127,10 @@ void kernel_main(struct mb2_info *info)
 
 
 	assert(dummy->mm.root->left);
-	assert(!vma_map_now_one(dummy->mm.root->left, dummy1_start));
+	assert(!vma_map_now_one(dummy->mm.root->left, dummy1_start, false));
 	memcpy((void*)dummy1_start, loop, MMU_PAGESIZE);
 
-	BOCHS_BREAK;
+	proc_release(dummy);
+
 	sched_start();
 }

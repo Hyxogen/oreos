@@ -70,4 +70,6 @@ void mmu_flush_tlb(void);
 
 #define MMU_PAGEDIR_SIZE (1024 * MMU_PAGESIZE)
 
+void mmu_init_pagefault_handler(void);
+
 #endif

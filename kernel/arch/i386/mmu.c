@@ -78,6 +78,16 @@ static void mmu_release_pageframe(struct page *page, size_t nframes)
 	}
 }
 
+void mmu_page_acquire(struct page *page)
+{
+	mmu_get_pageframe(page, 1);
+}
+
+void mmu_page_release(struct page *page)
+{
+	mmu_release_pageframe(page, 1);
+}
+
 static bool mmu_page_used(const struct page *page)
 {
 	return atomic_load_explicit(&page->refcount, memory_order_relaxed) > 0;
@@ -417,26 +427,6 @@ void mmu_invalidate_user(void)
 	mmu_flush_tlb();
 }
 
-static enum irq_result mmu_on_pagefault(u8 irq, struct cpu_state *state, void *ctx)
-{
-	(void) irq;
-	struct pagefault fault = {
-		.is_write = state->err_code & 0x02,
-		.is_present = state->err_code & 0x01,
-		.addr = 0,
-	};
-
-	__asm__ volatile ("mov %0, cr2" : "=r"(fault.addr));
-	enum irq_result (*handler)(struct cpu_state*, const struct pagefault*) = ctx;
-	return handler(state, &fault);
-}
-
-int mmu_register_pagefault_handler(enum irq_result (*handler)(
-    struct cpu_state *state, const struct pagefault *info))
-{
-	return irq_register_handler(IRQ_PAGEFAULT, mmu_on_pagefault, handler);
-}
-
 static void mmu_read_mmap(const struct mb2_info *info)
 {
 	const struct mb2_mmap *map =
@@ -505,4 +495,6 @@ void init_mmu(void)
 	mmu_mark_kernel_code();
 	// temporarily mark the multiboot data as unavailable
 	mmu_mark_multiboot(info);
+
+	mmu_init_pagefault_handler();
 }

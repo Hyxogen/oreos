@@ -33,28 +33,30 @@ struct process {
 
 	struct mm mm;
 
-	u32 pending_signals;
-	void (*sighandlers[32])(int);
-
 	atomic_uint refcount;
 };
 
 //TODO remove out of scheduler
 struct process *proc_create(void *start, u32 flags);
-struct process *proc_copy(const struct process *proc);
+struct process *proc_clone(const struct process *proc);
 void proc_free(struct process *proc);
 void proc_prepare_switch(struct process *proc);
+void proc_release(struct process *proc);
+void proc_get(struct process *proc);
 
 void init_sched(void);
 __attribute__((noreturn)) void sched_start(void);
 
 __attribute__((noreturn)) void sched_yield(struct cpu_state *state);
 
+__attribute__ ((deprecated("use sched_signal")))
 int sched_kill(struct process *proc, int exit_code);
+
+void sched_signal(struct process *proc, int signum);
 int sched_schedule(struct process *proc);
+__attribute__ ((noreturn))
+void sched_resume(struct cpu_state *state);
 
 struct process *sched_get_current_proc(void);
-void proc_release(struct process *proc);
-void proc_get(struct process *proc);
 
 #endif

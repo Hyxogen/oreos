@@ -88,6 +88,7 @@ i16 irq_get_free_irq(void)
 	return -1;
 }
 
+/* TODO mark this function as noreturn */
 void* irq_callback(struct cpu_state *state)
 {
 	int irq = irq_get_id(state);
@@ -96,7 +97,7 @@ void* irq_callback(struct cpu_state *state)
 		irq_panic(irq, state, "unhandled irq");
 	}
 
-	return_from_irq(state);
+	sched_resume(state);
 }
 
 static enum irq_result irq_on_syscall(u8 irq, struct cpu_state *state, void *dummy)

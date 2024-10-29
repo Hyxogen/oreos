@@ -28,6 +28,7 @@ loop:
 	mov edx, 1 ; len
 
 	int 0x80
+	xchg bx, bx
 
 	test eax, eax
 	jz .loop

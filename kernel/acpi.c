@@ -6,6 +6,9 @@
 #include <kernel/libc/string.h>
 #include <kernel/libc/assert.h>
 
+/* TODO remove */
+#include <kernel/debug.h>
+
 bool acpi_validate(const void *data, size_t len)
 {
 	const unsigned char *data_c = data;
@@ -90,6 +93,7 @@ bool read_rsdp(struct acpi_table *table, struct rsdp *root)
 	}
 
 	bool success = true;
+	BOCHS_BREAK;
 	struct rsdt *rsdt = mmu_map(NULL, root->rsdt_addr, MMU_PAGESIZE,
 				    MMU_ADDRSPACE_KERNEL, 0);
 	if (rsdt == MMU_MAP_FAILED) {

@@ -242,7 +242,11 @@ size_t ps2_read(void *dest, size_t n)
 
 		/* TODO this should not be here, this driver should also be able
 		 * to be used from the kernel */
-		c = put_user1(c, (u8) val);
+		int res  = put_user1(c, (u8) val);
+		if (res)
+			return 0;
+
+		c++;
 		nread++;
 	}
 	return nread;

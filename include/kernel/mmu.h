@@ -71,6 +71,9 @@ struct pagefault {
 struct page *mmu_alloc_pageframe(uintptr_t hint, size_t nframes, u32 flags);
 void mmu_free_pageframe(struct page *page, size_t nframes);
 
+void mmu_page_acquire(struct page *page);
+void mmu_page_release(struct page *page);
+
 struct page *mmu_paddr_to_page(uintptr_t paddr);
 uintptr_t mmu_page_to_paddr(const struct page *page);
 
@@ -87,7 +90,7 @@ void mmu_invalidate_user(void);
 int mmu_register_pagefault_handler(enum irq_result (*handler)(
     struct cpu_state *state, const struct pagefault *info));
 
-void init_vma(void);
+int vma_clone(struct mm *dest, const struct mm *src);
 
 struct vma_area *vma_find_mapping(const struct vma_area *area, uintptr_t start,
 				uintptr_t end);
@@ -95,6 +98,6 @@ int vma_map(struct mm *mm, uintptr_t *addr, size_t len, u32 flags);
 int vma_unmap(struct mm *mm, uintptr_t addr, size_t len);
 int vma_destroy(struct mm *mm);
 /* TODO remove from public interface */
-int vma_map_now_one(struct vma_area *area, uintptr_t addr);
+int vma_map_now_one(struct vma_area *area, uintptr_t addr, bool readonly);
 
 #endif
