@@ -77,5 +77,9 @@ fclean:
 	${MAKE} clean
 	rm -f  $(ISO)
 
+re:
+	${MAKE} fclean
+	${MAKE}
+
 -include $(DEPS)
 .PHONY: all run debug clean $(ISO)
