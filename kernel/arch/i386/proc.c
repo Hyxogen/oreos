@@ -47,15 +47,13 @@ static void proc_get_selectors(int ring, u16 *code_sel, u16 *data_sel)
 	}
 }
 
+//0xc000ab84
 static u32 proc_get_eflags(int ring)
 {
+	(void) ring;
 	/* eflags: IOPL 3 (0x3000) IF: (0x0200) legacy: (0x0002) */
 	//TODO remove magic values
-	if (ring == 0)
-		return 0x0202;
-	else if (ring == 3)
-		return 0x3202;
-	panic("proc_get_eflags: invalid ring");
+	return 0x0202;
 }
 
 struct process *proc_create(void *start, u32 flags)
@@ -135,10 +133,8 @@ void proc_free(struct process *proc)
 		printk("failed to properly destroy vma of pid %u\n", proc->pid);
 }
 
-struct process *proc_clone(const struct process *proc)
+struct process *proc_clone(struct process *proc, const struct cpu_state *state)
 {
-	assert(0);
-
 	struct process *cloned = kmalloc(sizeof(*proc));
 	if (!cloned)
 		return NULL;
@@ -149,14 +145,11 @@ struct process *proc_clone(const struct process *proc)
 	if (cloned->kernel_stack == MMU_MAP_FAILED)
 		goto err;
 
-	/* TODO we can't just copy the kernel stack, that's stupid, only clone
-	 * context */
-	memcpy(cloned->kernel_stack, proc->kernel_stack, KERNEL_STACK_SIZE);
+	u8 *top = (u8*) cloned->kernel_stack + KERNEL_STACK_SIZE;
+	top -= sizeof(*cloned->context);
+	memcpy(top, state, sizeof(*state));
 
-	assert((void*) proc->context <= proc->kernel_stack);
-	size_t off = proc->kernel_stack - (void*) proc->context;
-
-	cloned->context = (void*) ((u8*)cloned->kernel_stack - off);
+	cloned->context = (void*) top;
 
 	if (vma_clone(&cloned->mm, &proc->mm))
 		goto err;
@@ -173,6 +166,10 @@ void proc_prepare_switch(struct process *proc)
 {
 	disable_irqs();
 	_tss.esp0 = (uintptr_t) proc->kernel_stack + KERNEL_STACK_SIZE;
-	mmu_invalidate_user(); /* do irqs have to be disabled? */
 	enable_irqs();
+}
+
+void proc_set_syscall_ret(struct cpu_state *state, size_t v)
+{
+	state->eax = v;
 }

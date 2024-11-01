@@ -45,6 +45,7 @@ int irq_register_handler(
 __attribute__((noreturn))
 static void irq_panic(u8 irq, struct cpu_state *state, const char *msg)
 {
+	assert(0);
 	printk("irq: %u\n", irq);
 	printk("irq stackstrace:\n");
 	dump_stacktrace_at(state);

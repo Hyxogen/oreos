@@ -58,10 +58,13 @@ static void _sched_del_proc(int pid)
 
 static struct process *_sched_next(struct cpu_state *state)
 {
+	assert(!sched_set_preemption(false));
+	/* TODO use _sched_save */
 	struct process *prev = _sched_cur();
 	struct process *cur = NULL;
 	if (prev) {
-		prev->context = state;
+		if (state)
+			prev->context = state;
 		if (prev->status == RUNNING)
 			prev->status = READY;
 
@@ -96,10 +99,16 @@ static struct process *_sched_next(struct cpu_state *state)
 __attribute__((noreturn))
 static void _sched_yield(struct cpu_state *state)
 {
+	struct process *prev = _sched_cur();
 	struct process *next = _sched_next(state);
 	assert(next);
 
-	proc_prepare_switch(next);
+	if (prev != next) {
+		disable_irqs();
+		mmu_invalidate_user(); /* do irqs have to be disabled? */
+		/* proc_prepare_switch enables irqs */
+		proc_prepare_switch(next);
+	}
 
 	sched_set_preemption(true);
 	return_from_irq(next->context);
@@ -110,8 +119,12 @@ void sched_resume(struct cpu_state *state)
 	bool saved = sched_set_preemption(false);
 
 	struct process *proc = _sched_cur();
-	if (is_from_userspace(state) && proc->status != RUNNING)
-		_sched_yield(state);
+	/* TODO make sure that you remove the saved check when just resuming for
+	 * signals (SEE TODO BELOW) */
+	if (saved && is_from_userspace(state) && proc->status != RUNNING)
+		_sched_yield(state); /* TODO we should not yield, just try to resume or handle signals */
+
+	assert(!is_from_userspace(state) || proc->status == RUNNING);
 
 	sched_set_preemption(saved);
 	return_from_irq(state);
@@ -120,7 +133,7 @@ void sched_resume(struct cpu_state *state)
 void sched_yield(struct cpu_state *state)
 {
 	assert(sched_set_preemption(false));
-	assert(state || _sched_cur()->status == DEAD);
+	//assert(state || _sched_cur()->status == DEAD);
 	_sched_yield(state);
 }
 
@@ -212,6 +225,17 @@ void sched_signal(struct process *proc, int signum)
 
 	proc->status = DEAD;
 	proc->exit_code = -1;
+
+	sched_set_preemption(saved);
+}
+
+void sched_save(struct cpu_state *state)
+{
+	bool saved = sched_set_preemption(false);
+
+	struct process *proc = _sched_cur();
+	assert(proc);
+	proc->context = state;
 
 	sched_set_preemption(saved);
 }

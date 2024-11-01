@@ -121,5 +121,7 @@ bool is_from_uaccess(const struct cpu_state *state)
 
 bool is_from_userspace(const struct cpu_state *state)
 {
-	return state->eflags.iopl == 3;
+	/* TODO this doesn't seem that corrent, the requested privilege level
+	 * could be diferrent perhaps */
+	return state->cs != I386_KERNEL_CODE_SELECTOR;
 }

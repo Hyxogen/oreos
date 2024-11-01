@@ -3,6 +3,7 @@
 #include <kernel/types.h>
 #include <kernel/errno.h>
 #include <kernel/syscall.h>
+#include <kernel/sched.h>
 #include <kernel/arch/i386/platform.h>
 
 static i32 syscall_stub(void)
@@ -13,7 +14,7 @@ static i32 syscall_stub(void)
 static i32 (*_syscall_table[])() = {
     syscall_stub, /* restart_syscall */
     syscall_exit, /* exit */
-    syscall_stub, /* fork */
+    syscall_fork, /* fork */
     syscall_read, /* read */
     syscall_write, /* write */
     syscall_stub, /* open */
@@ -406,7 +407,7 @@ int do_syscall(struct cpu_state *state)
 		return -1;
 
 	// syscall argument order: eax, ebx, ecx, edx, esi, edi, and ebp
-	u32 res = _syscall_table[idx](state->ebx, state->ecx, state->edx, state->esi, state->edi, state->ebp);
-	state->eax = res;
+	u32 res = _syscall_table[idx](state, state->ebx, state->ecx, state->edx, state->esi, state->edi, state->ebp);
+	proc_set_syscall_ret(state, res);
 	return 0;
 }

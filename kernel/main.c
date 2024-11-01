@@ -125,10 +125,15 @@ void kernel_main(struct mb2_info *info)
 
 	assert(!vma_map(&dummy->mm, &dummy1_start, MMU_PAGESIZE, VMA_MAP_PROT_READ | VMA_MAP_FIXED_NOREPLACE));
 
-
 	assert(dummy->mm.root->left);
-	assert(!vma_map_now_one(dummy->mm.root->left, dummy1_start, false));
-	memcpy((void*)dummy1_start, loop, MMU_PAGESIZE);
+
+	assert(!vma_map_now_one(dummy->mm.root->left, dummy1_start));
+	void *tmp = mmu_map_pages(NULL, dummy->mm.root->left->pages[0], 1, MMU_ADDRSPACE_KERNEL, 0);
+	assert(tmp != MMU_MAP_FAILED);
+
+	memcpy((void*)tmp, loop, MMU_PAGESIZE);
+
+	mmu_unmap(tmp, MMU_PAGESIZE, 0);
 
 	proc_release(dummy);
 

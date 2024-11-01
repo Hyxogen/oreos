@@ -26,7 +26,7 @@ struct process {
 	int exit_code;
 	enum proc_status status;
 
-	void* kernel_stack;
+	void *kernel_stack;
 
 	struct cpu_state *context;
 	struct process *next;
@@ -38,11 +38,12 @@ struct process {
 
 //TODO remove out of scheduler
 struct process *proc_create(void *start, u32 flags);
-struct process *proc_clone(const struct process *proc);
+struct process *proc_clone(struct process *proc, const struct cpu_state *state);
 void proc_free(struct process *proc);
 void proc_prepare_switch(struct process *proc);
 void proc_release(struct process *proc);
 void proc_get(struct process *proc);
+void proc_set_syscall_ret(struct cpu_state *state, size_t val);
 
 void init_sched(void);
 __attribute__((noreturn)) void sched_start(void);
@@ -56,6 +57,8 @@ void sched_signal(struct process *proc, int signum);
 int sched_schedule(struct process *proc);
 __attribute__ ((noreturn))
 void sched_resume(struct cpu_state *state);
+
+int sched_getpid(void);
 
 struct process *sched_get_current_proc(void);
 

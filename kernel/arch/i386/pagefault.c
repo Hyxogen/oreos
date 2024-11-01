@@ -64,18 +64,23 @@ static enum irq_result do_page_fault(u8 irq, struct cpu_state *state, void *dumm
 	(void) irq;
 	(void) dummy;
 
-	if (!is_from_userspace(state) && !is_from_uaccess(state))
+	if (!is_from_userspace(state) && !is_from_uaccess(state)) {
+		assert(0);
 		return IRQ_PANIC;
+	}
 
 	struct process *proc = sched_get_current_proc();
-	if (!proc)
+	if (!proc) {
+		assert(0);
 		return IRQ_PANIC;
+	}
 
 	uintptr_t addr = ALIGN_DOWN(get_pagefault_addr(), MMU_PAGESIZE);
 
 	/* TODO we need to lock the mm struct */
 	struct vma_area *area = vma_find_mapping(proc->mm.root, addr, addr + MMU_PAGESIZE);
 	if (!area) {
+		assert(0);
 		if (!faulting)
 			faulting = true;
 		else
@@ -87,13 +92,17 @@ static enum irq_result do_page_fault(u8 irq, struct cpu_state *state, void *dumm
 		printk("could not find area\n");
 	}
 
-	if (!area && is_present(state)) {
-		/* TODO CoW? */
-		assert(0);
-		sched_signal(proc, SIGSEGV);
-		maybe_fail_uaccess(state);
+	if (is_write(state) && is_present(state)) {
+		if (vma_do_cow_one(area, addr)) {
+			/* TODO CoW? */
+			assert(0);
+			sched_signal(proc, SIGSEGV);
+			maybe_fail_uaccess(state);
+		} else {
+			mmu_invalidate_user(); /* TODO only invalidate this page */
+		}
 	} else {
-		if (vma_map_now_one(area, addr, false)) {
+		if (vma_map_now_one(area, addr)) {
 			assert(0);
 			sched_signal(proc, SIGSEGV); /* TODO this should not be a segfault */
 			maybe_fail_uaccess(state);

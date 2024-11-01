@@ -6,8 +6,9 @@
 #include <kernel/sched.h>
 
 //TODO SANITIZE INPUT!!
-i32 syscall_read(int fd, void *buf, size_t nbytes)
+i32 syscall_read(struct cpu_state *state, int fd, void *buf, size_t nbytes)
 {
+	(void)state;
 	(void)fd;
 	/* TODO make sure that the process owns the buffer */
 

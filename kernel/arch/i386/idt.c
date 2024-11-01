@@ -60,11 +60,6 @@ unsigned irq_get_id(const struct cpu_state *state)
 	return state->vec_num;
 }
 
-bool irq_returning_to_userspace(const struct cpu_state *state)
-{
-	return state->eflags.iopl == IOPL_USER;
-}
-
 static enum irq_result irq_spurrious_handler(u8 irq, struct cpu_state *state, void *dummy)
 {
 	(void) irq;

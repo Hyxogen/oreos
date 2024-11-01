@@ -38,6 +38,7 @@
 #define VMA_MAP_PROT_READ 0x01
 #define VMA_MAP_PROT_WRITE 0x02
 #define VMA_MAP_FIXED_NOREPLACE 0x04
+#define VMA_MAP_COW 0x08
 
 /* just a generally good pageframe hint */
 #define MMU_PAGEFRAME_HINT (16 * 1024 * 1024)
@@ -90,7 +91,7 @@ void mmu_invalidate_user(void);
 int mmu_register_pagefault_handler(enum irq_result (*handler)(
     struct cpu_state *state, const struct pagefault *info));
 
-int vma_clone(struct mm *dest, const struct mm *src);
+int vma_clone(struct mm *dest, struct mm *src);
 
 struct vma_area *vma_find_mapping(const struct vma_area *area, uintptr_t start,
 				uintptr_t end);
@@ -98,6 +99,7 @@ int vma_map(struct mm *mm, uintptr_t *addr, size_t len, u32 flags);
 int vma_unmap(struct mm *mm, uintptr_t addr, size_t len);
 int vma_destroy(struct mm *mm);
 /* TODO remove from public interface */
-int vma_map_now_one(struct vma_area *area, uintptr_t addr, bool readonly);
+int vma_map_now_one(struct vma_area *area, uintptr_t addr);
+int vma_do_cow_one(struct vma_area *area, uintptr_t addr);
 
 #endif

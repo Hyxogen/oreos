@@ -12,10 +12,10 @@
 
 int do_syscall(struct cpu_state *state);
 
-i32 syscall_exit(int error_code);
-i32 syscall_fork(void);
-i32 syscall_write(int fd, const void *buf, size_t nbytes);
-i32 syscall_read(int fd, void *buf, size_t nbytes);
-i32 syscall_mmap(uintptr_t addr, size_t len, int prot, int flags, int fd, i32 off);
+i32 syscall_exit(struct cpu_state *state, int error_code);
+i32 syscall_fork(struct cpu_state *state);
+i32 syscall_write(struct cpu_state *state, int fd, const void *buf, size_t nbytes);
+i32 syscall_read(struct cpu_state *state, int fd, void *buf, size_t nbytes);
+i32 syscall_mmap(struct cpu_state *state, uintptr_t addr, size_t len, int prot, int flags, int fd, i32 off);
 
 #endif

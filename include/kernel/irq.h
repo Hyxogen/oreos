@@ -21,7 +21,6 @@ int irq_register_handler(
 i16 irq_get_free_irq(void);
 
 unsigned irq_get_id(const struct cpu_state *state);
-bool irq_returning_to_userspace(const struct cpu_state *state);
 bool irq_is_reserved(u8 irqn);
 
 void disable_irqs(void);

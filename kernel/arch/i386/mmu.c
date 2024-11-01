@@ -10,6 +10,9 @@
 #include <kernel/libc/assert.h>
 #include <kernel/arch/i386/platform.h>
 
+/* TODO REMOVE */
+#include <kernel/debug.h>
+
 static struct page mmu_pages[MMU_MAX_PAGES];
 
 #define MMU_RECURSIVE_PTE_ADDR 0xffc00000

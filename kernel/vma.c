@@ -223,12 +223,14 @@ static size_t vma_get_page_idx(const struct vma_area *area, uintptr_t addr)
 	return (addr - area->start) / MMU_PAGESIZE;
 }
 
-int vma_map_now_one(struct vma_area *area, uintptr_t addr, bool readonly)
+int vma_map_now_one(struct vma_area *area, uintptr_t addr)
 {
 	size_t idx = vma_get_page_idx(area, addr);
 
+	/* TODO set permissions correctly */
+	bool readonly = !(area->flags & VMA_MAP_PROT_WRITE) || (area->flags & VMA_MAP_COW);
+
 	if (area->pages[idx]) {
-		/* TODO set permissions correctly */
 		void *res = mmu_map_pages((void *)addr, area->pages[idx], 1,
 					  MMU_ADDRSPACE_USER,
 					  MMU_MAP_FIXED | MMU_MAP_NO_INCR_REF |
@@ -241,10 +243,15 @@ int vma_map_now_one(struct vma_area *area, uintptr_t addr, bool readonly)
 	area->pages[idx] = mmu_alloc_pageframe(MMU_PAGEFRAME_HINT, 1, 0);
 	if (!area->pages[idx])
 		return -ENOMEM;
-	int res = vma_map_now_one(area, addr, readonly);
 
-	if (!res)
-		memset((void*) addr, 0, MMU_PAGESIZE);
+	/*void *tmp = mmu_map_pages(NULL, area->pages[idx], 1, MMU_ADDRSPACE_KERNEL, 0);
+	if (tmp == MMU_MAP_FAILED)
+		return -ENOMEM;
+
+	memset(tmp, 0, MMU_PAGESIZE);
+	mmu_unmap(tmp, MMU_PAGESIZE, 0);*/
+
+	int res = vma_map_now_one(area, addr);
 	return res;
 }
 
@@ -263,7 +270,44 @@ int vma_destroy(struct mm *mm)
 	return 0;
 }
 
-static int vma_clone_one(struct mm *dest, const struct vma_area *area)
+int vma_do_cow_one(struct vma_area *area, uintptr_t addr)
+{
+	assert(IS_ALIGNED(addr, MMU_PAGESIZE));
+
+	size_t idx = vma_get_page_idx(area, addr);
+	/* TODO we don't need alloc a new page if the refcount is back to 1 */
+	struct page *src = area->pages[idx];
+	assert(src);
+
+	void *src_vaddr = mmu_map_pages(NULL, src, 1, MMU_ADDRSPACE_KERNEL, 0);
+	if (src_vaddr == MMU_MAP_FAILED)
+		return -ENOMEM;
+
+	struct page *dest = mmu_alloc_pageframe(MMU_PAGEFRAME_HINT, 1, 0);
+	if (!dest) {
+		mmu_unmap(src_vaddr, MMU_PAGESIZE, 0);
+		return -ENOMEM;
+	}
+
+	void *dest_vaddr = mmu_map_pages(NULL, dest, 1, MMU_ADDRSPACE_KERNEL, 0);
+	if (dest_vaddr == MMU_MAP_FAILED) {
+		mmu_free_pageframe(dest, 1);
+		mmu_unmap(src_vaddr, MMU_PAGESIZE, 0);
+		return -ENOMEM;
+	}
+
+	memcpy(dest_vaddr, src_vaddr, MMU_PAGESIZE);
+
+	mmu_unmap(src_vaddr, MMU_PAGESIZE, 0);
+	mmu_unmap(dest_vaddr, MMU_PAGESIZE, 0);
+	mmu_free_pageframe(src, 1);
+
+	area->pages[idx] = dest;
+	area->flags &= ~VMA_MAP_COW;
+	return vma_map_now_one(area, addr);
+}
+
+static int vma_clone_one(struct mm *dest, struct vma_area *area)
 {
 	if (!area)
 		return 0;
@@ -275,15 +319,18 @@ static int vma_clone_one(struct mm *dest, const struct vma_area *area)
 	if (res)
 		return res;
 
+	u32 flags_saved = area->flags;
+
+	area->flags |= VMA_MAP_COW;
 	size_t nframes = (area->end - area->start) / MMU_PAGESIZE;
 	struct vma_area *node = vma_create_area(area->start, area->end, area->flags);
 	if (!node)
-		return -ENOMEM;
+		goto error;
 	node->pages = kmalloc(nframes * sizeof(*node->pages));
 	if (!node->pages) {
 		/* TODO make vma_destroy_area function */
 		kfree(node);
-		return -ENOMEM;
+		goto error;
 	}
 
 	for (size_t i = 0; i < nframes; i++) {
@@ -294,9 +341,12 @@ static int vma_clone_one(struct mm *dest, const struct vma_area *area)
 
 	vma_insert(&dest->root, node);
 	return 0;
+error:
+	area->flags = flags_saved;
+	return -ENOMEM;
 }
 
-int vma_clone(struct mm *dest, const struct mm *src)
+int vma_clone(struct mm *dest, struct mm *src)
 {
 	dest->root = NULL;
 	return vma_clone_one(dest, src->root);

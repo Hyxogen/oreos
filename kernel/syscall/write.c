@@ -5,8 +5,9 @@
 #include <kernel/platform.h>
 
 //TODO SANITIZE INPUT!!
-i32 syscall_write(int fd, const void *buf, size_t nbytes)
+i32 syscall_write(struct cpu_state *state, int fd, const void *buf, size_t nbytes)
 {
+	(void)state;
 	(void)fd;
 	(void)nbytes;
 	//TODO make sure that the process owns the buffer

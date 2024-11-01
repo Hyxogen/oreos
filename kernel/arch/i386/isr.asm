@@ -102,5 +102,3 @@ DEFINE_ISR_NOCODE	31
 	DEFINE_ISR_NOCODE i
 %assign i i+1
 %endrep
-
-.end

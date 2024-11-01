@@ -1,5 +1,6 @@
 ENTRY(_start)
 
+_test_addr = 0x00400000;
 _kernel_addr = 0xC0000000;
 
 SECTIONS
@@ -20,7 +21,16 @@ SECTIONS
 		*(.multiboot.text)
 	}
 
-	. += _kernel_addr;
+	. += _test_addr;
+	_test_start = .;
+	.test.text ALIGN(4K) : AT(ADDR(.test.text) - _test_addr)
+	{
+		*(.test_text)
+	}
+	_test_end = .;
+
+	/* . += _kernel_addr; */
+	. += (_kernel_addr - _test_addr);
 	_kernel_vstart = .;
 	_kernel_vro_start = .;
 	.text ALIGN(4K) : AT (ADDR(.text) - _kernel_addr)

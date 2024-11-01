@@ -93,7 +93,6 @@ bool read_rsdp(struct acpi_table *table, struct rsdp *root)
 	}
 
 	bool success = true;
-	BOCHS_BREAK;
 	struct rsdt *rsdt = mmu_map(NULL, root->rsdt_addr, MMU_PAGESIZE,
 				    MMU_ADDRSPACE_KERNEL, 0);
 	if (rsdt == MMU_MAP_FAILED) {

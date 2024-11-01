@@ -9,8 +9,9 @@
 #define MAP_PRIVATE 0x01
 #define MAP_ANONYMOUS 0x02
 
-i32 syscall_mmap(uintptr_t addr, size_t len, int prot, int flags, int fd, i32 off)
+i32 syscall_mmap(struct cpu_state *state, uintptr_t addr, size_t len, int prot, int flags, int fd, i32 off)
 {
+	(void) state;
 	(void) flags;
 	(void) fd;
 	(void) off;
