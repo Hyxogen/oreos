@@ -98,9 +98,7 @@ static enum irq_result do_page_fault(u8 irq, struct cpu_state *state, void *dumm
 			assert(0);
 			sched_signal(proc, SIGSEGV);
 			maybe_fail_uaccess(state);
-		} else {
-			mmu_invalidate_user(); /* TODO only invalidate this page */
-		}
+		} 
 	} else {
 		if (vma_map_now_one(area, addr)) {
 			assert(0);
