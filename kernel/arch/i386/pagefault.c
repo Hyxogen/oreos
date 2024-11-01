@@ -8,9 +8,6 @@
 #include <kernel/printk.h>
 #include <kernel/kernel.h>
 
-/* TODO remove */
-#include <kernel/debug.h>
-
 static uintptr_t get_pagefault_addr(void)
 {
 	uintptr_t res = -1;
@@ -28,8 +25,8 @@ static bool is_present(const struct cpu_state *state)
 	return state->err_code & 0x01;
 }
 
-/* TODO TEST THIS FUNCTION! */
-static void fail_uaccess(struct cpu_state *state)
+/* XXX seems to work, but probably requires more testing */
+static void pop_frame(struct cpu_state *state)
 {
 	u32* frame_start = (void*) (uintptr_t) state->ebp;
 
@@ -46,7 +43,11 @@ static void fail_uaccess(struct cpu_state *state)
 	state->eip = retaddr;
 	state->ebp = saved_ebp;
 	state->esp = stack;
+}
 
+static void fail_uaccess(struct cpu_state *state)
+{
+	pop_frame(state);
 	state->eax = -1;
 }
 
@@ -56,45 +57,27 @@ static void maybe_fail_uaccess(struct cpu_state *state)
 		fail_uaccess(state);
 }
 
-/* TODO remove */
-static bool faulting = false;
-
 static enum irq_result do_page_fault(u8 irq, struct cpu_state *state, void *dummy)
 {
 	(void) irq;
 	(void) dummy;
 
-	if (!is_from_userspace(state) && !is_from_uaccess(state)) {
-		assert(0);
-		return IRQ_PANIC;
-	}
+	if (!is_from_userspace(state) && !is_from_uaccess(state))
+		panic("pagefault from the kernel");
 
 	struct process *proc = sched_get_current_proc();
-	if (!proc) {
-		assert(0);
-		return IRQ_PANIC;
-	}
+	if (!proc)
+		panic("no process");
 
 	uintptr_t addr = ALIGN_DOWN(get_pagefault_addr(), MMU_PAGESIZE);
 
 	/* TODO we need to lock the mm struct */
 	struct vma_area *area = vma_find_mapping(proc->mm.root, addr, addr + MMU_PAGESIZE);
 	if (!area) {
-		assert(0);
-		if (!faulting)
-			faulting = true;
-		else
-			panic("was already faulting");
-		printk("irq stackstrace:\n");
-		dump_stacktrace_at(state);
-		printk("cpu state:\n");
-		dump_state(state);
-		printk("could not find area\n");
-	}
-
-	if (is_write(state) && is_present(state)) {
+		sched_signal(proc, SIGSEGV);
+		maybe_fail_uaccess(state);
+	} else if (is_write(state) && is_present(state)) {
 		if (vma_do_cow_one(area, addr)) {
-			/* TODO CoW? */
 			assert(0);
 			sched_signal(proc, SIGSEGV);
 			maybe_fail_uaccess(state);
