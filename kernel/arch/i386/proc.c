@@ -153,6 +153,8 @@ struct process *proc_clone(struct process *proc, const struct cpu_state *state)
 
 	cloned->context = (void*) top;
 
+	memcpy(&cloned->signal_handlers, proc->signal_handlers, sizeof(cloned->signal_handlers));
+
 	if (vma_clone(&cloned->mm, &proc->mm))
 		goto err;
 
