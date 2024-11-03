@@ -35,6 +35,7 @@ struct process {
 
 	atomic_uint refcount;
 
+	/* TODO blocked signals */
 	u32 pending_signals;
 	void (*signal_handlers[32])(int);
 };

@@ -215,13 +215,12 @@ int proc_do_signal(struct process *proc, struct cpu_state *state)
 int proc_do_sigreturn(struct process *proc, struct cpu_state *state)
 {
 	assert(is_from_userspace(state));
-	/* TODO always set ds, cs and iopl */
+	/* TODO sigaction sa_mask restore */
 
 	u16 code, data;
 	proc_get_selectors(3, &code, &data);
 
 	state->esp += 4; /* pop dummy */
-	int signum = *(int*)(void*)state->esp;
 	state->esp += 4; /* pop signum */
 
 	int res = copy_from_user(state, (void*)state->esp, sizeof(*state));
@@ -233,8 +232,6 @@ int proc_do_sigreturn(struct process *proc, struct cpu_state *state)
 	state->eflags.iopl = 0;
 	state->eflags.ief = true;
 	state->eflags._reserved1 = 1; /* legacy flag */
-
-	/* TODO restore blocked signals */
 
 	return res;
 }
