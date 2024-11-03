@@ -3,7 +3,9 @@
 
 #include <stdbool.h>
 
+#define SIGKILL 9
 #define SIGSEGV 11
+#define SIGSTOP 19
 
 bool is_valid_signal(int signum);
 
