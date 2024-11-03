@@ -255,6 +255,23 @@ int vma_map_now_one(struct vma_area *area, uintptr_t addr)
 	return res;
 }
 
+int vma_map_now(struct mm *mm, uintptr_t addr, size_t len)
+{
+	uintptr_t start = ALIGN_DOWN(addr, MMU_PAGESIZE);
+	uintptr_t end = ALIGN_UP(addr + len, MMU_PAGESIZE);
+
+	for (; start != end; start += MMU_PAGESIZE) {
+		struct vma_area *area = vma_find_mapping(mm->root, start, end);
+		if (!area)
+			return -EINVAL;
+
+		int res = vma_map_now_one(area, start);
+		if (res)
+			return res;
+	}
+	return 0;
+}
+
 static void vma_unmap_all(struct mm *mm, struct vma_area *area)
 {
 	if (!area)

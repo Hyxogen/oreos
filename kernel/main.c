@@ -90,6 +90,10 @@ struct mb2_info *mb2_get_info(void)
 
 extern char loop[];
 extern char loop2[];
+extern const unsigned char user_init[];
+extern const unsigned int user_init_len;
+
+struct process *load_elf(const void *data, size_t nbytes);
 
 void kernel_main(struct mb2_info *info)
 {
@@ -117,7 +121,12 @@ void kernel_main(struct mb2_info *info)
 
 	printk("done!\n");
 
-	uintptr_t dummy1_start = 0x400000;
+	struct process *proc = load_elf(user_init, user_init_len);
+	assert(proc);
+	assert(!sched_schedule(proc));
+	proc_release(proc);
+
+	/*uintptr_t dummy1_start = 0x400000;
 	struct process *dummy = proc_create((void*)dummy1_start, PROC_FLAG_RING3);
 
 	assert(dummy);
@@ -135,7 +144,7 @@ void kernel_main(struct mb2_info *info)
 
 	mmu_unmap(tmp, MMU_PAGESIZE, 0);
 
-	proc_release(dummy);
+	proc_release(dummy);*/
 
 	sched_start();
 }

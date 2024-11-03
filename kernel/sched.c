@@ -3,6 +3,7 @@
 #include <kernel/libc/assert.h>
 #include <kernel/printk.h>
 #include <kernel/timer.h>
+#include <kernel/kernel.h>
 
 static struct process *_proc_list;
 static struct process * _Atomic _proc_cur;
@@ -59,7 +60,6 @@ static void _sched_del_proc(int pid)
 static struct process *_sched_next(struct cpu_state *state)
 {
 	assert(!sched_set_preemption(false));
-	/* TODO use _sched_save */
 	struct process *prev = _sched_cur();
 	struct process *cur = NULL;
 	if (prev) {
@@ -121,8 +121,13 @@ void sched_resume(struct cpu_state *state)
 	struct process *proc = _sched_cur();
 	/* TODO make sure that you remove the saved check when just resuming for
 	 * signals (SEE TODO BELOW) */
-	if (saved && is_from_userspace(state) && proc->status != RUNNING)
-		_sched_yield(state); /* TODO we should not yield, just try to resume or handle signals */
+	if (is_from_userspace(state) && proc->pending_signals) {
+		if (proc_do_signal(proc, state)) {
+			proc->status = DEAD;
+			proc->exit_code = -2; /* TODO set proper exit code */
+			_sched_yield(state);
+		}
+	}
 
 	assert(!is_from_userspace(state) || proc->status == RUNNING);
 
@@ -133,7 +138,6 @@ void sched_resume(struct cpu_state *state)
 void sched_yield(struct cpu_state *state)
 {
 	assert(sched_set_preemption(false));
-	//assert(state || _sched_cur()->status == DEAD);
 	_sched_yield(state);
 }
 
@@ -223,8 +227,7 @@ void sched_signal(struct process *proc, int signum)
 	(void) signum;
 	bool saved = sched_set_preemption(false);
 
-	proc->status = DEAD;
-	proc->exit_code = -1;
+	proc->pending_signals |= 1 << signum;
 
 	sched_set_preemption(saved);
 }

@@ -32,3 +32,26 @@ __get_user1:
 
 	ret
 .end:
+
+
+global __user_memcpy:function (__user_memcpy.end - __user_memcpy)
+__user_memcpy:
+	push ebp
+	mov ebp, esp
+
+	push esi
+	push edi
+
+	mov ecx, [ebp + 16] ; nbytes
+	mov esi, [ebp + 12] ; src
+	mov edi, [ebp + 8] ; dest
+
+	rep movsb 
+
+	pop esi
+	pop edi
+	pop ebp
+
+	xor eax, eax
+	ret
+.end:

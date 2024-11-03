@@ -34,6 +34,9 @@ struct process {
 	struct mm mm;
 
 	atomic_uint refcount;
+
+	u32 pending_signals;
+	void (*signal_handlers[32])(int);
 };
 
 //TODO remove out of scheduler
@@ -44,6 +47,8 @@ void proc_prepare_switch(struct process *proc);
 void proc_release(struct process *proc);
 void proc_get(struct process *proc);
 void proc_set_syscall_ret(struct cpu_state *state, size_t val);
+int proc_do_signal(struct process *proc, struct cpu_state *state);
+int proc_do_sigreturn(struct process *proc, struct cpu_state *state);
 
 void init_sched(void);
 __attribute__((noreturn)) void sched_start(void);

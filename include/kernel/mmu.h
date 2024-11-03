@@ -100,6 +100,7 @@ int vma_unmap(struct mm *mm, uintptr_t addr, size_t len);
 int vma_destroy(struct mm *mm);
 /* TODO remove from public interface */
 int vma_map_now_one(struct vma_area *area, uintptr_t addr);
+int vma_map_now(struct mm *mm, uintptr_t addr, size_t len);
 int vma_do_cow_one(struct vma_area *area, uintptr_t addr);
 
 #endif

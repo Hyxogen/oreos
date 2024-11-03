@@ -27,5 +27,9 @@ __attribute__((warn_unused_result))
 int put_user1(void *dest, u8 val);
 __attribute__((warn_unused_result))
 int get_user1(u8 *dest, const void *src);
+__attribute__((warn_unused_result))
+int copy_to_user(void *dest, const void *src, size_t nbytes);
+__attribute__((warn_unused_result))
+int copy_from_user(void *dest, const void *src, size_t nbytes);
 
 #endif

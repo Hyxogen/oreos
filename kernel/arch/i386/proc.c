@@ -31,6 +31,7 @@ static void proc_init(struct process *proc)
 	proc->context = NULL;
 	proc->next = NULL;
 	proc->mm.root = NULL;
+	proc->pending_signals = 0;
 	atomic_init(&proc->refcount, 1);
 }
 
@@ -51,7 +52,7 @@ static void proc_get_selectors(int ring, u16 *code_sel, u16 *data_sel)
 static u32 proc_get_eflags(int ring)
 {
 	(void) ring;
-	/* eflags: IOPL 3 (0x3000) IF: (0x0200) legacy: (0x0002) */
+	/* eflags: IOPL 0 (0x0000) IF: (0x0200) legacy: (0x0002) */
 	//TODO remove magic values
 	return 0x0202;
 }
@@ -172,4 +173,65 @@ void proc_prepare_switch(struct process *proc)
 void proc_set_syscall_ret(struct cpu_state *state, size_t v)
 {
 	state->eax = v;
+}
+
+static int proc_push(struct cpu_state *state, const void *src, size_t n)
+{
+	state->esp -= n;
+	int res = copy_to_user((void*)(uintptr_t)state->esp, src, n);
+
+	if (res)
+		state->esp += n;
+	return res;
+}
+
+int proc_do_signal(struct process *proc, struct cpu_state *state)
+{
+	assert(proc->pending_signals);
+	int i = __builtin_ctzll(proc->pending_signals);
+
+	u32 mask = ~(1 << i);
+	proc->pending_signals &= mask;
+
+	if (!proc->signal_handlers[i])
+		return -1;
+
+	if (proc_push(state, state, sizeof(*state)))
+		return -1;
+	if (proc_push(state, &i, sizeof(i)))
+		return -1; /* TODO pop previous */
+
+	u32 dummy = 0;
+	if (proc_push(state, &dummy, sizeof(dummy)))
+		return -1; /* TODO pop previous */
+
+	state->eip = (uintptr_t) proc->signal_handlers[i];
+	return 0;
+}
+
+int proc_do_sigreturn(struct process *proc, struct cpu_state *state)
+{
+	assert(is_from_userspace(state));
+	/* TODO always set ds, cs and iopl */
+
+	u16 code, data;
+	proc_get_selectors(PROC_FLAG_RING3, &code, &data);
+
+	state->esp += 4; /* pop dummy */
+	int signum = *(int*)(void*)state->esp;
+	state->esp += 4; /* pop signum */
+
+	int res = copy_from_user(state, (void*)state->esp, sizeof(*state));
+	state->esp += sizeof(*state);
+
+	/* TODO check which other registers have to be sanitized */
+	state->cs = code;
+	state->ds = data;
+	state->eflags.iopl = 0;
+	state->eflags.ief = true;
+	state->eflags._reserved1 = 1; /* legacy flag */
+
+	/* TODO restore blocked signals */
+
+	return res;
 }

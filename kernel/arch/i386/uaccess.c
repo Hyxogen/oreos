@@ -16,6 +16,7 @@ static bool check_user_buf(const void *user_ptr, size_t len)
 
 int __put_user1(void *dest, u8 val);
 int __get_user1(void *dest, const void *src);
+int __user_memcpy(void *dest, const void *src, size_t nbytes);
 
 int put_user1(void *dest, u8 val)
 {
@@ -30,4 +31,18 @@ int get_user1(u8 *dest, const void *src)
 	if (!check_user_buf(src, 1))
 		return -1;
 	return __get_user1(dest, src);
+}
+
+int copy_to_user(void *dest, const void *src, size_t nbytes)
+{
+	if (!check_user_buf(dest, nbytes))
+		return -1;
+	return __user_memcpy(dest, src, nbytes);
+}
+
+int copy_from_user(void *dest, const void *src, size_t nbytes)
+{
+	if (!check_user_buf(src, nbytes))
+		return -1;
+	return __user_memcpy(dest, src, nbytes);
 }

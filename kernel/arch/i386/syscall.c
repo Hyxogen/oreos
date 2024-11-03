@@ -8,7 +8,7 @@
 
 static i32 syscall_stub(void)
 {
-	return -ENOTSUP;
+	return -ENOSYS;
 }
 
 static i32 (*_syscall_table[])() = {
@@ -60,7 +60,7 @@ static i32 (*_syscall_table[])() = {
     syscall_stub, /* brk */
     syscall_stub, /* setgid */
     syscall_stub, /* getgid */
-    syscall_stub, /* signal */
+    syscall_signal, /* signal */
     syscall_stub, /* geteuid */
     syscall_stub, /* getegid */
     syscall_stub, /* acct */
@@ -131,7 +131,7 @@ static i32 (*_syscall_table[])() = {
     syscall_stub, /* sysinfo */
     syscall_stub, /* ipc */
     syscall_stub, /* fsync */
-    syscall_stub, /* sigreturn */
+    syscall_sigreturn, /* sigreturn */
     syscall_stub, /* clone */
     syscall_stub, /* setdomainname */
     syscall_stub, /* uname */

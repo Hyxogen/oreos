@@ -6,6 +6,7 @@
 #define ENOMEM 12
 #define EEXIST 17
 #define EINVAL 22
+#define ENOSYS 38
 #define ENOTSUP 95
 
 #endif

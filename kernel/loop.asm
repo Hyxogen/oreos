@@ -1,9 +1,37 @@
 ; TODO remove
+default rel
+
+loop_handler:
+	sub esp, 0x01
+
+	mov esp, 'x'
+
+	mov eax, 0x04
+	mov ebx, 0x00
+	mov ecx, esp
+	mov edx, 0x01
+
+	int 0x80
+
+	mov eax, 0x01
+	mov ebx, 0x10
+
+	int 0x80
+.halt:
+	jmp .halt
+
+
 global loop:function (loop.end - loop)
 align 0x1000
 loop:
 	sub esp, 0x1 ; allocate 1 byte on the stack
 .loop:
+	mov eax, 0x30 ; signal syscall
+	mov ebx, 11 ; SIGSEGV
+	lea ecx, [loop_handler] ; handler
+
+	int 0x80
+
 	mov eax, 0x03 ; read syscall
 	mov ebx, 0x00 ; fd 0
 	mov ecx, esp ; buf
@@ -13,6 +41,8 @@ loop:
 
 	test eax, eax
 	jz .loop
+
+	mov eax, [0]
 
 	xchg bx, bx
 	mov eax, 0x02 ; fork syscall
