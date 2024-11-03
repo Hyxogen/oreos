@@ -4,18 +4,30 @@
 #include <kernel/tty.h>
 #include <kernel/platform.h>
 
-//TODO SANITIZE INPUT!!
 i32 syscall_write(struct cpu_state *state, int fd, const void *buf, size_t nbytes)
 {
 	(void)state;
 	(void)fd;
 	(void)nbytes;
-	//TODO make sure that the process owns the buffer
-	//TODO write more than 1 byte
 	
-	u8 byte;
-	if (get_user1(&byte, buf))
-		return -EINVAL;
-	term_write(term_get_primary(), (void*) &byte, 1);
-	return 1;
+	const char *cbuf = buf;
+	
+	char tmp[64];
+	i32 nwritten = 0;
+	size_t size = 0;
+
+	while (nbytes > 0) {
+		size = nbytes > sizeof(tmp) ? sizeof(tmp) : nbytes;
+
+		if (copy_from_user(tmp, cbuf, size))
+			return -EINVAL;
+
+		term_write(term_get_primary(), tmp, size);
+
+		nbytes -= size;
+		nwritten += size;
+		cbuf += size;
+	}
+
+	return nwritten;
 }
