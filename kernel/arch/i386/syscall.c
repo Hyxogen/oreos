@@ -32,7 +32,7 @@ static i32 (*_syscall_table[])() = {
     syscall_stub, /* break */
     syscall_stub, /* oldstat */
     syscall_stub, /* lseek */
-    syscall_stub, /* getpid */
+    syscall_getpid, /* getpid */
     syscall_stub, /* mount */
     syscall_stub, /* umount */
     syscall_stub, /* setuid */
@@ -49,7 +49,7 @@ static i32 (*_syscall_table[])() = {
     syscall_stub, /* nice */
     syscall_stub, /* ftime */
     syscall_stub, /* sync */
-    syscall_stub, /* kill */
+    syscall_kill, /* kill */
     syscall_stub, /* rename */
     syscall_stub, /* mkdir */
     syscall_stub, /* rmdir */

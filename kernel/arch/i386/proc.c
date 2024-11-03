@@ -32,6 +32,7 @@ static void proc_init(struct process *proc)
 	proc->next = NULL;
 	proc->mm.root = NULL;
 	proc->pending_signals = 0;
+	memset(proc->signal_handlers, 0, sizeof(proc->signal_handlers));
 	atomic_init(&proc->refcount, 1);
 }
 
@@ -215,7 +216,7 @@ int proc_do_sigreturn(struct process *proc, struct cpu_state *state)
 	/* TODO always set ds, cs and iopl */
 
 	u16 code, data;
-	proc_get_selectors(PROC_FLAG_RING3, &code, &data);
+	proc_get_selectors(3, &code, &data);
 
 	state->esp += 4; /* pop dummy */
 	int signum = *(int*)(void*)state->esp;

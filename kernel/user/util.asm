@@ -1,3 +1,4 @@
+section .text
 ; write(int fd, const void *src, size_t nbytes)
 global write:function (write.end - write)
 write:
@@ -61,9 +62,59 @@ exit:
 	jmp .halt
 .end:
 
-; signal(int signum, void (*handler)(int))
-global signal:function (signal.end - signal)
-signal:
+; getpid(void)
+global getpid:function (getpid.end - getpid)
+getpid:
+	mov eax, 0x14 ; getpid syscall
+
+	int 0x80
+
+	ret
+.end:
+
+; kill(int pid, int sig)
+global kill:function (kill.end - kill)
+kill:
+	push ebp
+	mov ebp, esp
+
+	push ebx
+
+	mov eax, 0x25 ; kill syscall
+	mov ebx, [ebp + 8] ; pid
+	mov ecx, [ebp + 12] ; sig
+
+	int 0x80
+
+	pop ebx
+	pop ebp
+
+	ret
+.end:
+
+global __signal_trampoline:function (__signal_trampoline.end - __signal_trampoline)
+__signal_trampoline:
+	mov eax, [esp + 4] ; signum
+	extern __signal_handlers
+	mov eax, [__signal_handlers + 4 * eax]
+
+	test eax, eax
+	jz .finish ; TODO do default handler or something
+
+	call eax
+
+.finish:
+	mov eax, 0x77 ; sigreturn syscall
+
+	int 0x80
+
+.halt:
+	jmp .halt
+.end:
+
+; __signal(int signum, void (*handler)(int))
+global __signal:function (__signal.end - __signal)
+__signal:
 	push ebp
 	mov ebp, esp
 
@@ -77,4 +128,6 @@ signal:
 
 	pop ebx
 	pop ebp
+
+	ret
 .end:

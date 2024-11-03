@@ -10,7 +10,7 @@ CLEAN		:= $(CLEAN) $(OBJS_$(d)) $(DEPS_$(d))
 OBJS		+= $(OBJS_$(d))
 DEPS		+= $(DEPS_$(d))
 
-USER_CFLAGS	:= -ffreestanding -nostdlib -fno-builtin -Wall -Wextra -masm=intel -g0
+USER_CFLAGS	:= -ffreestanding -nostdlib -fno-builtin -Wall -Wextra -masm=intel -g
 USER_LFLAGS	:= -ffreestanding -nostdlib
 
 USER_OBJS	:= $(d)/shell.o $(d)/util.o
@@ -30,10 +30,11 @@ $(OBJ_DIR)/$(d)/%.o: $(OBJ_DIR)/$(d)/%.c $(d)/Rules.mk
 
 $(OBJ_DIR)/$(d)/%.o: $(OBJ_DIR)/$(d)/%.asm $(d)/Rules.mk
 	@mkdir -p $(@D)
-	$(AS) -felf32 $< -o $@
+	$(AS) -felf32 -g $< -o $@
 
 $(OBJ_DIR)/$(d)/init.out: $(USER_OBJS) $(USER_LINKSCRIPT) $(d)/Rules.mk
 	$(LD_CMD) $(USER_OBJS) -T $(USER_LINKSCRIPT) -o $@ $(USER_LFLAGS)
+	cp $@ init-syms.out
 	strip $@
 
 $(OBJ_DIR)/$(d)/init.c: $(OBJ_DIR)/$(d)/init.out
