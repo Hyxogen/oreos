@@ -12,8 +12,6 @@
 
 #define PROC_FLAG_RING_MASK 0x03
 
-#define SIGSEGV 11
-
 enum proc_status {
 	READY,
 	RUNNING,
@@ -67,5 +65,6 @@ void sched_resume(struct cpu_state *state);
 int sched_getpid(void);
 
 struct process *sched_get_current_proc(void);
+struct process *sched_get(int pid);
 
 #endif

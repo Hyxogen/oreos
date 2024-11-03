@@ -7,6 +7,7 @@
 #include <kernel/arch/i386/platform.h>
 #include <kernel/printk.h>
 #include <kernel/kernel.h>
+#include <kernel/signal.h>
 
 static uintptr_t get_pagefault_addr(void)
 {

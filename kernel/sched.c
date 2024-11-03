@@ -198,6 +198,24 @@ struct process *sched_get_current_proc(void)
 	return cur;
 }
 
+struct process *sched_get(int pid)
+{
+	bool saved = sched_set_preemption(false);
+
+	struct process *proc = _proc_list;
+
+	while (proc) {
+		if (proc->pid == pid) {
+			proc_get(proc);
+			break;
+		}
+		proc = proc->next;
+	}
+
+	sched_set_preemption(saved);
+	return proc;
+}
+
 int sched_schedule(struct process *proc)
 {
 	proc_get(proc);

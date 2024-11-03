@@ -1,5 +1,6 @@
 #include <kernel/syscall.h>
 #include <kernel/sched.h>
+#include <kernel/signal.h>
 
 i32 syscall_sigreturn(struct cpu_state *state)
 {
