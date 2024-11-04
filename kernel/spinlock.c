@@ -1,5 +1,5 @@
 #include <stdbool.h>
-#include <kernel/spinlock.h>
+#include <kernel/sync.h>
 #include <kernel/platform.h>
 
 int spinlock_init(struct spinlock *lock)

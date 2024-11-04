@@ -3,7 +3,7 @@
 
 #include <kernel/font/psf.h>
 #include <kernel/types.h>
-#include <kernel/spinlock.h>
+#include <kernel/sync.h>
 
 #define TERM_WIDTH 80
 #define TERM_HEIGHT 24

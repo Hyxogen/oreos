@@ -1,5 +1,5 @@
-#ifndef __KERNEL_SPINLOCK_H
-#define __KERNEL_SPINLOCK_H
+#ifndef __KERNEL_SYNC_H
+#define __KERNEL_SYNC_H
 
 #include <stdatomic.h>
 

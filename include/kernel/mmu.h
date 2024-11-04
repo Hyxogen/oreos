@@ -8,7 +8,7 @@
 #include <stdbool.h>
 #include <kernel/platform.h>
 #include <kernel/irq.h>
-#include <kernel/spinlock.h>
+#include <kernel/sync.h>
 
 #define MMU_PAGESIZE 0x1000
 
