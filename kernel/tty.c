@@ -54,7 +54,7 @@ void init_term(struct term *term, struct framebuf *fb)
 		term->chars[i] =
 		    (struct term_char){term->fg_color, term->bg_color, ' '};
 
-	init_spinlock(&term->mtx);
+	spinlock_init(&term->mtx);
 }
 
 static struct fb_color term_conv_color(u8 col)

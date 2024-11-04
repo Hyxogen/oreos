@@ -7,7 +7,7 @@ struct spinlock {
 	atomic_flag _locked;
 };
 
-int init_spinlock(struct spinlock *lock);
+int spinlock_init(struct spinlock *lock);
 int spinlock_lock(struct spinlock *lock);
 int spinlock_unlock(struct spinlock *lock);
 
