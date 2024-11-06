@@ -6,6 +6,7 @@
 #include <stddef.h>
 #include <kernel/types.h>
 #include <kernel/mmu.h>
+#include <kernel/list.h>
 
 #define PROC_FLAG_RING0 0x01
 #define PROC_FLAG_RING3 0x02
@@ -21,9 +22,10 @@ enum proc_status {
 
 struct process {
 	int pid;
+	atomic_int parent_pid;
 
 	int exit_code;
-	enum proc_status status;
+	_Atomic enum proc_status status;
 
 	void *kernel_stack;
 
@@ -37,6 +39,11 @@ struct process {
 	/* TODO blocked signals */
 	u32 pending_signals;
 	void (*signal_handlers[32])(int);
+
+	struct list children;
+	struct spinlock lock;
+
+	struct condvar child_exited_cond;
 };
 
 //TODO remove out of scheduler
@@ -47,6 +54,8 @@ void proc_prepare_switch(struct process *proc);
 void proc_release(struct process *proc);
 void proc_get(struct process *proc);
 void proc_set_syscall_ret(struct cpu_state *state, size_t val);
+void proc_set_parent(struct process *child, struct process *parent);
+struct process *proc_get_parent(const struct process *proc);
 int proc_do_signal(struct process *proc, struct cpu_state *state);
 int proc_do_sigreturn(struct process *proc, struct cpu_state *state);
 

@@ -8,6 +8,7 @@
 #include <kernel/errno.h>
 #include <kernel/irq.h>
 #include <kernel/libc/assert.h>
+#include <stdatomic.h>
 
 #include <kernel/debug.h>
 
@@ -25,6 +26,7 @@ static void *push(void *stackp, u32 v)
 static void proc_init(struct process *proc)
 {
 	proc->pid = -1;
+	proc->parent_pid = -1;
 	proc->exit_code = 0;
 	proc->status = -1;
 	proc->kernel_stack = NULL;
@@ -32,8 +34,11 @@ static void proc_init(struct process *proc)
 	proc->next = NULL;
 	proc->mm.root = NULL;
 	proc->pending_signals = 0;
+	lst_init(&proc->children);
+	spinlock_init(&proc->lock);
 	memset(proc->signal_handlers, 0, sizeof(proc->signal_handlers));
 	atomic_init(&proc->refcount, 1);
+	condvar_init(&proc->child_exited_cond);
 }
 
 static void proc_get_selectors(int ring, u16 *code_sel, u16 *data_sel)
@@ -127,12 +132,63 @@ err:
 	return NULL;
 }
 
-void proc_free(struct process *proc)
+void proc_set_parent(struct process *child, struct process *parent)
+{
+	atomic_store_explicit(&child->parent_pid, parent->pid, memory_order_relaxed);
+}
+
+struct process *proc_get_parent(const struct process *proc)
+{
+	struct process *parent = sched_get(atomic_load_explicit(&proc->parent_pid, memory_order_relaxed));
+	if (!parent)
+		parent = sched_get(1);
+	assert(parent);
+	return parent;
+}
+
+static void proc_lst_release(void *ptr)
+{
+	proc_release(ptr);
+}
+
+static void proc_lst_update_parent(void *child, void *parent)
+{
+	proc_get(parent);
+	proc_set_parent(child, parent);
+}
+
+static void proc_transfer_children(struct process *proc)
+{
+	assert(atomic_load(&proc->refcount) == 1);
+	/* spinlock not necesarry, as the refcount should be 1
+	 * anyway */
+
+	struct process *init = sched_get(1);
+	assert(init);
+
+	lst_foreach(&proc->children, proc_lst_update_parent, init);
+
+	spinlock_lock(&init->lock);
+	lst_append_list(&init->children, &proc->children);
+	spinlock_unlock(&init->lock);
+
+	proc_release(init);
+}
+
+static void proc_free_resources(struct process *proc)
 {
 	mmu_unmap(proc->kernel_stack, KERNEL_STACK_SIZE, 0);
 	kfree(proc);
 	if (!vma_destroy(&proc->mm))
-		printk("failed to properly destroy vma of pid %u\n", proc->pid);
+		oops("failed to properly destroy vma of pid %u\n", proc->pid);
+	lst_free(&proc->children, proc_lst_release);
+	condvar_free(&proc->child_exited_cond);
+}
+
+void proc_free(struct process *proc)
+{
+	proc_transfer_children(proc);
+	proc_free_resources(proc);
 }
 
 struct process *proc_clone(struct process *proc, const struct cpu_state *state)

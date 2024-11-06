@@ -38,11 +38,13 @@ struct list_node *lst_prepend(struct list *list, void *data);
 /* this moves the contents of the other list */
 void lst_append_list(struct list *list, struct list *other);
 
-struct list_node *lst_find(struct list *list, bool (*p)(void *, void *),
+struct list_node *lst_find(const struct list *list, bool (*p)(const void *, void *),
 			   void *opaque);
 
 struct list_node *lst_unlink(struct list *list, struct list_node *node);
 void lst_del(struct list *list, struct list_node *node, void (*del)(void*));
 void lst_foreach(struct list *list, void (*f)(void *, void*), void *opaque);
+
+bool lst_isempty(const struct list *list);
 
 #endif

@@ -9,6 +9,18 @@ int condvar_init(struct condvar *cond)
 	return 0;
 }
 
+static void condvar_free_proc(void *proc)
+{
+	proc_release(proc);
+}
+
+void condvar_free(struct condvar *cond)
+{
+	sched_disable_preemption();
+	lst_free(&cond->waitlist, condvar_free_proc);
+	sched_enable_preemption();
+}
+
 int condvar_wait(struct condvar *cond, struct spinlock *mutex)
 {
 	assert(mutex);
@@ -28,7 +40,7 @@ int condvar_wait(struct condvar *cond, struct spinlock *mutex)
 
 	sched_goto_sleep();
 
-	proc_release(proc); /* entry in waitlist was deleted, but we still have the reference */
+	condvar_free_proc(proc); /* entry in waitlist was deleted, but we still have the reference */
 
 	spinlock_lock(mutex);
 

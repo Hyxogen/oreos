@@ -2,6 +2,7 @@
 
 int write(int fd, const char *src, size_t nbytes);
 int read(int fd, char *dest, size_t nbytes);
+int waitpid(int pid, int *wstatus, int options);
 __attribute__((noreturn))
 void exit(int exit_code);
 int fork(void);
@@ -11,6 +12,11 @@ int kill(int pid, int sig);
 void __signal_trampoline(int signum);
 
 void (*__signal_handlers[32])(int);
+
+int wait(int *wstatus)
+{
+	return waitpid(-1, wstatus, 0);
+}
 
 static void init(void)
 {
@@ -30,6 +36,22 @@ static void handler(int signum)
 {
 	(void)signum;
 	write(0, "x", 1);
+}
+
+size_t strlen(const char *str)
+{
+	const char *tmp = str;
+
+	while (*tmp)
+		++tmp;
+	return tmp - str;
+}
+
+void writestr(const char *str)
+{
+	size_t len = strlen(str);
+
+	write(0, str, len);
 }
 
 void _start(void)
@@ -54,6 +76,13 @@ void _start(void)
 		} else if (res == 0) {
 			write(0, &buf, 1);
 			exit(0);
+		}
+
+		res = wait(NULL);
+		if (!res) {
+			writestr("a child exited\n");
+		} else {
+			writestr("no children\n");
 		}
 	}
 }

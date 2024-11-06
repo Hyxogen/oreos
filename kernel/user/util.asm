@@ -131,3 +131,24 @@ __signal:
 
 	ret
 .end:
+
+; waitpid(int pid, int *wstatus, int options)
+global waitpid:function (waitpid.end - waitpid)
+waitpid:
+	push ebp
+	mov ebp, esp
+
+	push ebx
+
+	mov eax, 0x07 ; waitpid syscall
+	mov ebx, [ebp + 8] ; pid
+	mov ecx, [ebp + 12] ; wstatus
+	mov edx, [ebp + 16] ; options
+
+	int 0x80
+
+	pop ebx
+	pop ebp
+
+	ret
+.end:

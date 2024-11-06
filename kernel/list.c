@@ -90,15 +90,15 @@ static void _lst_node_destroy(struct list_node *head, void (*del)(void*))
 	}
 }
 
-static struct list_node *_lst_node_find(struct list_node *head,
-					bool (*p)(void *, void *), void *opaque)
+static struct list_node *_lst_node_find(const struct list_node *head,
+					bool (*p)(const void *, void *), void *opaque)
 {
 	while (head) {
 		if (p(head->_private, opaque))
 			break;
 		head = head->next;
 	}
-	return head;
+	return (struct list_node *)head;
 }
 
 void lst_init(struct list *list)
@@ -172,7 +172,7 @@ void lst_append_list(struct list *list, struct list *other)
 	other->tail = NULL;
 }
 
-struct list_node *lst_find(struct list *list, bool (*p)(void *, void *),
+struct list_node *lst_find(const struct list *list, bool (*p)(const void *, void *),
 			   void *opaque)
 {
 	return _lst_node_find(list->head, p, opaque);
@@ -213,4 +213,9 @@ static void _lst_node_foreach(struct list_node *head, void (*f)(void *, void*), 
 void lst_foreach(struct list *list, void (*f)(void *, void*), void *opaque)
 {
 	_lst_node_foreach(list->head, f, opaque);
+}
+
+bool lst_isempty(const struct list *list)
+{
+	return list->head == NULL;
 }

@@ -19,7 +19,7 @@ static i32 (*_syscall_table[])() = {
     syscall_write, /* write */
     syscall_stub, /* open */
     syscall_stub, /* close */
-    syscall_stub, /* waitpid */
+    syscall_waitpid, /* waitpid */
     syscall_stub, /* creat */
     syscall_stub, /* link */
     syscall_stub, /* unlink */

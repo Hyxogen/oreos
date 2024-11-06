@@ -20,6 +20,7 @@ struct condvar {
 };
 
 int condvar_init(struct condvar *cond);
+/* XXX MAKE NO OTHER REFERENCES EXIST TO THE CONDVAR, IT WILL NOT PROTECT YOU */
 void condvar_free(struct condvar *cond);
 int condvar_signal(struct condvar *cond);
 /* TODO "normal" mutexes instead of spinlocks */

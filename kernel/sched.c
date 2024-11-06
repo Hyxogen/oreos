@@ -136,8 +136,7 @@ void sched_resume(struct cpu_state *state)
 	 * signals (SEE TODO BELOW) */
 	if (is_from_userspace(state) && proc->pending_signals) {
 		if (proc_do_signal(proc, state)) {
-			proc->status = DEAD;
-			proc->exit_code = -2; /* TODO set proper exit code */
+			sched_kill(proc, -2); /* TODO set proper exit code */
 			_sched_yield(state);
 		}
 	}
@@ -219,10 +218,16 @@ int sched_kill(struct process *proc, int exit_code)
 	if (proc->status != DEAD) {
 		proc->exit_code = exit_code;
 		proc->status = DEAD;
+		/* TODO the process is now a zombie, but the vma etc. can be
+		 * freed already */
 		res = 0;
 
 		if (proc->pid == 1)
 			panic("tried to kill init!");
+
+		struct process *parent = proc_get_parent(proc);
+		condvar_signal(&parent->child_exited_cond);
+		proc_release(parent);
 	}
 
 	sched_enable_preemption();
