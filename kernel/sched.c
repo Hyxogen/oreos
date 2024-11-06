@@ -220,6 +220,9 @@ int sched_kill(struct process *proc, int exit_code)
 		proc->exit_code = exit_code;
 		proc->status = DEAD;
 		res = 0;
+
+		if (proc->pid == 1)
+			panic("tried to kill init!");
 	}
 
 	sched_enable_preemption();
