@@ -145,8 +145,9 @@ void sched_resume(struct cpu_state *state)
 	/* TODO make sure that you remove the saved check when just resuming for
 	 * signals (SEE TODO BELOW) */
 	if (is_from_userspace(state) && proc->pending_signals) {
-		if (proc_do_signal(proc, state)) {
-			sched_kill(proc, -2); /* TODO set proper exit code */
+		int res = proc_do_signal(proc, state);
+		if (res) {
+			sched_kill(proc, res); /* TODO set proper exit code */
 			_sched_yield(state);
 		}
 	}

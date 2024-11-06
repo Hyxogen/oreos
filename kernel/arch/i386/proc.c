@@ -254,16 +254,16 @@ int proc_do_signal(struct process *proc, struct cpu_state *state)
 	proc->pending_signals &= mask;
 
 	if (!proc->signal_handlers[i])
-		return -1;
+		return -i;
 
 	if (proc_push(state, state, sizeof(*state)))
-		return -1;
+		return -i;
 	if (proc_push(state, &i, sizeof(i)))
-		return -1; /* TODO pop previous */
+		return -i; /* TODO pop previous */
 
 	u32 dummy = 0;
 	if (proc_push(state, &dummy, sizeof(dummy)))
-		return -1; /* TODO pop previous */
+		return -i; /* TODO pop previous */
 
 	state->eip = (uintptr_t) proc->signal_handlers[i];
 	return 0;
