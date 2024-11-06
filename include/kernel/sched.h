@@ -44,6 +44,8 @@ struct process {
 	struct spinlock lock;
 
 	struct condvar child_exited_cond;
+
+	unsigned int alarm;
 };
 
 //TODO remove out of scheduler
@@ -58,6 +60,8 @@ void proc_set_parent(struct process *child, struct process *parent);
 struct process *proc_get_parent(const struct process *proc);
 int proc_do_signal(struct process *proc, struct cpu_state *state);
 int proc_do_sigreturn(struct process *proc, struct cpu_state *state);
+
+bool sched_has_pending_signals();
 
 void init_sched(void);
 __attribute__((noreturn)) void sched_start(void);
@@ -74,6 +78,7 @@ void sched_resume(struct cpu_state *state);
 
 void sched_goto_sleep(void);
 void sched_wakeup(struct process *proc);
+unsigned sched_set_alarm(struct process *proc, unsigned timepoint);
 
 int sched_getpid(void);
 
@@ -84,5 +89,8 @@ struct process *sched_get(int pid);
 bool sched_disable_preemption(void);
 /* returns if preemption is now enabled */
 bool sched_enable_preemption(void);
+
+/* TODO make a proper clock */
+unsigned sched_get_time(void);
 
 #endif

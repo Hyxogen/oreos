@@ -39,9 +39,9 @@ static i32 (*_syscall_table[])() = {
     syscall_stub, /* getuid */
     syscall_stub, /* stime */
     syscall_stub, /* ptrace */
-    syscall_stub, /* alarm */
+    syscall_alarm, /* alarm */
     syscall_stub, /* oldfstat */
-    syscall_stub, /* pause */
+    syscall_pause, /* pause */
     syscall_stub, /* utime */
     syscall_stub, /* stty */
     syscall_stub, /* gtty */

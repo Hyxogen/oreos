@@ -1,5 +1,11 @@
 #include <stddef.h>
 
+#define SIGKILL 9
+#define SIGSEGV 11
+#define SIGALRM 14
+#define SIGCHLD 17
+#define SIGSTOP 19
+
 int write(int fd, const char *src, size_t nbytes);
 int read(int fd, char *dest, size_t nbytes);
 int waitpid(int pid, int *wstatus, int options);
@@ -10,17 +16,39 @@ int __signal(int signum, void (*handler)(int));
 int getpid(void);
 int kill(int pid, int sig);
 void __signal_trampoline(int signum);
+unsigned int alarm(unsigned int seconds);
+int pause(void);
 
 void (*__signal_handlers[32])(int);
+
+void SIG_DFL(int signum)
+{
+	switch (signum) {
+	case SIGALRM:
+	case SIGCHLD:
+		return;
+	case SIGSEGV:
+	default:
+		exit(-signum);
+	}
+}
 
 int wait(int *wstatus)
 {
 	return waitpid(-1, wstatus, 0);
 }
 
+unsigned int sleep(unsigned int seconds)
+{
+	alarm(seconds);
+	pause();
+	return alarm(0);
+}
+
 static void init(void)
 {
 	for (unsigned i = 0; i < sizeof(__signal_handlers)/sizeof(__signal_handlers[0]); i++) {
+		__signal_handlers[i] = SIG_DFL;
 		__signal(i, __signal_trampoline);
 	}
 }
@@ -52,6 +80,12 @@ void writestr(const char *str)
 	size_t len = strlen(str);
 
 	write(0, str, len);
+}
+
+static void alarm_handler(int signum)
+{
+	(void) signum;
+	writestr("got alarmed!");
 }
 
 void _start(void)

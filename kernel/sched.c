@@ -4,6 +4,7 @@
 #include <kernel/printk.h>
 #include <kernel/timer.h>
 #include <kernel/kernel.h>
+#include <kernel/signal.h>
 
 static struct process *_proc_list;
 static struct process * _Atomic _proc_cur;
@@ -11,6 +12,7 @@ static struct process *_idle_proc;
 static atomic_int _pid;
 static atomic_int _preemption_disabled_count = 1; /* we default to 1 until the scheduler is started */
 static u8 _yield_irqn;
+static atomic_uint _clock = 0;
 
 struct process *_sched_cur(void)
 {
@@ -91,15 +93,23 @@ static struct process *_sched_next(struct cpu_state *state)
 			cur = _idle_proc;
 			break;
 		}
+		struct process *next = cur->next;
 
 		if (cur->status == DEAD) {
 			printk("%i exited with: %i\n", cur->pid, cur->exit_code);
-			struct process *next = cur->next;
 			_sched_del_proc(cur->pid);
-			cur = next;
-		} else if (cur->status == READY) {
-			break;
+		} else {
+			if (cur->alarm && cur->alarm < sched_get_time()) {
+				cur->alarm = 0;
+				sched_signal(cur, SIGALRM);
+			}
+
+			if (cur->status == READY) {
+				break;
+			}
 		}
+
+		cur = next;
 	}
 	timer_sched_int(10);
 	cur->status = RUNNING;
@@ -159,6 +169,8 @@ static enum irq_result sched_on_tick(u8 irqn, struct cpu_state *state, void *dum
 	(void)irqn;
 	(void)dummy;
 	(void)state;
+	atomic_fetch_add_explicit(&_clock, 1, memory_order_relaxed);
+
 	if (timer_poll() == 0) {
 		bool can_preempt = sched_disable_preemption();
 		if (can_preempt)
@@ -316,12 +328,26 @@ void sched_wakeup(struct process *proc)
 	sched_enable_preemption();
 }
 
+unsigned sched_set_alarm(struct process *proc, unsigned timepoint)
+{
+	sched_disable_preemption();
+
+	unsigned prev = proc->alarm;
+	proc->alarm = timepoint;
+
+	sched_enable_preemption();
+
+	return prev;
+}
+
 void sched_signal(struct process *proc, int signum)
 {
 	(void) signum;
 	sched_disable_preemption();
 
 	proc->pending_signals |= 1 << signum;
+	enum proc_status sleeping = SLEEPING;
+	atomic_compare_exchange_strong(&proc->status, &sleeping, READY);
 
 	sched_enable_preemption();
 }
@@ -340,4 +366,17 @@ void sched_save(struct cpu_state *state)
 void sched_start(void)
 {
 	_sched_yield(NULL);
+}
+
+bool sched_has_pending_signals()
+{
+	sched_disable_preemption();
+	bool pending = _sched_cur()->pending_signals;
+	sched_enable_preemption();
+	return pending;
+}
+
+unsigned sched_get_time(void)
+{
+	return atomic_load_explicit(&_clock, memory_order_relaxed);
 }

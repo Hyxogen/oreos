@@ -26,7 +26,7 @@ static void *push(void *stackp, u32 v)
 static void proc_init(struct process *proc)
 {
 	proc->pid = -1;
-	proc->parent_pid = -1;
+	atomic_init(&proc->parent_pid, 1);
 	proc->exit_code = 0;
 	proc->status = -1;
 	proc->kernel_stack = NULL;
@@ -34,6 +34,7 @@ static void proc_init(struct process *proc)
 	proc->next = NULL;
 	proc->mm.root = NULL;
 	proc->pending_signals = 0;
+	proc->alarm = -1;
 	lst_init(&proc->children);
 	spinlock_init(&proc->lock);
 	memset(proc->signal_handlers, 0, sizeof(proc->signal_handlers));

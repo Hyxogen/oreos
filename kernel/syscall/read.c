@@ -13,5 +13,6 @@ i32 syscall_read(struct cpu_state *state, int fd, void *buf, size_t nbytes)
 	/* TODO make sure that the process owns the buffer */
 
 	size_t n = ps2_read(buf, nbytes);
+	/* TODO handle pending signals */
 	return (i32) n;
 }

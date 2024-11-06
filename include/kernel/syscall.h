@@ -22,5 +22,7 @@ i32 syscall_signal(struct cpu_state *state, int signum, void (*handler)(int));
 i32 syscall_sigreturn(struct cpu_state *state); /* TODO test */
 i32 syscall_getpid(void);
 i32 syscall_kill(struct cpu_state *state, int pid, int sig);
+i32 syscall_alarm(struct cpu_state *state, unsigned int seconds);
+i32 syscall_pause(void);
 
 #endif

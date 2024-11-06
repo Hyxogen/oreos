@@ -152,3 +152,30 @@ waitpid:
 
 	ret
 .end:
+
+; alarm(unsigned int seconds)
+global alarm:function (alarm.end - alarm)
+alarm:
+	push ebp
+	mov ebp, esp
+
+	push ebx
+	mov eax, 0x1b ; alarm syscall
+	mov ebx, [ebp + 8] ; seconds
+
+	int 0x80
+
+	pop ebx
+	pop ebp
+
+	ret
+.end:
+
+; pause(void)
+global pause:function (pause.end - pause)
+pause:
+	mov eax, 0x1d ; pause syscall
+
+	int 0x80
+	ret
+.end:
