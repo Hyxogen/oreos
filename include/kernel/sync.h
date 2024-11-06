@@ -15,6 +15,17 @@ void spinlock_lock(struct spinlock *lock);
 bool spinlock_trylock(struct spinlock *lock);
 void spinlock_unlock(struct spinlock *lock);
 
+struct mutex {
+	atomic_flag _locked;
+	struct list waitlist;
+};
+
+int mutex_init(struct mutex *mtx, u32 flags);
+void mutex_free(struct mutex *mtx);
+int mutex_lock(struct mutex *mtx);
+int mutex_trylock(struct mutex *mtx);
+int mutex_unlock(struct mutex *mtx);
+
 struct condvar {
 	struct list waitlist;
 };
@@ -24,6 +35,6 @@ int condvar_init(struct condvar *cond);
 void condvar_free(struct condvar *cond);
 int condvar_signal(struct condvar *cond);
 /* TODO "normal" mutexes instead of spinlocks */
-int condvar_wait(struct condvar *cond, struct spinlock *mutex);
+int condvar_wait(struct condvar *cond, struct mutex *mutex);
 
 #endif

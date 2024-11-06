@@ -36,7 +36,7 @@ static void proc_init(struct process *proc)
 	proc->pending_signals = 0;
 	proc->alarm = -1;
 	lst_init(&proc->children);
-	spinlock_init(&proc->lock);
+	mutex_init(&proc->lock, 0);
 	memset(proc->signal_handlers, 0, sizeof(proc->signal_handlers));
 	atomic_init(&proc->refcount, 1);
 	condvar_init(&proc->child_exited_cond);
@@ -169,9 +169,9 @@ static void proc_transfer_children(struct process *proc)
 
 	lst_foreach(&proc->children, proc_lst_update_parent, init);
 
-	spinlock_lock(&init->lock);
+	mutex_lock(&init->lock);
 	lst_append_list(&init->children, &proc->children);
-	spinlock_unlock(&init->lock);
+	mutex_unlock(&init->lock);
 
 	proc_release(init);
 }

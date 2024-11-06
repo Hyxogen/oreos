@@ -5,7 +5,7 @@ d		:= $(dir)
 OBJS_$(d)	:= \
 	$(d)/main.o $(d)/keycode.o $(d)/printk.o $(d)/ps2.o $(d)/tty.o $(d)/acpi.o $(d)/panic.o $(d)/sched.o \
 	$(d)/spinlock.o $(d)/irq.o $(d)/debug.o $(d)/loop.o $(d)/serial.o $(d)/vma.o $(d)/elf.o $(d)/signal.o \
-	$(d)/condvar.o $(d)/list.o
+	$(d)/condvar.o $(d)/list.o $(d)/mutex.o
 DEPS_$(d)	:= $(OBJS_$(d):%.o=%.d)
 CLEAN		:= $(CLEAN) $(OBJS_$(d)) $(DEPS_$(d))
 

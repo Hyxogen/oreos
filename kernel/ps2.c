@@ -5,6 +5,7 @@
 #include <kernel/platform.h>
 #include <kernel/irq.h>
 #include <kernel/sync.h>
+#include <kernel/libc/assert.h>
 
 static u8 ps2_dev_type1, ps2_dev_type2;
 
@@ -17,7 +18,7 @@ static u8 ps2_dev_type1, ps2_dev_type2;
 static atomic_bool _ps2_has_data = false;
 static u8 _ps2_buf[PS2_BUFSIZE];
 static u8 _ps2_write = 0, _ps2_read = 0;
-static struct spinlock _ps2_mutex;
+static struct mutex _ps2_mutex;
 static struct condvar _ps2_not_empty_cond;
 
 static enum keycode ps2_tokeycode(u8 b)
@@ -233,7 +234,8 @@ size_t ps2_read(void *dest, size_t n)
 {
 	char *c = dest;
 
-	spinlock_lock(&_ps2_mutex);
+	/* TODO use semaphore */
+	mutex_lock(&_ps2_mutex);
 
 	if (!atomic_load(&_ps2_has_data))
 		condvar_wait(&_ps2_not_empty_cond, &_ps2_mutex);
@@ -262,7 +264,7 @@ size_t ps2_read(void *dest, size_t n)
 		nread++;
 	}
 
-	spinlock_unlock(&_ps2_mutex);
+	mutex_unlock(&_ps2_mutex);
 	return nread;
 }
 
@@ -513,6 +515,7 @@ void init_ps2(void)
 	ps2_enable_irq();
 	init_ps2_controller();
 	ps2_identify();
-	spinlock_init(&_ps2_mutex);
+	int res = mutex_init(&_ps2_mutex, 0);
+	assert(!res);
 	condvar_init(&_ps2_not_empty_cond);
 }

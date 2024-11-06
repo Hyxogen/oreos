@@ -21,9 +21,9 @@ i32 syscall_fork(struct cpu_state *state)
 	if (!res) {
 		res = child->pid;
 
-		spinlock_lock(&proc->lock);
+		mutex_lock(&proc->lock);
 		lst_append(&proc->children, child);
-		spinlock_unlock(&proc->lock);
+		mutex_unlock(&proc->lock);
 	} else {
 		proc_release(child);
 	}

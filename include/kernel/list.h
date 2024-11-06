@@ -47,4 +47,6 @@ void lst_foreach(struct list *list, void (*f)(void *, void*), void *opaque);
 
 bool lst_isempty(const struct list *list);
 
+struct list_node *lst_pop_front(struct list *list);
+
 #endif

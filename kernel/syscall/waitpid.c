@@ -29,7 +29,7 @@ i32 syscall_waitpid(struct cpu_state *state, int pid, int *wstatus, int options)
 	struct process *proc = sched_get_current_proc();
 	i32 res = -ECHILD;
 
-	spinlock_lock(&proc->lock);
+	mutex_lock(&proc->lock);
 
 	while (!sched_has_pending_signals() && !lst_isempty(&proc->children)) {
 		struct list_node *node = lst_find(&proc->children, find_exited_proc, &pid);
@@ -50,7 +50,7 @@ i32 syscall_waitpid(struct cpu_state *state, int pid, int *wstatus, int options)
 		condvar_wait(&proc->child_exited_cond, &proc->lock);
 	}
 
-	spinlock_unlock(&proc->lock);
+	mutex_unlock(&proc->lock);
 
 	proc_release(proc);
 
