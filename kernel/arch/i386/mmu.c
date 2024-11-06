@@ -9,6 +9,7 @@
 #include <kernel/libc/string.h>
 #include <kernel/libc/assert.h>
 #include <kernel/arch/i386/platform.h>
+#include <kernel/sched.h>
 
 /* TODO REMOVE */
 #include <kernel/debug.h>
@@ -20,6 +21,18 @@ static struct page mmu_pages[MMU_MAX_PAGES];
 
 #define MMU_PTE_COUNT 1024
 #define MMU_PAGETABLE_SIZE (MMU_PTE_COUNT * sizeof(struct mmu_pte))
+
+/* XXX
+ * This code only works (safely) from: startup code, syscalls irqs, and
+ * pagefault irqs. It achieves this by disabling preemption to make sure that no
+ * races exits. SO THIS DOESN'T WORK FROM OTHER IRQS!!
+ *
+ * TODO add some debug check that makes sure that it's used correctly
+ *
+ * TODO separate mechanism from policy, tbh the only thing really needed
+ * mmu_map_pages and the pageframe allocator, the other stuff is platform
+ * agnostic (kind off)
+ */
 
 void mmu_write_cr3(uintptr_t paddr)
 {
@@ -146,6 +159,8 @@ struct page *mmu_alloc_pageframe(uintptr_t hint, size_t nframes, u32 flags)
 {
 	struct page *page;
 
+	sched_disable_preemption();
+
 	if (flags & MMU_ALLOC_FIXED)
 		page = mmu_paddr_to_page(hint);
 	else
@@ -153,6 +168,8 @@ struct page *mmu_alloc_pageframe(uintptr_t hint, size_t nframes, u32 flags)
 
 	if (page)
 		mmu_get_pageframe(page, nframes);
+
+	sched_enable_preemption();
 
 	return page;
 }
@@ -173,9 +190,13 @@ static void mmu_unmap_one(void *vaddr, u32 flags)
 		return;
 	}
 
+	sched_disable_preemption();
+
 	// TODO: zero the pte?
 	pte->present = false;
 	mmu_free_pageframe(mmu_pfn_to_page(pte->pfn), 1);
+
+	sched_enable_preemption();
 }
 
 int mmu_unmap(void *vaddr, size_t len, u32 flags)
@@ -346,8 +367,8 @@ static void *mmu_find_pages(void *hint, size_t count, int addrspace)
 /*
  * map a physical address to a vaddr
  */
-void *mmu_map_pages(void *vaddr, struct page *frame, size_t nframes,
-		    int addrspace, u32 flags)
+static void *mmu_do_map_pages(void *vaddr, struct page *frame, size_t nframes,
+			      int addrspace, u32 flags)
 {
 	if (!addrspace) {
 		// invalid addrspace
@@ -381,6 +402,18 @@ void *mmu_map_pages(void *vaddr, struct page *frame, size_t nframes,
 
 	mmu_flush_tlb();
 	return vaddr;
+}
+
+void *mmu_map_pages(void *vaddr, struct page *frame, size_t nframes,
+		    int addrspace, u32 flags)
+
+{
+	sched_disable_preemption();
+
+	void *res = mmu_do_map_pages(vaddr, frame, nframes, addrspace, flags);
+
+	sched_enable_preemption();
+	return res;
 }
 
 void *mmu_map(void *vaddr, uintptr_t paddr, size_t len, int addrspace, u32 flags)
