@@ -62,9 +62,17 @@ int sched_schedule(struct process *proc);
 __attribute__ ((noreturn))
 void sched_resume(struct cpu_state *state);
 
+void sched_goto_sleep(void);
+void sched_wakeup(struct process *proc);
+
 int sched_getpid(void);
 
 struct process *sched_get_current_proc(void);
 struct process *sched_get(int pid);
+
+/* returns if preemption was enabled */
+bool sched_disable_preemption(void);
+/* returns if preemption is now enabled */
+bool sched_enable_preemption(void);
 
 #endif

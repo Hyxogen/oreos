@@ -19,6 +19,7 @@
 #include <kernel/acpi/acpi.h>
 
 /* TODO REMOVE */
+/* TODO remove important code out of assert() as they may be removed */
 #include <kernel/libc/string.h>
 void init_paging(void);
 void init_segments(void);

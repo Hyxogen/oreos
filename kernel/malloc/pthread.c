@@ -13,17 +13,20 @@ int ma_unlock_mutex(ma_mtx *mtx) { return pthread_mutex_unlock(mtx); }
 
 int ma_init_mutex(ma_mtx *mtx)
 {
-	return spinlock_init(mtx);
+	spinlock_init(mtx);
+	return 0;
 }
 
 int ma_lock_mutex(ma_mtx *mtx)
 {
-	return spinlock_lock(mtx);
+	spinlock_lock(mtx);
+	return 0;
 }
 
 int ma_unlock_mutex(ma_mtx *mtx)
 {
-	return spinlock_unlock(mtx);
+	spinlock_unlock(mtx);
+	return 0;
 }
 
 #endif
