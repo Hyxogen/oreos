@@ -4,6 +4,7 @@
 #include <kernel/printk.h>
 #include <kernel/platform.h>
 #include <kernel/irq.h>
+#include <kernel/sync.h>
 
 static u8 ps2_dev_type1, ps2_dev_type2;
 
@@ -16,6 +17,8 @@ static u8 ps2_dev_type1, ps2_dev_type2;
 static atomic_bool _ps2_has_data = false;
 static u8 _ps2_buf[PS2_BUFSIZE];
 static u8 _ps2_write = 0, _ps2_read = 0;
+static struct spinlock _ps2_mutex;
+static struct condvar _ps2_not_empty_cond;
 
 static enum keycode ps2_tokeycode(u8 b)
 {
@@ -180,6 +183,8 @@ static enum irq_result ps2_on_event(u8 irq, struct cpu_state *state, void *dummy
 		_ps2_read += 1;
 
 	atomic_store(&_ps2_has_data, true);
+
+	condvar_signal(&_ps2_not_empty_cond); /* condvars are not irq safe, so must be before ps2_eoi() */
 	ps2_eoi();
 	return IRQ_CONTINUE;
 }
@@ -228,6 +233,11 @@ size_t ps2_read(void *dest, size_t n)
 {
 	char *c = dest;
 
+	spinlock_lock(&_ps2_mutex);
+
+	if (!atomic_load(&_ps2_has_data))
+		condvar_wait(&_ps2_not_empty_cond, &_ps2_mutex);
+
 	size_t nread = 0;
 	while (nread < n) {
 		int ch = ps2_get();
@@ -243,12 +253,16 @@ size_t ps2_read(void *dest, size_t n)
 		/* TODO this should not be here, this driver should also be able
 		 * to be used from the kernel */
 		int res  = put_user1(c, (u8) val);
-		if (res)
-			return 0;
+		if (res) {
+			nread = 0;
+			break;
+		}
 
 		c++;
 		nread++;
 	}
+
+	spinlock_unlock(&_ps2_mutex);
 	return nread;
 }
 
@@ -499,4 +513,6 @@ void init_ps2(void)
 	ps2_enable_irq();
 	init_ps2_controller();
 	ps2_identify();
+	spinlock_init(&_ps2_mutex);
+	condvar_init(&_ps2_not_empty_cond);
 }

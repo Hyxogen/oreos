@@ -28,4 +28,5 @@ void enable_irqs(void);
 void __enable_irqs(void);
 
 void init_interrupts(struct acpi_table *table);
+void do_irq(u8 irqn);
 #endif

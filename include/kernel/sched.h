@@ -15,6 +15,7 @@
 enum proc_status {
 	READY,
 	RUNNING,
+	SLEEPING,
 	DEAD,
 };
 

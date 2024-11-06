@@ -10,6 +10,7 @@ static struct process * _Atomic _proc_cur;
 static struct process *_idle_proc;
 static atomic_int _pid;
 static atomic_int _preemption_disabled_count = 1; /* we default to 1 until the scheduler is started */
+static u8 _yield_irqn;
 
 struct process *_sched_cur(void)
 {
@@ -24,7 +25,7 @@ static void sched_set_cur(struct process *proc)
 bool sched_disable_preemption(void)
 {
 	/* TODO check if seq_cst is really needed */
-	/* In theory this is just a recursive spinlock */
+	/* TODO In theory this is just a recursive spinlock, perhaphs just use one */
 	int i = atomic_fetch_add_explicit(&_preemption_disabled_count, 1, memory_order_seq_cst);
 	assert(i >= 0);
 	return i == 0;
@@ -96,7 +97,7 @@ static struct process *_sched_next(struct cpu_state *state)
 			struct process *next = cur->next;
 			_sched_del_proc(cur->pid);
 			cur = next;
-		} else {
+		} else if (cur->status == READY) {
 			break;
 		}
 	}
@@ -169,6 +170,20 @@ static enum irq_result sched_on_tick(u8 irqn, struct cpu_state *state, void *dum
 	return IRQ_CONTINUE;
 }
 
+static enum irq_result sched_on_yield(u8 irqn, struct cpu_state *state, void *dummy)
+{
+	(void)irqn;
+	(void)dummy;
+	(void)state;
+	bool can_preempt = sched_disable_preemption();
+	if (can_preempt)
+		_sched_yield(state);
+	else
+		oops("could not yield because preemption was disabled");
+	sched_enable_preemption();
+	return IRQ_CONTINUE;
+}
+
 __attribute__((noreturn))
 static void sched_idle(void)
 {
@@ -185,6 +200,12 @@ void init_sched(void)
 	_idle_proc = proc_create(sched_idle, PROC_FLAG_RING0);
 	assert(_idle_proc);
 	_idle_proc->pid = 0;
+
+	i16 irqn = irq_get_free_irq();
+	assert(irqn > 0);
+	_yield_irqn = (u8) irqn;
+
+	irq_register_handler(_yield_irqn, sched_on_yield, NULL);
 }
 
 int sched_kill(struct process *proc, int exit_code)
@@ -254,6 +275,37 @@ int sched_schedule(struct process *proc)
 
 	sched_enable_preemption();
 	return 0;
+}
+
+static void _sched_save_state_and_yield()
+{
+	do_irq(_yield_irqn);
+}
+
+void sched_goto_sleep(void)
+{
+	sched_disable_preemption();
+
+	struct process *proc = _sched_cur();
+
+	assert(proc->status != DEAD);
+	proc->status = SLEEPING;
+
+	sched_enable_preemption();
+
+	_sched_save_state_and_yield();
+}
+
+void sched_wakeup(struct process *proc)
+{
+	sched_disable_preemption();
+
+	if (proc->status != SLEEPING)
+		printk("tried to wake up a non sleeping process");
+	else
+		proc->status = READY;
+
+	sched_enable_preemption();
 }
 
 void sched_signal(struct process *proc, int signum)

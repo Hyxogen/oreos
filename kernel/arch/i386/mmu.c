@@ -27,6 +27,8 @@ static struct page mmu_pages[MMU_MAX_PAGES];
  * pagefault irqs. It achieves this by disabling preemption to make sure that no
  * races exits. SO THIS DOESN'T WORK FROM OTHER IRQS!!
  *
+ * (kmalloc uses a lock however, so that is save to use from IRQ handlers)
+ *
  * TODO add some debug check that makes sure that it's used correctly
  *
  * TODO separate mechanism from policy, tbh the only thing really needed
