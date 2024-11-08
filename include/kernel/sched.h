@@ -69,8 +69,8 @@ __attribute__((noreturn)) void sched_start(void);
 
 __attribute__((noreturn)) void sched_yield(struct cpu_state *state);
 
-__attribute__ ((deprecated("use sched_signal")))
-int sched_kill(struct process *proc, int exit_code);
+__attribute__((noreturn))
+void sched_do_kill(int exit_code);
 
 void sched_signal(struct process *proc, int signum);
 int sched_schedule(struct process *proc);

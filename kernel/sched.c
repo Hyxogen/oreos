@@ -149,8 +149,8 @@ void sched_resume(struct cpu_state *state)
 	if (is_from_userspace(state) && proc->pending_signals) {
 		int res = proc_do_signal(proc, state);
 		if (res) {
-			sched_kill(proc, res); /* TODO set proper exit code */
-			_sched_yield(state);
+			sched_enable_preemption();
+			sched_do_kill(res);
 		}
 	}
 
@@ -222,31 +222,22 @@ void init_sched(void)
 	irq_register_handler(_yield_irqn, sched_on_yield, NULL);
 }
 
-int sched_kill(struct process *proc, int exit_code)
+void sched_do_kill(int exit_code)
 {
-	/* TODO this will probably have to use atomics once we want SMP,
-	 * otherwise races could exits for accessing the status and/or exit_code
-	 */
-	int res = -ESRCH;
 	sched_disable_preemption();
+
+	struct process *proc = _sched_cur();
 
 	if (proc->status != DEAD) {
 		proc->exit_code = exit_code;
 		proc->status = DEAD;
-		/* TODO the process is now a zombie, but the vma etc. can be
-		 * freed already */
-		res = 0;
-
-		if (proc->pid == 1)
-			panic("tried to kill init!");
 
 		struct process *parent = proc_get_parent(proc);
 		condvar_signal(&parent->child_exited_cond);
 		proc_release(parent);
 	}
 
-	sched_enable_preemption();
-	return res;
+	_sched_yield(NULL);
 }
 
 struct process *sched_get_current_proc(void)

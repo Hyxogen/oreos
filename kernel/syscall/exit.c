@@ -4,9 +4,6 @@
 
 i32 syscall_exit(struct cpu_state *state, int exit_code)
 {
-	struct process *cur = sched_get_current_proc();
-	assert(cur);
-
-	sched_kill(cur, exit_code);
-	sched_yield(state);
+	(void) state;
+	sched_do_kill(exit_code);
 }
