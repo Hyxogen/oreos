@@ -131,8 +131,6 @@ void sched_resume(struct cpu_state *state)
 	sched_disable_preemption();
 
 	struct process *proc = _sched_cur();
-	/* TODO make sure that you remove the saved check when just resuming for
-	 * signals (SEE TODO BELOW) */
 	if (is_from_userspace(state) && proc->pending_signals) {
 		int res = proc_do_signal(proc, state);
 		if (res) {
@@ -287,13 +285,8 @@ int sched_schedule(struct process *proc)
 	return 0;
 }
 
-static void _sched_save_state_and_yield()
-{
-	do_irq(_yield_irqn);
-}
-
 void sched_yield_here(void) {
-	_sched_save_state_and_yield();
+	do_irq(_yield_irqn);
 }
 
 void sched_prepare_goto_sleep(void)
@@ -311,17 +304,16 @@ void sched_prepare_goto_sleep(void)
 void sched_goto_sleep(void)
 {
 	sched_prepare_goto_sleep();
-	_sched_save_state_and_yield();
+	sched_yield_here();
 }
 
 void sched_wakeup(struct process *proc)
 {
 	sched_disable_preemption();
 
-	if (proc->status != SLEEPING)
-		printk("tried to wake up a non sleeping process");
-	else
-		proc->status = READY;
+	enum proc_status sleeping = SLEEPING;
+
+	atomic_compare_exchange_strong(&proc->status, &sleeping, READY);
 
 	sched_enable_preemption();
 }
@@ -348,8 +340,7 @@ int sched_signal(int pid, int signum)
 
 	if (proc) {
 		proc->pending_signals |= 1 << signum;
-		enum proc_status sleeping = SLEEPING;
-		atomic_compare_exchange_strong(&proc->status, &sleeping, READY);
+		sched_wakeup(proc);
 		res = 0;
 	}
 
