@@ -82,6 +82,16 @@ void writestr(const char *str)
 	write(0, str, len);
 }
 
+static void seghandler(int signum)
+{
+	if (__signal_handlers[11] == SIG_DFL) {
+		writestr("yes");
+	} else {
+		writestr("no");
+	}
+}
+
+
 void _start(void)
 {
 	init();
@@ -94,6 +104,13 @@ void _start(void)
 	int pid = getpid();
 	kill(pid, 10);
 
+	signal(11, seghandler);
+	kill(pid, 11);
+	if (__signal_handlers[11] == seghandler) {
+		writestr("yes2");
+	} else {
+		writestr("no2");
+	}
 	while (1) {
 		if (read(0, &buf, 1) != 1)
 			continue;
