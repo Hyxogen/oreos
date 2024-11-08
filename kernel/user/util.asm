@@ -101,6 +101,7 @@ __signal_trampoline:
 	test eax, eax
 	jz .finish ; TODO do default handler or something
 
+	; TODO temporarily set handler to default handler
 	call eax
 
 .finish:

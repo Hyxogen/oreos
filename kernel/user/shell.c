@@ -82,12 +82,6 @@ void writestr(const char *str)
 	write(0, str, len);
 }
 
-static void alarm_handler(int signum)
-{
-	(void) signum;
-	writestr("got alarmed!");
-}
-
 void _start(void)
 {
 	init();

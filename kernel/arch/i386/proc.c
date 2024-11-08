@@ -252,6 +252,7 @@ int proc_do_signal(struct process *proc, struct cpu_state *state)
 
 int proc_do_sigreturn(struct process *proc, struct cpu_state *state)
 {
+	(void) proc;
 	assert(is_from_userspace(state));
 	/* TODO sigaction sa_mask restore */
 
