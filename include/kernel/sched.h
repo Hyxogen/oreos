@@ -35,8 +35,6 @@ struct process {
 
 	struct mm mm;
 
-	atomic_uint refcount;
-
 	/* TODO blocked signals */
 	u32 pending_signals;
 	void (*signal_handlers[32])(int);
@@ -54,11 +52,8 @@ struct process *proc_create(void *start, u32 flags);
 struct process *proc_clone(struct process *proc, const struct cpu_state *state);
 void proc_free(struct process *proc);
 void proc_prepare_switch(struct process *proc);
-void proc_release(struct process *proc);
-void proc_get(struct process *proc);
 void proc_set_syscall_ret(struct cpu_state *state, size_t val);
 void proc_set_parent(struct process *child, struct process *parent);
-struct process *proc_get_parent(const struct process *proc);
 int proc_do_signal(struct process *proc, struct cpu_state *state);
 int proc_do_sigreturn(struct process *proc, struct cpu_state *state);
 
@@ -72,7 +67,7 @@ __attribute__((noreturn)) void sched_yield(struct cpu_state *state);
 __attribute__((noreturn))
 void sched_do_kill(int exit_code);
 
-void sched_signal(struct process *proc, int signum);
+int sched_signal(int pid, int signum);
 int sched_schedule(struct process *proc);
 __attribute__ ((noreturn))
 void sched_resume(struct cpu_state *state);
@@ -87,7 +82,7 @@ unsigned sched_set_alarm(struct process *proc, unsigned timepoint);
 int sched_getpid(void);
 
 struct process *sched_get_current_proc(void);
-struct process *sched_get(int pid);
+struct process *sched_get_init(void);
 
 /* returns if preemption was enabled */
 bool sched_disable_preemption(void);

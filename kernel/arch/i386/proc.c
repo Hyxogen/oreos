@@ -38,7 +38,6 @@ static void proc_init(struct process *proc)
 	lst_init(&proc->children);
 	mutex_init(&proc->lock, 0);
 	memset(proc->signal_handlers, 0, sizeof(proc->signal_handlers));
-	atomic_init(&proc->refcount, 1);
 	condvar_init(&proc->child_exited_cond);
 }
 
@@ -138,33 +137,17 @@ void proc_set_parent(struct process *child, struct process *parent)
 	atomic_store_explicit(&child->parent_pid, parent->pid, memory_order_relaxed);
 }
 
-struct process *proc_get_parent(const struct process *proc)
-{
-	struct process *parent = sched_get(atomic_load_explicit(&proc->parent_pid, memory_order_relaxed));
-	if (!parent)
-		parent = sched_get(1);
-	assert(parent);
-	return parent;
-}
-
-static void proc_lst_release(void *ptr)
-{
-	proc_release(ptr);
-}
-
 static void proc_lst_update_parent(void *child, void *parent)
 {
-	proc_get(parent);
 	proc_set_parent(child, parent);
 }
 
 static void proc_transfer_children(struct process *proc)
 {
-	assert(atomic_load(&proc->refcount) == 1);
 	/* spinlock not necesarry, as the refcount should be 1
 	 * anyway */
 
-	struct process *init = sched_get(1);
+	struct process *init = sched_get_init();
 	assert(init);
 
 	lst_foreach(&proc->children, proc_lst_update_parent, init);
@@ -172,8 +155,6 @@ static void proc_transfer_children(struct process *proc)
 	mutex_lock(&init->lock);
 	lst_append_list(&init->children, &proc->children);
 	mutex_unlock(&init->lock);
-
-	proc_release(init);
 }
 
 static void proc_free_resources(struct process *proc)
@@ -182,7 +163,7 @@ static void proc_free_resources(struct process *proc)
 	kfree(proc);
 	if (!vma_destroy(&proc->mm))
 		oops("failed to properly destroy vma of pid %u\n", proc->pid);
-	lst_free(&proc->children, proc_lst_release);
+	lst_free(&proc->children, NULL);
 	condvar_free(&proc->child_exited_cond);
 }
 

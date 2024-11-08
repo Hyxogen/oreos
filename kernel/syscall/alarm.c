@@ -12,7 +12,5 @@ i32 syscall_alarm(struct cpu_state *state, unsigned int seconds)
 	/* TODO don't hardcode granularity */
 	unsigned prev = sched_set_alarm(proc, now + (seconds * 1000));
 
-	proc_release(proc);
-
 	return prev;
 }

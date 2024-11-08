@@ -34,7 +34,6 @@ i32 syscall_mmap(struct cpu_state *state, uintptr_t addr, size_t len, int prot, 
 
 	i32 res = vma_map(&proc->mm, &addr, len, vma_flags);
 
-	proc_release(proc); /* what should happen if the process gets killed just before returning? */
 	if (res)
 		return res;
 	return (i32) addr;

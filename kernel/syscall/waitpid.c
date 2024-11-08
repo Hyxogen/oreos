@@ -2,11 +2,6 @@
 #include <kernel/sched.h>
 #include <kernel/errno.h>
 
-static void lst_proc_del(void *proc)
-{
-	proc_release(proc);
-}
-
 static bool find_exited_proc(const void *proc_ptr, void *pid_ptr)
 {
 	int pid = *(int*)pid_ptr;
@@ -42,7 +37,7 @@ i32 syscall_waitpid(struct cpu_state *state, int pid, int *wstatus, int options)
 			if (wstatus && copy_to_user(wstatus, &child->exit_code, sizeof(child->exit_code)))
 				res = -EINVAL;
 			else
-				lst_del(&proc->children, node, lst_proc_del);
+				lst_del(&proc->children, node, NULL);
 
 			break;
 		}
@@ -51,8 +46,6 @@ i32 syscall_waitpid(struct cpu_state *state, int pid, int *wstatus, int options)
 	}
 
 	mutex_unlock(&proc->lock);
-
-	proc_release(proc);
 
 	if (sched_has_pending_signals())
 		res = -EINTR;

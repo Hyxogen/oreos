@@ -8,10 +8,8 @@ i32 syscall_fork(struct cpu_state *state)
 	struct process *proc = sched_get_current_proc();
 	struct process *child = proc_clone(proc, state);
 
-	if (!child) {
-		proc_release(proc);
+	if (!child)
 		return -ENOMEM;
-	}
 
 	proc_set_parent(child, proc);
 	proc_set_syscall_ret(child->context, 0);
@@ -24,11 +22,7 @@ i32 syscall_fork(struct cpu_state *state)
 		mutex_lock(&proc->lock);
 		lst_append(&proc->children, child);
 		mutex_unlock(&proc->lock);
-	} else {
-		proc_release(child);
 	}
-
-	proc_release(proc);
 
 	/* pages are now CoW */
 	mmu_invalidate_user();

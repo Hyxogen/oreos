@@ -8,15 +8,10 @@ void monitor_init(struct monitor *monitor)
 	lst_init(&monitor->waitlist);
 }
 
-static void monitor_free_proc(void *proc)
-{
-	proc_release(proc);
-}
-
 void monitor_free(struct monitor *monitor)
 {
 	sched_disable_preemption();
-	lst_free(&monitor->waitlist, monitor_free_proc);
+	lst_free(&monitor->waitlist, NULL);
 	sched_enable_preemption();
 }
 
@@ -42,8 +37,6 @@ void monitor_wait(struct monitor *monitor, struct spinlock *lock)
 	sched_yield_here();
 
 	spinlock_lock(lock);
-
-	proc_release(proc);
 }
 
 void monitor_signal(struct monitor *monitor)

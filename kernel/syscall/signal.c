@@ -17,6 +17,5 @@ i32 syscall_signal(struct cpu_state *state, int signum, void (*handler)(int))
 	/* TODO atomic load? */
 	proc->signal_handlers[signum] = handler;
 
-	proc_release(proc);
 	return 0;
 }

@@ -9,15 +9,10 @@ void condvar_init(struct condvar *cond)
 	lst_init(&cond->waitlist);
 }
 
-static void condvar_free_proc(void *proc)
-{
-	proc_release(proc);
-}
-
 void condvar_free(struct condvar *cond)
 {
 	sched_disable_preemption();
-	lst_free(&cond->waitlist, condvar_free_proc);
+	lst_free(&cond->waitlist, NULL);
 	sched_enable_preemption();
 }
 
@@ -26,7 +21,6 @@ void condvar_wait(struct condvar *cond, struct mutex *mutex)
 	assert(mutex);
 
 	struct process *proc = sched_get_current_proc();
-
 	sched_disable_preemption();
 	struct list_node *node = lst_append(&cond->waitlist, proc);
 	sched_enable_preemption();
@@ -41,8 +35,6 @@ void condvar_wait(struct condvar *cond, struct mutex *mutex)
 	/* we might have gottend signalled, but then we will just yield one
 	 * quantum */
 	sched_yield_here();
-
-	condvar_free_proc(proc); /* entry in waitlist was deleted, but we still have the reference */
 
 	mutex_lock(mutex);
 }

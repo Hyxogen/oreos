@@ -9,12 +9,5 @@ i32 syscall_kill(struct cpu_state *state, int pid, int sig)
 	if (!is_valid_signal(sig))
 		return -EINVAL;
 
-	struct process *proc = sched_get(pid);
-	if (!proc)
-		return -ESRCH;
-
-	sched_signal(proc, sig);
-
-	proc_release(proc);
-	return 0;
+	return sched_signal(pid, sig);
 }

@@ -40,18 +40,6 @@ bool sched_enable_preemption(void)
 	return i == 1;
 }
 
-void proc_release(struct process *proc)
-{
-	if (atomic_fetch_sub(&proc->refcount, 1) == 0) {
-		proc_free(proc);
-	}
-}
-
-void proc_get(struct process *proc)
-{
-	atomic_fetch_add(&proc->refcount, 1);
-}
-
 static void _sched_del_proc(int pid)
 {
 	struct process *cur = _proc_list;
@@ -62,7 +50,6 @@ static void _sched_del_proc(int pid)
 				_proc_list = cur->next;
 			else
 				prev->next = cur->next;
-			proc_release(cur);
 			break;
 		}
 
@@ -101,7 +88,7 @@ static struct process *_sched_next(struct cpu_state *state)
 		} else {
 			if (cur->alarm && cur->alarm < sched_get_time()) {
 				cur->alarm = 0;
-				sched_signal(cur, SIGALRM);
+				sched_signal(cur->pid, SIGALRM);
 			}
 
 			if (cur->status == READY) {
@@ -222,6 +209,32 @@ void init_sched(void)
 	irq_register_handler(_yield_irqn, sched_on_yield, NULL);
 }
 
+static struct process *_sched_get(int pid)
+{
+	sched_disable_preemption();
+
+	struct process *proc = _proc_list;
+
+	while (proc) {
+		if (proc->pid == pid) {
+			break;
+		}
+		proc = proc->next;
+	}
+
+	sched_enable_preemption();
+	return proc;
+}
+
+static struct process *_sched_get_parent(void)
+{
+	struct process *parent = _sched_get(atomic_load_explicit(&_sched_cur()->parent_pid, memory_order_relaxed));
+	if (!parent)
+		parent = sched_get_init();
+	assert(parent);
+	return parent;
+}
+
 void sched_do_kill(int exit_code)
 {
 	sched_disable_preemption();
@@ -232,9 +245,8 @@ void sched_do_kill(int exit_code)
 		proc->exit_code = exit_code;
 		proc->status = DEAD;
 
-		struct process *parent = proc_get_parent(proc);
+		struct process *parent = _sched_get_parent();
 		condvar_signal(&parent->child_exited_cond);
-		proc_release(parent);
 	}
 
 	_sched_yield(NULL);
@@ -244,33 +256,17 @@ struct process *sched_get_current_proc(void)
 {
 	sched_disable_preemption();
 	struct process *cur = _sched_cur();
-	proc_get(cur);
 	sched_enable_preemption();
 	return cur;
 }
 
-struct process *sched_get(int pid)
+struct process *sched_get_init(void)
 {
-	sched_disable_preemption();
-
-	struct process *proc = _proc_list;
-
-	while (proc) {
-		if (proc->pid == pid) {
-			proc_get(proc);
-			break;
-		}
-		proc = proc->next;
-	}
-
-	sched_enable_preemption();
-	return proc;
+	return _sched_get(1);
 }
 
 int sched_schedule(struct process *proc)
 {
-	proc_get(proc);
-
 	proc->pid = atomic_fetch_add(&_pid, 1);
 	proc->status = READY;
 	proc->next = NULL;
@@ -342,16 +338,23 @@ unsigned sched_set_alarm(struct process *proc, unsigned timepoint)
 	return prev;
 }
 
-void sched_signal(struct process *proc, int signum)
+int sched_signal(int pid, int signum)
 {
 	(void) signum;
 	sched_disable_preemption();
 
-	proc->pending_signals |= 1 << signum;
-	enum proc_status sleeping = SLEEPING;
-	atomic_compare_exchange_strong(&proc->status, &sleeping, READY);
+	int res = -ENOENT;
+	struct process *proc = _sched_get(pid);
+
+	if (proc) {
+		proc->pending_signals |= 1 << signum;
+		enum proc_status sleeping = SLEEPING;
+		atomic_compare_exchange_strong(&proc->status, &sleeping, READY);
+		res = 0;
+	}
 
 	sched_enable_preemption();
+	return res;
 }
 
 void sched_save(struct cpu_state *state)

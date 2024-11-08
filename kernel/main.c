@@ -125,7 +125,6 @@ void kernel_main(struct mb2_info *info)
 	struct process *proc = load_elf(user_init, user_init_len);
 	assert(proc);
 	assert(!sched_schedule(proc));
-	proc_release(proc);
 
 	/*uintptr_t dummy1_start = 0x400000;
 	struct process *dummy = proc_create((void*)dummy1_start, PROC_FLAG_RING3);

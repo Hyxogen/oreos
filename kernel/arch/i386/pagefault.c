@@ -75,23 +75,22 @@ static enum irq_result do_page_fault(u8 irq, struct cpu_state *state, void *dumm
 	/* TODO we need to lock the mm struct */
 	struct vma_area *area = vma_find_mapping(proc->mm.root, addr, addr + MMU_PAGESIZE);
 	if (!area || (is_write(state) && !(area->flags & VMA_MAP_PROT_WRITE))) {
-		sched_signal(proc, SIGSEGV);
+		sched_signal(proc->pid, SIGSEGV);
 		maybe_fail_uaccess(state);
 	} else if (is_write(state) && is_present(state)) {
 		if (vma_do_cow_one(area, addr)) {
 			assert(0);
-			sched_signal(proc, SIGSEGV);
+			sched_signal(proc->pid, SIGSEGV);
 			maybe_fail_uaccess(state);
 		} 
 	} else {
 		if (vma_map_now_one(area, addr)) {
 			assert(0);
-			sched_signal(proc, SIGSEGV); /* TODO this should not be a segfault */
+			sched_signal(proc->pid, SIGSEGV); /* TODO this should not be a segfault */
 			maybe_fail_uaccess(state);
 		}
 	}
 
-	proc_release(proc);
 	return IRQ_CONTINUE;
 }
 
