@@ -2,11 +2,11 @@
 #include <kernel/libc/assert.h>
 #include <kernel/sched.h>
 #include <kernel/errno.h>
+#include <kernel/kernel.h>
 
-int condvar_init(struct condvar *cond)
+void condvar_init(struct condvar *cond)
 {
 	lst_init(&cond->waitlist);
-	return 0;
 }
 
 static void condvar_free_proc(void *proc)
@@ -21,7 +21,7 @@ void condvar_free(struct condvar *cond)
 	sched_enable_preemption();
 }
 
-int condvar_wait(struct condvar *cond, struct mutex *mutex)
+void condvar_wait(struct condvar *cond, struct mutex *mutex)
 {
 	assert(mutex);
 
@@ -31,23 +31,23 @@ int condvar_wait(struct condvar *cond, struct mutex *mutex)
 	struct list_node *node = lst_append(&cond->waitlist, proc);
 	sched_enable_preemption();
 
-	if (!node) {
-		assert(0);
-		return -ENOMEM;
-	}
+	if (!node)
+		panic("failed to setup condvar");
+
+	sched_prepare_goto_sleep();
 
 	mutex_unlock(mutex);
 
-	sched_goto_sleep();
+	/* we might have gottend signalled, but then we will just yield one
+	 * quantum */
+	sched_yield_here();
 
 	condvar_free_proc(proc); /* entry in waitlist was deleted, but we still have the reference */
 
 	mutex_lock(mutex);
-
-	return 0;
 }
 
-int condvar_signal(struct condvar *cond)
+void condvar_signal(struct condvar *cond)
 {
 	sched_disable_preemption();
 
@@ -59,10 +59,8 @@ int condvar_signal(struct condvar *cond)
 		lst_del(&cond->waitlist, head, NULL);
 	}
 
-	sched_enable_preemption();
-
 	if (proc)
 		sched_wakeup(proc);
 
-	return 0;
+	sched_enable_preemption();
 }

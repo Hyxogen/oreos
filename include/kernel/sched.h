@@ -25,6 +25,7 @@ struct process {
 	atomic_int parent_pid;
 
 	int exit_code;
+	/* TODO why is status atomic? */
 	_Atomic enum proc_status status;
 
 	void *kernel_stack;
@@ -76,6 +77,9 @@ int sched_schedule(struct process *proc);
 __attribute__ ((noreturn))
 void sched_resume(struct cpu_state *state);
 
+void sched_yield_here(void);
+/* TODO give better name, just sets the status of the thread to sleep */
+void sched_prepare_goto_sleep(void);
 void sched_goto_sleep(void);
 void sched_wakeup(struct process *proc);
 unsigned sched_set_alarm(struct process *proc, unsigned timepoint);

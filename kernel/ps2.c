@@ -515,7 +515,6 @@ void init_ps2(void)
 	ps2_enable_irq();
 	init_ps2_controller();
 	ps2_identify();
-	int res = mutex_init(&_ps2_mutex, 0);
-	assert(!res);
+	mutex_init(&_ps2_mutex, 0);
 	condvar_init(&_ps2_not_empty_cond);
 }

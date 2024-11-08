@@ -133,6 +133,8 @@ static void _sched_yield(struct cpu_state *state)
 	}
 
 	bool can_preempt = sched_enable_preemption();
+	/* TODO we should probably disable irqs here, or we might get preempted
+	 * here */
 	assert(can_preempt);
 	return_from_irq(next->context);
 }
@@ -303,7 +305,11 @@ static void _sched_save_state_and_yield()
 	do_irq(_yield_irqn);
 }
 
-void sched_goto_sleep(void)
+void sched_yield_here(void) {
+	_sched_save_state_and_yield();
+}
+
+void sched_prepare_goto_sleep(void)
 {
 	sched_disable_preemption();
 
@@ -313,7 +319,11 @@ void sched_goto_sleep(void)
 	proc->status = SLEEPING;
 
 	sched_enable_preemption();
+}
 
+void sched_goto_sleep(void)
+{
+	sched_prepare_goto_sleep();
 	_sched_save_state_and_yield();
 }
 
