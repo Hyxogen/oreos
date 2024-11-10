@@ -121,6 +121,9 @@ static void lst_append_node(struct list *list, struct list_node *node)
 		assert(list->head);
 
 		lst_node_add_after(list->tail, node);
+
+		if (list->head == list->tail)
+			list->tail = node;
 	} else {
 		assert(!list->head);
 
@@ -134,6 +137,9 @@ static void lst_prepend_node(struct list *list, struct list_node *node)
 		assert(list->tail);
 
 		lst_node_add_before(list->head, node);
+
+		if (list->head == list->tail)
+			list->head = node;
 	} else {
 		assert(!list->tail);
 
@@ -180,18 +186,19 @@ struct list_node *lst_find(const struct list *list, bool (*p)(const void *, void
 
 struct list_node *lst_unlink(struct list *list, struct list_node *node)
 {
-	if (list->head == node) {
-		assert(!node->prev);
-		list->head = node->next;
-	}
+	if (node) {
+		if (list->head == node) {
+			assert(!node->prev);
+			list->head = node->next;
+		}
 
-	if (list->tail == node) {
-		assert(!node->next);
-		list->tail = node->prev;
-	}
+		if (list->tail == node) {
+			assert(!node->next);
+			list->tail = node->prev;
+		}
 
-	node->prev = NULL;
-	node->next = NULL;
+		lst_node_unlink(node);
+	}
 
 	return node;
 }
