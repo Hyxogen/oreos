@@ -152,3 +152,22 @@ int isdigit(int c)
 {
 	return (unsigned)c - '0' < 10;
 }
+
+void *mmap(void *addr, size_t len, int prot, int flags, int fd, off_t offset)
+{
+	return (void*) syscall(SYS_mmap, addr, len, prot, flags, fd, offset);
+}
+
+int munmap(void *addr, size_t len)
+{
+	return syscall(SYS_munmap, addr, len);
+}
+
+void *memset(void *dest, int c, size_t n)
+{
+	unsigned char *d = dest;
+
+	while (n--)
+		*d++ = (unsigned char)c;
+	return dest;
+}

@@ -12,9 +12,16 @@
 
 #define STDOUT_FILENO 0
 
+#define MAP_PROT_READ 0x1
+#define MAP_PROT_WRITE 0x2
+
+#define MAP_PRIVATE 0x01
+#define MAP_ANONYMOUS 0x02
+
 typedef long ssize_t;
 typedef long uid_t;
 typedef int pid_t;
+typedef long off_t;
 
 void __signal_trampoline(int signum);
 
@@ -34,6 +41,8 @@ int wait(int *wstatus);
 unsigned int sleep(unsigned int seconds);
 void* signal(int signum, void (*handler)(int));
 uid_t getuid(void);
+void *mmap(void *addr, size_t len, int prot, int flags, int fd, off_t offset);
+int munmap(void *addr, size_t len);
 
 __attribute__((noreturn))
 void exit(int exit_code);
@@ -43,6 +52,7 @@ void __init();
 size_t strlen(const char *str);
 int strncmp(const char *s1, const char *s2, size_t n);
 int isdigit(int c);
+void *memset(void *dest, int c, size_t n);
 
 int snprintf(char *str, size_t size, const char *fmt, ...);
 int vdprintf(int fd, const char *fmt, va_list ap);

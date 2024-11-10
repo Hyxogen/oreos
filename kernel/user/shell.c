@@ -66,6 +66,14 @@ void _start(void)
 
 	int pid = getpid();
 	kill(pid, 10);
+	
+	void *tmp = mmap(NULL, 4096, MAP_PROT_WRITE | MAP_PROT_READ, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
+	if (tmp == 0) {
+		printf("failed to map memory\n");
+	} else {
+		printf("got some memory %p\n", tmp);
+	}
+	/* TODO munmap */
 
 	while (1) {
 		if (read(0, &buf, 1) != 1)
