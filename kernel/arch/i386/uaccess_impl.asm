@@ -33,7 +33,8 @@ __get_user1:
 	ret
 .end:
 
-
+; TODO if this function fails, the preserverd registers will not get properly
+; restored
 global __user_memcpy:function (__user_memcpy.end - __user_memcpy)
 __user_memcpy:
 	push ebp
@@ -48,8 +49,8 @@ __user_memcpy:
 
 	rep movsb 
 
-	pop esi
 	pop edi
+	pop esi
 	pop ebp
 
 	xor eax, eax
