@@ -6,6 +6,8 @@
 #include <kernel/libc/string.h>
 #include <kernel/malloc/malloc.h>
 
+/* TODO send sigpipe when needed */
+
 static size_t _pipe_nreadable(const struct pipe *pipe)
 {
 	if (pipe->read_head < pipe->write_head)

@@ -7,6 +7,11 @@ static void handler(int signum)
 	write(0, "x", 1);
 }
 
+static void writestr(int fd, const char *str)
+{
+	write(fd, str, strlen(str));
+}
+
 static void test_socket(void)
 {
 	int sv[2];
@@ -28,10 +33,10 @@ static void test_socket(void)
 			printf("\n");
 		}
 
-		dprintf(sv[1], "hello world form child");
+		writestr(sv[1], "hello world from child");
 		exit(0);
 	} else if (res > 0) {
-		dprintf(sv[0], "hello world from parent\n");
+		writestr(sv[0], "hello world from parent\n");
 		int nread = read(sv[0], buf, sizeof(buf));
 		if (nread < 0) {
 			printf("parent: failed to read\n");
