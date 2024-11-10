@@ -128,7 +128,15 @@ static uintptr_t vma_find_free(const struct vma_area *area, uintptr_t start, siz
 			return -1;
 		return start;
 	}
-	return vma_find_free(area->right, area->end, len);
+	/* TODO this is a really hacky way to find free memory, fix it */
+	uintptr_t res = vma_find_free(area->right, area->end, len);
+	if (res == (uintptr_t) -1) {
+		if (area->left)
+			return vma_find_free(area->left, area->left->start, len);
+		else if (area->start >= len)
+			return vma_find_free(area->left, area->start - len, len);
+	}
+	return res;
 }
 
 int vma_map(struct mm *mm, uintptr_t *addr, size_t len, u32 flags)
