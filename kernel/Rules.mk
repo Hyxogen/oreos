@@ -32,6 +32,9 @@ include		$(dir)/Rules.mk
 dir		:= $(d)/sync
 include		$(dir)/Rules.mk
 
+dir		:= $(d)/fs
+include		$(dir)/Rules.mk
+
 -include $(DEPS_$(d))
 
 d		:= $(dirstack_$(sp))

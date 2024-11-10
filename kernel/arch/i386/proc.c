@@ -35,9 +35,11 @@ static void proc_init(struct process *proc)
 	proc->mm.root = NULL;
 	proc->pending_signals = 0;
 	proc->alarm = -1;
+	proc->iobuf = NULL;
 	lst_init(&proc->children);
 	mutex_init(&proc->lock, 0);
 	memset(proc->signal_handlers, 0, sizeof(proc->signal_handlers));
+	memset(proc->files, 0, sizeof(proc->files));
 	condvar_init(&proc->child_exited_cond);
 }
 
@@ -76,6 +78,9 @@ struct process *proc_create(void *start, u32 flags)
 		ring = 0;
 	} else if (flags & PROC_FLAG_RING3) {
 		ring = 3;
+		proc->iobuf = kmalloc(PROC_IOBUF_SIZE);
+		if (!proc->iobuf)
+			goto err;
 	} else {
 		printk("ring not specified\n");
 		goto err;
@@ -129,6 +134,7 @@ err:
 		mmu_unmap(proc->kernel_stack, KERNEL_STACK_SIZE, 0);
 	kfree(proc->context);
 	kfree(proc);
+	kfree(proc->iobuf);
 	return NULL;
 }
 
@@ -159,12 +165,18 @@ static void proc_transfer_children(struct process *proc)
 
 static void proc_free_resources(struct process *proc)
 {
+	for (unsigned i = 0; i < PROC_MAX_OPEN_FILES; i++) {
+		if (proc->files[i])
+			vfs_close(proc->files[i]);
+	}
+
 	mmu_unmap(proc->kernel_stack, KERNEL_STACK_SIZE, 0);
-	kfree(proc);
+	kfree(proc->iobuf);
 	if (!vma_destroy(&proc->mm))
 		oops("failed to properly destroy vma of pid %u\n", proc->pid);
 	lst_free(&proc->children, NULL);
 	condvar_free(&proc->child_exited_cond);
+	kfree(proc);
 }
 
 void proc_free(struct process *proc)
@@ -190,14 +202,26 @@ struct process *proc_clone(struct process *proc, const struct cpu_state *state)
 	memcpy(top, state, sizeof(*state));
 
 	cloned->context = (void*) top;
+	cloned->iobuf = kmalloc(PROC_IOBUF_SIZE);
+	if (!cloned->iobuf)
+		goto err;
 
 	memcpy(&cloned->signal_handlers, proc->signal_handlers, sizeof(cloned->signal_handlers));
+
+	for (unsigned i = 0; i < PROC_MAX_OPEN_FILES; i++) {
+		struct file *f = proc->files[i];
+		if (f)
+			atomic_fetch_add(&f->refcount, 1);
+
+		cloned->files[i] = f;
+	}
 
 	if (vma_clone(&cloned->mm, &proc->mm))
 		goto err;
 
 	return cloned;
 err:
+	kfree(proc->iobuf);
 	kfree(cloned);
 	if (cloned->kernel_stack != MMU_MAP_FAILED)
 		mmu_unmap(cloned->kernel_stack, KERNEL_STACK_SIZE, 0);
@@ -272,5 +296,44 @@ int proc_do_sigreturn(struct process *proc, struct cpu_state *state)
 	state->eflags.ief = true;
 	state->eflags._reserved1 = 1; /* legacy flag */
 
+	return res;
+}
+
+int proc_alloc_fd(struct process *proc)
+{
+	int res = 0;
+
+	sched_disable_preemption(); /* TODO probably better to just use a spinlock */
+	for (unsigned i = 1; i < PROC_MAX_OPEN_FILES; i++) {
+		if (!proc->files[i]) {
+			proc->files[i] = kmalloc(sizeof(struct file));
+			res = (int) i;
+			if (!proc->files[i])
+				res = -ENOMEM;
+			goto finish;
+		}
+	}
+	res = -ENOMEM; /* TODO probably a better errno exists, too many files open */
+finish:
+	sched_enable_preemption();
+	return res;
+}
+
+int proc_free_fd(struct process *proc, int fd)
+{
+	int res = 0;
+	if (fd < 0 || fd > PROC_MAX_OPEN_FILES)
+		return -EBADF;
+
+	sched_disable_preemption();
+
+	if (proc->files[fd]) {
+		file_free(proc->files[fd]);
+		proc->files[fd] = NULL;
+	} else {
+		res = -EBADF;
+	}
+
+	sched_enable_preemption();
 	return res;
 }

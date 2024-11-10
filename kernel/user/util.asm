@@ -62,6 +62,15 @@ exit:
 	jmp .halt
 .end:
 
+; close(int fd)
+global close:function (close.end - close)
+close:
+	mov eax, 0x06 ; close syscall
+	mov ebx, [esp + 4] ; fd
+
+	int 0x80
+.end:
+
 ; getpid(void)
 global getpid:function (getpid.end - getpid)
 getpid:
@@ -195,5 +204,30 @@ pause:
 	mov eax, 0x1d ; pause syscall
 
 	int 0x80
+	ret
+.end:
+
+; socketpair
+global socketpair:function (socketpair.end - socketpair)
+socketpair:
+	push ebp
+	mov ebp, esp
+
+	push ebx
+	push esi
+
+	mov eax, 0x168 ; socketpair syscall
+
+	mov ebx, [ebp + 8]
+	mov ecx, [ebp + 12]
+	mov edx, [ebp + 16]
+	mov esi, [ebp + 20]
+
+	int 0x80
+
+	pop esi
+	pop ebx
+
+	pop ebp
 	ret
 .end:

@@ -18,7 +18,7 @@ static i32 (*_syscall_table[])() = {
     syscall_read, /* read */
     syscall_write, /* write */
     syscall_stub, /* open */
-    syscall_stub, /* close */
+    syscall_close, /* close */
     syscall_waitpid, /* waitpid */
     syscall_stub, /* creat */
     syscall_stub, /* link */
@@ -372,7 +372,7 @@ static i32 (*_syscall_table[])() = {
     syscall_stub, /* bpf */
     syscall_stub, /* execveat */
     syscall_stub, /* socket */
-    syscall_stub, /* socketpair */
+    syscall_socketpair, /* socketpair */
     syscall_stub, /* bind */
     syscall_stub, /* connect */
     syscall_stub, /* listen */

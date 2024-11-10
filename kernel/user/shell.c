@@ -18,8 +18,11 @@ int kill(int pid, int sig);
 void __signal_trampoline(int signum);
 unsigned int alarm(unsigned int seconds);
 int pause(void);
+int socketpair(int domain, int type, int protocol, int sv[2]);
 
 void (*__signal_handlers[32])(int);
+
+long syscall(long number, ...); /* TODO implement */
 
 void SIG_DFL(int signum)
 {
@@ -75,15 +78,21 @@ size_t strlen(const char *str)
 	return tmp - str;
 }
 
-void writestr(const char *str)
+void writestrto(int fd, const char *str)
 {
 	size_t len = strlen(str);
 
-	write(0, str, len);
+	write(fd, str, len);
+}
+
+void writestr(const char *str)
+{
+	writestrto(0, str);
 }
 
 static void seghandler(int signum)
 {
+	(void) signum;
 	if (__signal_handlers[11] == SIG_DFL) {
 		writestr("yes");
 	} else {
@@ -91,10 +100,52 @@ static void seghandler(int signum)
 	}
 }
 
+static void test_socket(void)
+{
+	int sv[2];
+	socketpair(1, 1, 0, sv);
+
+	int res = fork();
+
+	char buf[64];
+
+	if (res == 0) {
+		int nread = read(sv[1], buf, sizeof(buf));
+		if (nread < 0) {
+			writestr("child: failed to read\n");
+		} else if (nread == 0) {
+			writestr("child: socket was closed\n");
+		} else {
+			writestr("child: from parent: ");
+			write(0, buf, nread);
+			writestr("\n");
+		}
+
+		writestrto(sv[1], "hello world form child");
+		exit(0);
+	} else if (res > 0) {
+		writestrto(sv[0], "hello world from parent\n");
+		int nread = read(sv[0], buf, sizeof(buf));
+		if (nread < 0) {
+			writestr("parent: failed to read\n");
+		} else if (nread == 0) {
+			writestr("parent: socket was closed\n");
+		} else {
+			writestr("parent: from child: ");
+			write(0, buf, nread);
+			writestr("\n");
+		}
+
+	} else {
+		writestr("failed to fork");
+	}
+}
 
 void _start(void)
 {
 	init();
+
+	test_socket();
 
 	char buf = 'x';
 	write(0, "hello world!\n", 13); 
@@ -107,10 +158,11 @@ void _start(void)
 	signal(11, seghandler);
 	kill(pid, 11);
 	if (__signal_handlers[11] == seghandler) {
-		writestr("yes2");
+		writestr("yes2\n");
 	} else {
-		writestr("no2");
+		writestr("no2\n");
 	}
+
 	while (1) {
 		if (read(0, &buf, 1) != 1)
 			continue;

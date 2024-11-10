@@ -24,5 +24,7 @@ i32 syscall_getpid(void);
 i32 syscall_kill(struct cpu_state *state, int pid, int sig);
 i32 syscall_alarm(struct cpu_state *state, unsigned int seconds);
 i32 syscall_pause(void);
+i32 syscall_close(struct cpu_state *state, int fd);
+i32 syscall_socketpair(struct cpu_state *state, int domain, int type, int protocol, int sv[2]);
 
 #endif

@@ -7,11 +7,14 @@
 #include <kernel/types.h>
 #include <kernel/mmu.h>
 #include <kernel/list.h>
+#include <kernel/fs/vfs.h>
 
 #define PROC_FLAG_RING0 0x01
 #define PROC_FLAG_RING3 0x02
 
 #define PROC_FLAG_RING_MASK 0x03
+#define PROC_IOBUF_SIZE 4096
+#define PROC_MAX_OPEN_FILES 8
 
 enum proc_status {
 	READY,
@@ -45,6 +48,10 @@ struct process {
 	struct condvar child_exited_cond;
 
 	unsigned int alarm;
+
+	void *iobuf;
+
+	struct file *files[PROC_MAX_OPEN_FILES];
 };
 
 //TODO remove out of scheduler
@@ -56,6 +63,8 @@ void proc_set_syscall_ret(struct cpu_state *state, size_t val);
 void proc_set_parent(struct process *child, struct process *parent);
 int proc_do_signal(struct process *proc, struct cpu_state *state);
 int proc_do_sigreturn(struct process *proc, struct cpu_state *state);
+int proc_alloc_fd(struct process *proc);
+int proc_free_fd(struct process *proc, int fd);
 
 bool sched_has_pending_signals();
 
