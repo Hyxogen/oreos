@@ -7,27 +7,6 @@ static void handler(int signum)
 	write(0, "x", 1);
 }
 
-size_t strlen(const char *str)
-{
-	const char *tmp = str;
-
-	while (*tmp)
-		++tmp;
-	return tmp - str;
-}
-
-void writestrto(int fd, const char *str)
-{
-	size_t len = strlen(str);
-
-	write(fd, str, len);
-}
-
-void writestr(const char *str)
-{
-	writestrto(0, str);
-}
-
 static void test_socket(void)
 {
 	int sv[2];
@@ -40,32 +19,32 @@ static void test_socket(void)
 	if (res == 0) {
 		int nread = read(sv[1], buf, sizeof(buf));
 		if (nread < 0) {
-			writestr("child: failed to read\n");
+			printf("child: failed to read\n");
 		} else if (nread == 0) {
-			writestr("child: socket was closed\n");
+			printf("child: socket was closed\n");
 		} else {
-			writestr("child: from parent: ");
+			printf("child: from parent: ");
 			write(0, buf, nread);
-			writestr("\n");
+			printf("\n");
 		}
 
-		writestrto(sv[1], "hello world form child");
+		dprintf(sv[1], "hello world form child");
 		exit(0);
 	} else if (res > 0) {
-		writestrto(sv[0], "hello world from parent\n");
+		dprintf(sv[0], "hello world from parent\n");
 		int nread = read(sv[0], buf, sizeof(buf));
 		if (nread < 0) {
-			writestr("parent: failed to read\n");
+			printf("parent: failed to read\n");
 		} else if (nread == 0) {
-			writestr("parent: socket was closed\n");
+			printf("parent: socket was closed\n");
 		} else {
-			writestr("parent: from child: ");
+			printf("parent: from child: ");
 			write(0, buf, nread);
-			writestr("\n");
+			printf("\n");
 		}
 
 	} else {
-		writestr("failed to fork");
+		printf("failed to fork");
 	}
 }
 
@@ -76,7 +55,7 @@ void _start(void)
 	test_socket();
 
 	char buf = 'x';
-	write(0, "hello world!\n", 13); 
+	printf("hello world!\n");
 
 	signal(10, handler);
 
@@ -97,9 +76,9 @@ void _start(void)
 
 		res = wait(NULL);
 		if (!res) {
-			writestr("a child exited\n");
+			printf("a child exited\n");
 		} else {
-			writestr("no children\n");
+			printf("no children\n");
 		}
 	}
 }

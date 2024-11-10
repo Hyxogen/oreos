@@ -36,6 +36,7 @@ static void proc_init(struct process *proc)
 	proc->pending_signals = 0;
 	proc->alarm = -1;
 	proc->iobuf = NULL;
+	proc->uid = -1;
 	lst_init(&proc->children);
 	spinlock_init(&proc->lock);
 	memset(proc->signal_handlers, 0, sizeof(proc->signal_handlers));
@@ -85,6 +86,8 @@ struct process *proc_create(void *start, u32 flags)
 		printk("ring not specified\n");
 		goto err;
 	}
+
+	proc->uid = 0; /* TODO properly set uid */
 
 	u16 code_sel, data_sel;
 	proc_get_selectors(ring, &code_sel, &data_sel);
@@ -196,6 +199,8 @@ struct process *proc_clone(struct process *proc, const struct cpu_state *state)
 	cloned->kernel_stack = mmu_mmap(NULL, KERNEL_STACK_SIZE, MMU_ADDRSPACE_KERNEL, 0);
 	if (cloned->kernel_stack == MMU_MAP_FAILED)
 		goto err;
+
+	cloned->uid = proc->uid;
 
 	u8 *top = (u8*) cloned->kernel_stack + KERNEL_STACK_SIZE;
 	top -= sizeof(*cloned->context);

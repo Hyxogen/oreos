@@ -27,6 +27,7 @@ struct process {
 	int pid;
 	atomic_int parent_pid;
 
+	int uid;
 	int exit_code;
 	/* TODO why is status atomic? */
 	_Atomic enum proc_status status;

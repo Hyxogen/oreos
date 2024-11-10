@@ -120,3 +120,35 @@ void exit(int exit_code)
 	/* TODO this should call the on_exit hooks */
 	_exit(exit_code);
 }
+
+uid_t getuid(void)
+{
+	return syscall(SYS_getuid);
+}
+
+size_t strlen(const char *str)
+{
+	const char *tmp = str;
+
+	while (*tmp)
+		++tmp;
+	return tmp - str;
+}
+
+int strncmp(const char *s1, const char *s2, size_t n)
+{
+	const unsigned char *p1 = (const unsigned char *)s1;
+	const unsigned char *p2 = (const unsigned char *)s2;
+
+	int val = 0;
+	while (n-- && (val = (*p1 - *p2)) == 0 && *p1) {
+		++p1;
+		++p2;
+	}
+	return val;
+}
+
+int isdigit(int c)
+{
+	return (unsigned)c - '0' < 10;
+}
