@@ -10,10 +10,10 @@ CLEAN		:= $(CLEAN) $(OBJS_$(d)) $(DEPS_$(d))
 OBJS		+= $(OBJS_$(d))
 DEPS		+= $(DEPS_$(d))
 
-USER_CFLAGS	:= -ffreestanding -nostdlib -fno-builtin -Wall -Wextra -masm=intel -g
+USER_CFLAGS	:= -ffreestanding -nostdlib -fno-builtin -Wall -Wextra -masm=intel -g -Iwhot
 USER_LFLAGS	:= -ffreestanding -nostdlib
 
-USER_OBJS	:= $(d)/shell.o $(d)/util.o
+USER_OBJS	:= $(d)/shell.o $(d)/util.o $(d)/syscall.o $(d)/signal.o
 USER_LINKSCRIPT	:= $(d)/linker.ld
 
 USER_OBJS	:= $(addprefix $(OBJ_DIR)/, $(USER_OBJS))
