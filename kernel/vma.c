@@ -332,7 +332,7 @@ static int vma_clone_one(struct mm *dest, struct vma_area *area)
 	int res = vma_clone_one(dest, area->left);
 	if (res)
 		return res;
-	res = vma_clone_one(dest, area->left);
+	res = vma_clone_one(dest, area->right);
 	if (res)
 		return res;
 
