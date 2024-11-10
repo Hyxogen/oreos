@@ -14,158 +14,15 @@ static u8 ps2_dev_type1, ps2_dev_type2;
 #define PS2_TIMEOUT_TRIES 30
 
 #define PS2_BUFSIZE 128
+enum keycode ps2_tokeycode_qwerty(u8 b);
+enum keycode ps2_tokeycode_azerty(u8 b);
 
 static atomic_bool _ps2_has_data = false;
 static u8 _ps2_buf[PS2_BUFSIZE];
 static u8 _ps2_write = 0, _ps2_read = 0;
 static struct mutex _ps2_mutex;
 static struct condvar _ps2_not_empty_cond;
-
-static enum keycode ps2_tokeycode(u8 b)
-{
-	switch (b) {
-	case PS2_SCANCODE_A_PRESSED:
-		return KEYCODE_A;
-	case PS2_SCANCODE_B_PRESSED:
-		return KEYCODE_B;
-	case PS2_SCANCODE_C_PRESSED:
-		return KEYCODE_C;
-	case PS2_SCANCODE_D_PRESSED:
-		return KEYCODE_D;
-	case PS2_SCANCODE_E_PRESSED:
-		return KEYCODE_E;
-	case PS2_SCANCODE_F_PRESSED:
-		return KEYCODE_F;
-	case PS2_SCANCODE_G_PRESSED:
-		return KEYCODE_G;
-	case PS2_SCANCODE_H_PRESSED:
-		return KEYCODE_H;
-	case PS2_SCANCODE_I_PRESSED:
-		return KEYCODE_I;
-	case PS2_SCANCODE_J_PRESSED:
-		return KEYCODE_J;
-	case PS2_SCANCODE_K_PRESSED:
-		return KEYCODE_K;
-	case PS2_SCANCODE_L_PRESSED:
-		return KEYCODE_L;
-	case PS2_SCANCODE_M_PRESSED:
-		return KEYCODE_M;
-	case PS2_SCANCODE_N_PRESSED:
-		return KEYCODE_N;
-	case PS2_SCANCODE_O_PRESSED:
-		return KEYCODE_O;
-	case PS2_SCANCODE_P_PRESSED:
-		return KEYCODE_P;
-	case PS2_SCANCODE_Q_PRESSED:
-		return KEYCODE_Q;
-	case PS2_SCANCODE_R_PRESSED:
-		return KEYCODE_R;
-	case PS2_SCANCODE_S_PRESSED:
-		return KEYCODE_S;
-	case PS2_SCANCODE_T_PRESSED:
-		return KEYCODE_T;
-	case PS2_SCANCODE_U_PRESSED:
-		return KEYCODE_U;
-	case PS2_SCANCODE_V_PRESSED:
-		return KEYCODE_V;
-	case PS2_SCANCODE_W_PRESSED:
-		return KEYCODE_W;
-	case PS2_SCANCODE_X_PRESSED:
-		return KEYCODE_X;
-	case PS2_SCANCODE_Z_PRESSED:
-		return KEYCODE_Z;
-	case PS2_SCANCODE_Y_PRESSED:
-		return KEYCODE_Y;
-	case PS2_SCANCODE_1_PRESSED:
-		return KEYCODE_1;
-	case PS2_SCANCODE_2_PRESSED:
-		return KEYCODE_2;
-	case PS2_SCANCODE_3_PRESSED:
-		return KEYCODE_3;
-	case PS2_SCANCODE_4_PRESSED:
-		return KEYCODE_4;
-	case PS2_SCANCODE_5_PRESSED:
-		return KEYCODE_5;
-	case PS2_SCANCODE_6_PRESSED:
-		return KEYCODE_6;
-	case PS2_SCANCODE_7_PRESSED:
-		return KEYCODE_7;
-	case PS2_SCANCODE_8_PRESSED:
-		return KEYCODE_8;
-	case PS2_SCANCODE_9_PRESSED:
-		return KEYCODE_9;
-	case PS2_SCANCODE_0_PRESSED:
-		return KEYCODE_0;
-	case PS2_SCANCODE_ENTER_PRESSED:
-		return KEYCODE_ENTER;
-	case PS2_SCANCODE_SPACE_PRESSED:
-		return KEYCODE_SPACE;
-	case PS2_SCANCODE_BACKSPACE_PRESSED:
-		return KEYCODE_BACKSPACE;
-	case PS2_SCANCODE_LCTRL_PRESSED:
-		return KEYCODE_LCTRL;
-	case PS2_SCANCODE_F1_PRESSED:
-		return KEYCODE_F1;
-	case PS2_SCANCODE_F2_PRESSED:
-		return KEYCODE_F2;
-	case PS2_SCANCODE_F3_PRESSED:
-		return KEYCODE_F3;
-	case PS2_SCANCODE_F4_PRESSED:
-		return KEYCODE_F4;
-	case PS2_SCANCODE_F5_PRESSED:
-		return KEYCODE_F5;
-	case PS2_SCANCODE_F6_PRESSED:
-		return KEYCODE_F6;
-	case PS2_SCANCODE_F7_PRESSED:
-		return KEYCODE_F7;
-	case PS2_SCANCODE_F8_PRESSED:
-		return KEYCODE_F8;
-	case PS2_SCANCODE_F9_PRESSED:
-		return KEYCODE_F9;
-	case PS2_SCANCODE_F10_PRESSED:
-		return KEYCODE_F10;
-	case PS2_SCANCODE_F11_PRESSED:
-		return KEYCODE_F11;
-	case PS2_SCANCODE_F12_PRESSED:
-		return KEYCODE_F12;
-	case PS2_SCANCODE_SEMI_PRESSED:
-	case PS2_SCANCODE_SINGLE_QUOTE_PRESSED:
-	case PS2_SCANCODE_BACK_TICK_PRESSED:
-	case PS2_SCANCODE_LSHIFT_PRESSED:
-	case PS2_SCANCODE_BACKSLASH_PRESSED:
-	case PS2_SCANCODE_COMMA_PRESSED:
-	case PS2_SCANCODE_PERIOD_PRESSED:
-	case PS2_SCANCODE_FORWARDSLASH_PRESSED:
-	case PS2_SCANCODE_RSHIFT_PRESSED:
-	case PS2_SCANCODE_KP_STAR_PRESSED:
-	case PS2_SCANCODE_LALT_PRESSED:
-	case PS2_SCANCODE_CAPSLOCK_PRESSED:
-	case PS2_SCANCODE_ESC_PRESSED:
-	case PS2_SCANCODE_MINUS_PRESSED:
-	case PS2_SCANCODE_EQUALS_PRESSED:
-	case PS2_SCANCODE_TAB_PRESSED:
-	case PS2_SCANCODE_LBRACK_PRESSED:
-	case PS2_SCANCODE_RBRACK_PRESSED:
-	case PS2_SCANCODE_NUMLOCK_PRESSED:
-	case PS2_SCANCODE_SCROLLLOCK_PRESSED:
-	case PS2_SCANCODE_KP_7_PRESSED:
-	case PS2_SCANCODE_KP_8_PRESSED:
-	case PS2_SCANCODE_KP_9_PRESSED:
-	case PS2_SCANCODE_KP_MINUS_PRESSED:
-	case PS2_SCANCODE_KP_4_PRESSED:
-	case PS2_SCANCODE_KP_5_PRESSED:
-	case PS2_SCANCODE_KP_6_PRESSED:
-	case PS2_SCANCODE_KP_PLUS_PRESSED:
-	case PS2_SCANCODE_KP_1_PRESSED:
-	case PS2_SCANCODE_KP_2_PRESSED:
-	case PS2_SCANCODE_KP_3_PRESSED:
-	case PS2_SCANCODE_KP_0_PRESSED:
-	case PS2_SCANCODE_KP_PERIOD_PRESSED:
-	default:
-		return KEYCODE_UNKNOWN;
-	}
-}
-
+static enum keycode (*_ps2_tokeycode)(u8) = ps2_tokeycode_qwerty;
 
 static enum irq_result ps2_on_event(u8 irq, struct cpu_state *state, void *dummy)
 {
@@ -246,7 +103,7 @@ size_t ps2_read(void *dest, size_t n)
 
 		if (ch == -1)
 			break;
-		enum keycode kc = ps2_tokeycode((u8)ch);
+		enum keycode kc = _ps2_tokeycode((u8)ch);
 
 		int val = kc_toascii(kc);
 		if (val == 0)
@@ -326,7 +183,7 @@ static int ps2_send_ack(u8 b)
 
 static enum keycode ps2_getkey(void)
 {
-	return ps2_tokeycode(ps2_recv());
+	return _ps2_tokeycode(ps2_recv());
 }
 
 enum keycode ps2_getkey_timeout(void)
@@ -508,6 +365,20 @@ static void ps2_enable_irq(void)
 		return;
 	}
 	printk("enabled ps2 interrupts\n");
+}
+
+void ps2_set_mode(int mode)
+{
+	switch (mode){
+	case 0:
+		_ps2_tokeycode = ps2_tokeycode_qwerty;
+		break;
+	case 1:
+		_ps2_tokeycode = ps2_tokeycode_azerty;
+		break;
+	default:
+		panic("don't use this stupid function");
+	}
 }
 
 void init_ps2(void)
