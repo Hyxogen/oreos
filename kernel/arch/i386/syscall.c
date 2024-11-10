@@ -170,7 +170,7 @@ static i32 (*_syscall_table[])() = {
     syscall_stub, /* sched_getparam */
     syscall_stub, /* sched_setscheduler */
     syscall_stub, /* sched_getscheduler */
-    syscall_stub, /* sched_yield */
+    syscall_sched_yield, /* sched_yield */
     syscall_stub, /* sched_get_priority_max */
     syscall_stub, /* sched_get_priority_min */
     syscall_stub, /* sched_rr_get_interval */

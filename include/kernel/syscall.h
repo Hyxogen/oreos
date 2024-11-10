@@ -27,5 +27,6 @@ i32 syscall_pause(void);
 i32 syscall_close(struct cpu_state *state, int fd);
 i32 syscall_socketpair(struct cpu_state *state, int domain, int type, int protocol, int sv[2]);
 i32 syscall_getuid(void);
+i32 syscall_sched_yield(void);
 
 #endif

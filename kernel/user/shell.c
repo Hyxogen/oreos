@@ -53,9 +53,32 @@ static void test_socket(void)
 	}
 }
 
+/*
+static void loopy(void)
+{
+	int pid = fork();
+
+	if (pid == 0) {
+		while (1) {
+			write(0, "a", 1);
+			sched_yield();
+		}
+	} else if (pid > 0) {
+		while (1) {
+			write(0, "b", 1);
+			sched_yield();
+		}
+	} else {
+		printf("failed to fork\n");
+	}
+}
+*/
+
 void _start(void)
 {
 	__init();
+
+	//loopy();
 
 	test_socket();
 
