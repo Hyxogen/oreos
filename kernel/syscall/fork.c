@@ -14,15 +14,15 @@ i32 syscall_fork(struct cpu_state *state)
 	proc_set_parent(child, proc);
 	proc_set_syscall_ret(child->context, 0);
 
+	spinlock_lock(&proc->lock);
 	int res = sched_schedule(child);
 
 	if (!res) {
 		res = child->pid;
 
-		mutex_lock(&proc->lock);
 		lst_append(&proc->children, child);
-		mutex_unlock(&proc->lock);
 	}
+	spinlock_unlock(&proc->lock);
 
 	/* pages are now CoW */
 	mmu_invalidate_user();

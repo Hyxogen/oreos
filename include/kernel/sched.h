@@ -43,9 +43,9 @@ struct process {
 	void (*signal_handlers[32])(int);
 
 	struct list children;
-	struct mutex lock;
+	struct spinlock lock;
 
-	struct condvar child_exited_cond;
+	struct monitor child_exited_cond;
 
 	unsigned int alarm;
 

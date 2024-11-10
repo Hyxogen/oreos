@@ -244,7 +244,7 @@ void sched_do_kill(int exit_code)
 		proc->status = DEAD;
 
 		struct process *parent = _sched_get_parent();
-		condvar_signal(&parent->child_exited_cond);
+		monitor_signal(&parent->child_exited_cond);
 	}
 
 	_sched_yield(NULL);

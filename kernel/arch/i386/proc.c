@@ -37,10 +37,10 @@ static void proc_init(struct process *proc)
 	proc->alarm = -1;
 	proc->iobuf = NULL;
 	lst_init(&proc->children);
-	mutex_init(&proc->lock, 0);
+	spinlock_init(&proc->lock);
 	memset(proc->signal_handlers, 0, sizeof(proc->signal_handlers));
 	memset(proc->files, 0, sizeof(proc->files));
-	condvar_init(&proc->child_exited_cond);
+	monitor_init(&proc->child_exited_cond);
 }
 
 static void proc_get_selectors(int ring, u16 *code_sel, u16 *data_sel)
@@ -158,9 +158,9 @@ static void proc_transfer_children(struct process *proc)
 
 	lst_foreach(&proc->children, proc_lst_update_parent, init);
 
-	mutex_lock(&init->lock);
+	spinlock_lock(&init->lock);
 	lst_append_list(&init->children, &proc->children);
-	mutex_unlock(&init->lock);
+	spinlock_unlock(&init->lock);
 }
 
 static void proc_free_resources(struct process *proc)
@@ -175,7 +175,7 @@ static void proc_free_resources(struct process *proc)
 	if (!vma_destroy(&proc->mm))
 		oops("failed to properly destroy vma of pid %u\n", proc->pid);
 	lst_free(&proc->children, NULL);
-	condvar_free(&proc->child_exited_cond);
+	monitor_free(&proc->child_exited_cond);
 	kfree(proc);
 }
 

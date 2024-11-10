@@ -7,6 +7,7 @@ void spinlock_init(struct spinlock *lock)
 	atomic_flag_clear(&lock->_locked);
 }
 
+/* TODO probably a good idea to disable preemption while holding a spinlock */
 void spinlock_lock(struct spinlock *lock)
 {
 	while (atomic_flag_test_and_set_explicit(&lock->_locked, memory_order_acquire)) {
