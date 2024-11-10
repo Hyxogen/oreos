@@ -9,6 +9,8 @@
 #include <kernel/kernel.h>
 #include <kernel/signal.h>
 
+#include <kernel/debug.h>
+
 static uintptr_t get_pagefault_addr(void)
 {
 	uintptr_t res = -1;
@@ -58,13 +60,24 @@ static void maybe_fail_uaccess(struct cpu_state *state)
 		fail_uaccess(state);
 }
 
+static bool faulting = false;
+
 static enum irq_result do_page_fault(u8 irq, struct cpu_state *state, void *dummy)
 {
 	(void) irq;
 	(void) dummy;
 
-	if (!is_from_userspace(state) && !is_from_uaccess(state))
+	if (!is_from_userspace(state) && !is_from_uaccess(state)) {
+		if (faulting)
+			panic("recursive pagefault");
+		printk("pagefault addr: %p\n", (void*) get_pagefault_addr());
+		faulting = true;
+		printk("cpu state:\n");
+		dump_state(state);
+		printk("pagefault stackstrace:\n");
+		dump_stacktrace_at(state);
 		panic("pagefault from the kernel");
+	}
 
 	struct process *proc = sched_get_current_proc();
 	if (!proc)
