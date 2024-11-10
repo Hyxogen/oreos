@@ -176,3 +176,53 @@ int sched_yield(void)
 {
 	return syscall(SYS_sched_yield);
 }
+
+ssize_t getdelim(char **lineptr, size_t *n, int delim, int fd)
+{
+	if (fd < 0 || fd >= MAX_OPEN_FILES) {
+		errno = EBADF;
+		return -1;
+	}
+	if (!lineptr) {
+		errno = EINVAL;
+		return -1;
+	}
+	if (*lineptr) {
+		errno = ENOTSUP;
+		return -1;
+	}
+
+	/* TODO use malloc */
+	static char buf[MAX_OPEN_FILES][256];
+	size_t off = 0;
+
+	while (off < (sizeof(buf[0]) - 1)) {
+		char ch;
+
+		/* TODO don't read 1 char at a time */
+		ssize_t nread = read(fd, &ch, 1);
+
+		if (nread < 0)
+			return nread;
+		if (nread == 0)
+			continue;
+		if (ch == '\0')
+			break;
+
+		buf[fd][off] = ch;
+		off += nread;
+
+		if (ch == (char) delim)
+			break;
+	}
+	buf[fd][off] = '\0';
+	if (n)
+		*n = off;
+	*lineptr = buf[fd];
+	return off;
+}
+
+ssize_t getline(char **lineptr, size_t *n, int fd)
+{
+	return getdelim(lineptr, n, '\n', fd);
+}
