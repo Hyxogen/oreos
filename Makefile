@@ -6,7 +6,6 @@ KERNEL		:= $(NAME).bin
 KBD_VER		:= 2.6.4
 KBD_SHA256	:= 519f8d087aecca7e0a33cd084bef92c066eb19731666653dcc70c9d71aa40926
 CONSOLEFONT	:= lat0-08.psfu
-
 CC		:= $(HOME)/opt/cross/bin/i686-elf-gcc
 CFLAGS		:= \
 		   -std=c11 -O0 -Wall -Wextra -ffreestanding \
@@ -55,7 +54,7 @@ $(ISO): $(KERNEL) grub.cfg
 	mkdir -p $(ISO_DIR)/boot/grub
 	cp grub.cfg $(ISO_DIR)/boot/grub
 	cp $(KERNEL) $(ISO_DIR)/boot
-	grub-mkrescue -o $@ $(ISO_DIR)
+	grub-mkrescue --fonts="" --locales="" --install-modules="normal multiboot2" --core-compress=xz --compress=xz -o $@ $(ISO_DIR)
 
 $(KERNEL): $(OBJS) Makefile
 	$(LD_CMD) -o $@ $(OBJS) $(LFLAGS)
@@ -82,4 +81,4 @@ re:
 	${MAKE}
 
 -include $(DEPS)
-.PHONY: all run debug clean $(ISO)
+.PHONY: all run debug clean
