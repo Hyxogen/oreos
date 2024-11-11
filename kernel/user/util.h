@@ -1,6 +1,5 @@
 #ifndef __KERNEL_USER_H
 #define __KERNEL_USER_H
-
 #include <stddef.h>
 #include <stdarg.h>
 
@@ -69,5 +68,7 @@ int printf(const char *fmt, ...);
 
 ssize_t getdelim(char **lineptr, size_t *n, int delim, int fd);
 ssize_t getline(char **lineptr, size_t *n, int fd);
+void SIG_DFL(int signum);
+void SIG_IGN(int signum);
 
 #endif

@@ -17,6 +17,11 @@ void SIG_DFL(int signum)
 	}
 }
 
+void SIG_IGN(int signum)
+{
+	(void)signum;
+}
+
 static int __signal(int sig, void (*handler)(int))
 {
 	return syscall(SYS_signal, sig, handler);
