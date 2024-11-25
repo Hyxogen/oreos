@@ -138,6 +138,4 @@ void init_ps2(void);
 __attribute__((deprecated("will soon use new interrupt based driver")))
 enum keycode ps2_getkey_timeout(void);
 
-void ps2_set_mode(int mode);
-
 #endif
