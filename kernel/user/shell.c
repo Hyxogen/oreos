@@ -1,6 +1,5 @@
 #include <stddef.h>
 #include "util.h"
-#include "syscall.h"
 
 static void handler(int signum)
 {

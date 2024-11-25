@@ -17,12 +17,6 @@
 #define MAP_PRIVATE 0x01
 #define MAP_ANONYMOUS 0x02
 
-#define MAX_OPEN_FILES 8
-
-#define EBADF 9
-#define EINVAL 22
-#define ENOTSUP 95
-
 typedef long ssize_t;
 typedef long uid_t;
 typedef int pid_t;
@@ -66,8 +60,6 @@ int dprintf(int fd, const char *fmt, ...);
 int vprintf(const char *fmt, va_list ap);
 int printf(const char *fmt, ...);
 
-ssize_t getdelim(char **lineptr, size_t *n, int delim, int fd);
-ssize_t getline(char **lineptr, size_t *n, int fd);
 void SIG_DFL(int signum);
 void SIG_IGN(int signum);
 
